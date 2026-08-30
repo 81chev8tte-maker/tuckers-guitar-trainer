@@ -1,4 +1,4 @@
-const CACHE = 'tucker-guitar-quest-v2';
+const CACHE = 'tucker-guitar-quest-v2.1';
 const CORE = [
   './',
   './index.html',

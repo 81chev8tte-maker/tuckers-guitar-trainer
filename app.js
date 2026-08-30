@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const APP_VERSION = '0.2.0';
+  const APP_VERSION = '0.2.1';
   const PROGRESS_KEY = 'tgq-progress-v2';
   const OLD_PROGRESS_KEY = 'tgt-progress-v1';
   const DB_NAME = 'tucker-guitar-trainer';
@@ -195,6 +195,9 @@
   document.addEventListener('DOMContentLoaded', init);
 
   function init() {
+    // Always boot into the normal app shell; CSS also honors [hidden].
+    $('#gameScreen').hidden = true;
+    $('#resultScreen').hidden = true;
     bindNavigation();
     bindGameControls();
     bindInput();

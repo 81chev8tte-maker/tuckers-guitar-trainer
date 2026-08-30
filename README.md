@@ -2,7 +2,7 @@
 
 A free Chromebook-friendly PWA that teaches beginner electric guitar as a game.
 
-## v0.2.0
+## v0.2.1
 
 - Falling-note Guitar Hero/Rocksmith-style missions
 - Live microphone / USB audio-input pitch detection
