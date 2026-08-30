@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const APP_VERSION = '0.2.1';
+  const APP_VERSION = '0.3.0';
   const PROGRESS_KEY = 'tgq-progress-v2';
   const OLD_PROGRESS_KEY = 'tgt-progress-v1';
   const DB_NAME = 'tucker-guitar-trainer';
@@ -176,6 +176,9 @@
   let dbPromise = null;
   let currentSong = null;
   let alphaApi = null;
+  let loadedSongScore = null;
+  let loadedSongTracks = [];
+  let songLevelSpec = null;
   let deferredInstallPrompt = null;
   let metronomeTimer = null;
   let metronomeBeat = 0;
@@ -217,14 +220,14 @@
   }
 
   function defaultState() {
-    return { xp:0, stars:{}, totalHits:0, totalMisses:0, bestCombo:0, bestAccuracy:0, practiceSeconds:0, practiceDays:{}, missionsPlayed:0 };
+    return { xp:0, stars:{}, songBest:{}, totalHits:0, totalMisses:0, bestCombo:0, bestAccuracy:0, practiceSeconds:0, practiceDays:{}, missionsPlayed:0, songRuns:0 };
   }
 
   function loadProgress() {
     const base = defaultState();
     try {
       const saved = JSON.parse(localStorage.getItem(PROGRESS_KEY));
-      if (saved && typeof saved === 'object') return { ...base, ...saved, stars:saved.stars || {}, practiceDays:saved.practiceDays || {} };
+      if (saved && typeof saved === 'object') return { ...base, ...saved, stars:saved.stars || {}, songBest:saved.songBest || {}, practiceDays:saved.practiceDays || {} };
     } catch {}
     try {
       const old = JSON.parse(localStorage.getItem(OLD_PROGRESS_KEY));
@@ -315,43 +318,59 @@
     $('#gameStart').addEventListener('click', startMission);
     $('#gamePause').addEventListener('click', togglePause);
     $('#retryLevel').addEventListener('click', () => {
-      const id = game?.level?.id || flatLevels[nextLevelIndex()].id;
       $('#resultScreen').hidden = true;
-      launchLevel(id);
+      if (game?.mode === 'song' && game.level) launchLevel(game.level);
+      else launchLevel(game?.level?.id || flatLevels[nextLevelIndex()].id);
     });
     $('#nextLevel').addEventListener('click', () => {
+      $('#resultScreen').hidden = true;
+      if (game?.mode === 'song') {
+        launchNextSongSection();
+        return;
+      }
       const currentIndex = game ? flatLevels.findIndex(l => l.id === game.level.id) : nextLevelIndex();
       const next = Math.min(flatLevels.length - 1, currentIndex + 1);
-      $('#resultScreen').hidden = true;
       launchLevel(flatLevels[next].id);
     });
     $('#backToMap').addEventListener('click', () => {
       $('#resultScreen').hidden = true;
       $('#gameScreen').hidden = true;
-      renderWorldMap();
-      showView('play');
+      if (game?.mode === 'song') {
+        showView('songs');
+      } else {
+        renderWorldMap();
+        showView('play');
+      }
     });
   }
 
-  function launchLevel(levelId) {
-    const level = flatLevels.find(l => l.id === levelId);
+  function launchLevel(levelOrId) {
+    const isSongLevel = levelOrId && typeof levelOrId === 'object';
+    const level = isSongLevel ? levelOrId : flatLevels.find(l => l.id === levelOrId);
     if (!level) return;
-    if (!isLevelUnlocked(flatLevels.findIndex(l => l.id === level.id))) {
+    if (!isSongLevel && !isLevelUnlocked(flatLevels.findIndex(l => l.id === level.id))) {
       toast('Earn a star on the previous mission first.');
       return;
     }
     stopGameLoop();
-    const secondsPerBeat = 60 / level.bpm;
+    const stringInfo = level.stringInfo || STRING_INFO;
+    const secondsPerBeat = 60 / Math.max(20, Number(level.bpm) || 80);
     const events = level.notes.map((n, i) => ({
       ...n,
       index:i,
-      time:n.beat * secondsPerBeat,
-      midi:STRING_INFO[n.string].openMidi + n.fret,
+      time:Number.isFinite(n.time) ? n.time : n.beat * secondsPerBeat,
+      midi:Number.isFinite(n.midi) ? n.midi : (stringInfo[n.string]?.openMidi ?? STRING_INFO[n.string]?.openMidi ?? 40) + n.fret,
       status:'pending',
       element:null
-    }));
+    })).sort((a,b) => a.time - b.time).map((e, i) => ({ ...e, index:i }));
+    if (!events.length) {
+      toast('This section has no playable guitar notes.');
+      return;
+    }
     game = {
+      mode:level.mode || 'mission',
       level,
+      stringInfo,
       events,
       running:false,
       paused:false,
@@ -371,13 +390,18 @@
     tabCurrentIndex = -1;
     $('#gameScreen').hidden = false;
     $('#resultScreen').hidden = true;
-    $('#gameWorldLabel').textContent = `WORLD ${level.worldNumber} · ${level.worldTitle.toUpperCase()}`;
+    $('#gameStart').hidden = false;
+    $('#resultEyebrow').textContent = game.mode === 'song' ? 'SONG SECTION COMPLETE' : 'MISSION COMPLETE';
+    $('#backToMap').textContent = game.mode === 'song' ? 'Back to Song' : 'Mission Map';
+    $('#gameWorldLabel').textContent = game.mode === 'song'
+      ? `SONG LEVEL · ${String(level.trackName || 'GUITAR').toUpperCase()}`
+      : `WORLD ${level.worldNumber} · ${level.worldTitle.toUpperCase()}`;
     $('#gameLevelTitle').textContent = level.title;
     $('#gameLessonTag').textContent = level.tag;
     $('#gameLessonHeadline').textContent = level.headline;
     $('#gameLessonText').textContent = level.lesson;
     $('#tabHint').textContent = level.hint;
-    $('#gameStart').textContent = audio.active ? 'Start Mission' : 'Enable Guitar & Start';
+    $('#gameStart').textContent = audio.active ? (game.mode === 'song' ? 'Start Song Level' : 'Start Mission') : 'Enable Guitar & Start';
     $('#gameStart').disabled = false;
     $('#gamePause').disabled = true;
     $('#gamePause').textContent = 'Pause';
@@ -387,6 +411,7 @@
     $('#gameHearing').textContent = audio.lastResult?.note || '—';
     $('#nextNoteText').textContent = formatExpected(events[0]);
     $('#gameProgressBar').style.width = '0%';
+    renderStringLabels();
     renderLiveTab();
     renderGameNotes();
     updateGameBoard(0);
@@ -504,6 +529,17 @@
     }
   }
 
+  function renderStringLabels() {
+    const info = game?.stringInfo || STRING_INFO;
+    const wrap = $('#stringLabels');
+    if (!wrap) return;
+    wrap.innerHTML = info.map((s, i) => {
+      const number = info.length - i;
+      const edge = i === 0 ? ' thick' : i === info.length - 1 ? ' thin' : '';
+      return `<span>${escapeHtml(s.label)}<small>${number}${edge}</small></span>`;
+    }).join('');
+  }
+
   function renderGameNotes() {
     const layer = $('#noteLayer');
     layer.innerHTML = '';
@@ -520,14 +556,15 @@
 
   function renderLiveTab() {
     const wrap = $('#liveTab');
-    const rows = [5,4,3,2,1,0];
+    const info = game?.stringInfo || STRING_INFO;
+    const rows = Array.from({ length:info.length }, (_, i) => info.length - 1 - i);
     wrap.innerHTML = `<div class="tab-grid" style="--tab-cols:${game.events.length}">${rows.map(stringIndex => {
-      const label = STRING_INFO[stringIndex].label;
+      const label = info[stringIndex]?.label || `S${info.length - stringIndex}`;
       const cells = game.events.map(ev => {
         const isNote = ev.string === stringIndex;
         return `<span class="tab-cell ${isNote ? 'note' : ''}" data-tab-col="${ev.index}" data-tab-event="${ev.index}">${isNote ? ev.fret : '—'}</span>`;
       }).join('');
-      return `<div class="tab-row"><span class="tab-row-label">${label}</span>${cells}</div>`;
+      return `<div class="tab-row"><span class="tab-row-label">${escapeHtml(label)}</span>${cells}</div>`;
     }).join('')}</div>`;
   }
 
@@ -603,20 +640,28 @@
     const total = game.events.length;
     const accuracy = total ? Math.round(game.hits / total * 100) : 0;
     const stars = accuracy >= 90 ? 3 : accuracy >= 75 ? 2 : accuracy >= 55 ? 1 : 0;
-    const oldStars = Number(state.stars[game.level.id] || 0);
-    state.stars[game.level.id] = Math.max(oldStars, stars);
+    const isSong = game.mode === 'song';
+    if (isSong) {
+      const key = game.level.songKey || `${game.level.songId || 'song'}:${game.level.trackIndex || 0}:${game.level.songSpec?.startBar || 0}`;
+      const previous = state.songBest[key] || { stars:0, accuracy:0 };
+      state.songBest[key] = { stars:Math.max(previous.stars || 0, stars), accuracy:Math.max(previous.accuracy || 0, accuracy) };
+      state.songRuns++;
+    } else {
+      const oldStars = Number(state.stars[game.level.id] || 0);
+      state.stars[game.level.id] = Math.max(oldStars, stars);
+      state.missionsPlayed++;
+    }
     state.totalHits += game.hits;
     state.totalMisses += game.misses;
     state.bestCombo = Math.max(state.bestCombo, game.bestCombo);
     state.bestAccuracy = Math.max(state.bestAccuracy, accuracy);
-    state.missionsPlayed++;
     const elapsed = Math.max(0, (Date.now() - game.startedAtDate) / 1000);
     state.practiceSeconds += Math.min(900, elapsed);
     state.practiceDays[new Date().toISOString().slice(0,10)] = true;
     const xpEarned = Math.round(game.hits * 7 + stars * 40 + game.bestCombo * 2);
     state.xp += xpEarned;
     saveProgress();
-    renderWorldMap();
+    if (!isSong) renderWorldMap();
 
     $('#gameScreen').hidden = true;
     $('#resultScreen').hidden = false;
@@ -624,11 +669,21 @@
     $('#resultAccuracy').textContent = `${accuracy}%`;
     $('#resultCombo').textContent = game.bestCombo;
     $('#resultXp').textContent = `+${xpEarned}`;
-    $('#resultTitle').textContent = stars === 3 ? 'Crushed it!' : stars === 2 ? 'Nice run!' : stars === 1 ? 'Mission cleared!' : 'Almost there!';
-    $('#resultMessage').textContent = stars ? 'You unlocked the next mission. Retry anytime to chase more stars.' : 'Get to 55% accuracy to earn the first star and unlock the next mission.';
-    const currentIndex = flatLevels.findIndex(l => l.id === game.level.id);
-    const atEnd = currentIndex >= flatLevels.length - 1;
-    $('#nextLevel').hidden = atEnd || stars < 1;
+    if (isSong) {
+      $('#resultTitle').textContent = stars === 3 ? 'Section crushed!' : stars === 2 ? 'Nice run!' : stars === 1 ? 'Section cleared!' : 'Run it again!';
+      $('#resultMessage').textContent = stars ? 'That section is now scored. Retry it for more stars or move on to the next chunk.' : 'Slow it down or retry this section until the notes start to feel automatic.';
+      const spec = game.level.songSpec;
+      const hasNext = Boolean(spec && spec.endBar < spec.totalBars);
+      $('#nextLevel').hidden = !hasNext;
+      $('#nextLevel').textContent = 'Next Section ▶';
+    } else {
+      $('#resultTitle').textContent = stars === 3 ? 'Crushed it!' : stars === 2 ? 'Nice run!' : stars === 1 ? 'Mission cleared!' : 'Almost there!';
+      $('#resultMessage').textContent = stars ? 'You unlocked the next mission. Retry anytime to chase more stars.' : 'Get to 55% accuracy to earn the first star and unlock the next mission.';
+      const currentIndex = flatLevels.findIndex(l => l.id === game.level.id);
+      const atEnd = currentIndex >= flatLevels.length - 1;
+      $('#nextLevel').hidden = atEnd || stars < 1;
+      $('#nextLevel').textContent = 'Next Mission ▶';
+    }
   }
 
   function togglePause() {
@@ -646,11 +701,12 @@
   }
 
   function exitGame() {
+    const returnToSongs = game?.mode === 'song';
     stopGameLoop();
     $('#gameScreen').hidden = true;
     $('#resultScreen').hidden = true;
     $('#gameStart').hidden = false;
-    showView('play');
+    showView(returnToSongs ? 'songs' : 'play');
   }
 
   function stopGameLoop() {
@@ -660,7 +716,8 @@
 
   function formatExpected(ev) {
     if (!ev) return '—';
-    const s = STRING_INFO[ev.string];
+    const info = game?.stringInfo || STRING_INFO;
+    const s = info[ev.string] || STRING_INFO[ev.string] || { name:`String ${6 - ev.string}` };
     return `${s.name} · fret ${ev.fret} · ${midiToName(ev.midi)}`;
   }
 
@@ -955,6 +1012,11 @@
     $('#alphaPlay').addEventListener('click', () => alphaApi?.playPause());
     $('#alphaStop').addEventListener('click', () => alphaApi?.stop());
     $('#alphaSpeed').addEventListener('change', e => { if (alphaApi) alphaApi.playbackSpeed = Number(e.target.value); });
+    $('#songTrackSelect').addEventListener('change', () => { updateSongSectionOptions(); updateSongLevelPreview(); });
+    $('#songSectionSelect').addEventListener('change', updateSongLevelPreview);
+    $('#songLineMode').addEventListener('change', updateSongLevelPreview);
+    $('#songGameSpeed').addEventListener('change', updateSongLevelPreview);
+    $('#playSongAsLevel').addEventListener('click', startImportedSongLevel);
   }
 
   async function importFiles(files) {
@@ -1006,10 +1068,25 @@
   async function openSong(id) {
     const song = await getSong(id); if (!song) return;
     currentSong = song;
-    $('#playerEmpty').hidden = true; $('#playerContent').hidden = false; $('#playerSongName').textContent = stripExtension(song.name);
-    $('#textTab').hidden = true; $('#alphaTab').hidden = false; $('#alphaControls').hidden = false; $('#alphaStatus').textContent = 'Loading…';
+    loadedSongScore = null;
+    loadedSongTracks = [];
+    songLevelSpec = null;
+    $('#playerEmpty').hidden = true;
+    $('#playerContent').hidden = false;
+    $('#playerSongName').textContent = stripExtension(song.name);
+    $('#songGameSetup').hidden = true;
+    $('#textTab').hidden = true;
+    $('#alphaTab').hidden = false;
+    $('#alphaControls').hidden = false;
+    $('#alphaStatus').textContent = 'Loading…';
     if (song.ext === 'txt' || song.ext === 'tab') {
-      destroyAlphaTab(); $('#alphaControls').hidden = true; $('#alphaTab').hidden = true; $('#textTab').hidden = false; $('#textTab').textContent = await song.blob.text(); return;
+      destroyAlphaTab();
+      $('#alphaControls').hidden = true;
+      $('#alphaTab').hidden = true;
+      $('#songGameSetup').hidden = true;
+      $('#textTab').hidden = false;
+      $('#textTab').textContent = await song.blob.text();
+      return;
     }
     try {
       if (!window.alphaTab) throw new Error('Tab player library is unavailable. Connect to the internet once and reload.');
@@ -1019,17 +1096,262 @@
         player:{ enablePlayer:true, enableCursor:true, enableUserInteraction:true, soundFont:'https://cdn.jsdelivr.net/npm/@coderline/alphatab@1.8.4/dist/soundfont/sonivox.sf2', scrollElement:viewport },
         display:{ scale:.9 }
       });
+      alphaApi.scoreLoaded.on(score => {
+        loadedSongScore = score;
+        setupSongGame(score);
+      });
       alphaApi.renderStarted.on(() => { $('#alphaStatus').textContent = 'Rendering…'; });
       alphaApi.renderFinished.on(() => { $('#alphaStatus').textContent = 'Ready'; });
       alphaApi.playerReady.on(() => { $('#alphaStatus').textContent = 'Ready to play'; });
       alphaApi.playerStateChanged.on(args => { $('#alphaPlay').textContent = args.state === 1 ? '❚❚ Pause' : '▶ Play'; });
-      alphaApi.error.on(err => { console.error(err); $('#alphaStatus').textContent = 'Could not open this file'; });
+      alphaApi.error.on(err => { console.error(err); $('#alphaStatus').textContent = 'Could not open this file'; $('#songGameSetup').hidden = true; });
       alphaApi.load(await song.blob.arrayBuffer());
     } catch (err) { console.error(err); $('#alphaStatus').textContent = err.message || 'Could not load tab.'; toast(err.message || 'Could not load tab.'); }
   }
 
-  function destroyAlphaTab() { if (alphaApi) { try { alphaApi.destroy(); } catch {} alphaApi=null; } $('#alphaTab').innerHTML=''; }
-  function closePlayer() { destroyAlphaTab(); currentSong=null; $('#playerContent').hidden=true; $('#playerEmpty').hidden=false; }
+  function setupSongGame(score) {
+    const tracks = Array.from(score?.tracks || []);
+    loadedSongTracks = tracks.map((track, index) => {
+      const staff = getFrettedStaff(track);
+      const bars = staff ? Array.from(staff.bars || []) : [];
+      const stringCount = staff ? getStaffTuning(staff).length : 0;
+      const noteCount = staff ? countPlayableNotes(staff) : 0;
+      return { index, track, staff, bars, stringCount, noteCount, playable:Boolean(staff && stringCount === 6 && noteCount > 0) };
+    });
+    const playable = loadedSongTracks.filter(t => t.playable);
+    const select = $('#songTrackSelect');
+    select.innerHTML = loadedSongTracks.map(t => {
+      const name = t.track?.name || t.track?.shortName || `Track ${t.index + 1}`;
+      const detail = t.playable ? `${t.stringCount} strings · ${t.noteCount} notes` : 'not a 6-string guitar track';
+      return `<option value="${t.index}" ${t.playable ? '' : 'disabled'}>${escapeHtml(name)} — ${detail}</option>`;
+    }).join('');
+    if (!playable.length) {
+      $('#songGameSetup').hidden = false;
+      $('#songGameInfo').textContent = 'I could not find a playable six-string guitar track in this file.';
+      $('#playSongAsLevel').disabled = true;
+      $('#songSectionSelect').innerHTML = '<option>No playable sections</option>';
+      return;
+    }
+    select.value = String(playable[0].index);
+    $('#playSongAsLevel').disabled = false;
+    $('#songGameSetup').hidden = false;
+    $('#songGameInfo').textContent = `${playable.length} playable guitar track${playable.length === 1 ? '' : 's'} found. Song-game beta uses the file's fret/string data and simplifies simultaneous chords to one scored note.`;
+    updateSongSectionOptions();
+    updateSongLevelPreview();
+  }
+
+  function getFrettedStaff(track) {
+    const staves = Array.from(track?.staves || []);
+    return staves.find(staff => {
+      const tuning = getStaffTuning(staff);
+      if (tuning.length < 4 || tuning.length > 8) return false;
+      return Array.from(staff?.bars || []).some(bar => Array.from(bar?.voices || []).some(voice => Array.from(voice?.beats || []).some(beat => Array.from(beat?.notes || []).some(note => Number.isFinite(Number(note?.string)) && Number(note.string) > 0))));
+    }) || null;
+  }
+
+  function getStaffTuning(staff) {
+    try {
+      const direct = Array.from(staff?.tuning || []).map(Number).filter(Number.isFinite);
+      if (direct.length) return direct;
+    } catch {}
+    try {
+      const nested = Array.from(staff?.stringTuning?.tunings || []).map(Number).filter(Number.isFinite);
+      if (nested.length) return nested;
+    } catch {}
+    return [];
+  }
+
+  function countPlayableNotes(staff) {
+    let count = 0;
+    Array.from(staff?.bars || []).forEach(bar => Array.from(bar?.voices || []).forEach(voice => Array.from(voice?.beats || []).forEach(beat => {
+      Array.from(beat?.notes || []).forEach(note => {
+        const str = Number(note?.string), fret = Number(note?.fret);
+        if (Number.isFinite(str) && str >= 1 && str <= 6 && Number.isFinite(fret) && fret >= 0 && !note.isDead && !note.tieOrigin) count++;
+      });
+    })));
+    return count;
+  }
+
+  function updateSongSectionOptions() {
+    const meta = loadedSongTracks.find(t => t.index === Number($('#songTrackSelect').value));
+    const select = $('#songSectionSelect');
+    if (!meta?.playable) { select.innerHTML = '<option>No playable sections</option>'; return; }
+    const total = meta.bars.length;
+    const chunk = 8;
+    const options = [];
+    for (let start = 0; start < total; start += chunk) {
+      const end = Math.min(total, start + chunk);
+      options.push(`<option value="${start}:${end}">Bars ${start + 1}–${end}</option>`);
+    }
+    select.innerHTML = options.join('');
+    if (songLevelSpec && songLevelSpec.trackIndex === meta.index) {
+      const wanted = `${songLevelSpec.startBar}:${songLevelSpec.endBar}`;
+      if ([...select.options].some(o => o.value === wanted)) select.value = wanted;
+    }
+  }
+
+  function readSongBuilderSpec() {
+    const trackIndex = Number($('#songTrackSelect').value);
+    const meta = loadedSongTracks.find(t => t.index === trackIndex);
+    if (!meta?.playable) return null;
+    const parts = String($('#songSectionSelect').value || '0:8').split(':').map(Number);
+    const startBar = Math.max(0, Number.isFinite(parts[0]) ? parts[0] : 0);
+    const endBar = Math.min(meta.bars.length, Number.isFinite(parts[1]) ? parts[1] : startBar + 8);
+    return {
+      trackIndex,
+      startBar,
+      endBar,
+      totalBars:meta.bars.length,
+      lineMode:$('#songLineMode').value === 'high' ? 'high' : 'low',
+      speed:Math.max(.4, Math.min(1, Number($('#songGameSpeed').value) || .75))
+    };
+  }
+
+  function updateSongLevelPreview() {
+    const spec = readSongBuilderSpec();
+    if (!spec || !loadedSongScore) { $('#songLevelPreview').textContent = 'Choose a playable guitar track.'; return; }
+    try {
+      const level = buildImportedLevel(loadedSongScore, spec, true);
+      const simplification = level.chordsSimplified ? ` · ${level.chordsSimplified} chord beat${level.chordsSimplified === 1 ? '' : 's'} simplified` : '';
+      $('#songLevelPreview').textContent = `${level.notes.length} scored notes · ${Math.round(level.bpm)} BPM game speed${simplification}`;
+    } catch (err) {
+      $('#songLevelPreview').textContent = err.message || 'This section cannot be converted.';
+    }
+  }
+
+  function startImportedSongLevel() {
+    if (!loadedSongScore || !currentSong) { toast('Open a Guitar Pro or MusicXML file first.'); return; }
+    const spec = readSongBuilderSpec();
+    if (!spec) { toast('Choose a playable guitar track.'); return; }
+    try {
+      songLevelSpec = spec;
+      alphaApi?.stop?.();
+      const level = buildImportedLevel(loadedSongScore, spec, false);
+      launchLevel(level);
+    } catch (err) {
+      console.error(err);
+      toast(err.message || 'Could not turn this section into a level.');
+    }
+  }
+
+  function launchNextSongSection() {
+    if (!loadedSongScore || !game?.level?.songSpec) { showView('songs'); return; }
+    const previous = game.level.songSpec;
+    if (previous.endBar >= previous.totalBars) { showView('songs'); return; }
+    const length = Math.max(1, previous.endBar - previous.startBar);
+    const next = { ...previous, startBar:previous.endBar, endBar:Math.min(previous.totalBars, previous.endBar + length) };
+    songLevelSpec = next;
+    $('#songTrackSelect').value = String(next.trackIndex);
+    updateSongSectionOptions();
+    const optionValue = `${next.startBar}:${next.endBar}`;
+    if ([...$('#songSectionSelect').options].some(o => o.value === optionValue)) $('#songSectionSelect').value = optionValue;
+    const level = buildImportedLevel(loadedSongScore, next, false);
+    launchLevel(level);
+  }
+
+  function buildImportedLevel(score, spec, previewOnly = false) {
+    const meta = loadedSongTracks.find(t => t.index === spec.trackIndex);
+    if (!meta?.playable) throw new Error('That track is not a playable six-string guitar track.');
+    const track = meta.track;
+    const staff = meta.staff;
+    const bars = meta.bars.slice(spec.startBar, spec.endBar);
+    const groups = new Map();
+    let chordGroups = 0;
+    bars.forEach(bar => {
+      Array.from(bar?.voices || []).forEach(voice => {
+        Array.from(voice?.beats || []).forEach(beat => {
+          const notes = Array.from(beat?.notes || []).filter(note => {
+            const str = Number(note?.string), fret = Number(note?.fret);
+            return Number.isFinite(str) && str >= 1 && str <= 6 && Number.isFinite(fret) && fret >= 0 && !note.isDead && !note.tieOrigin;
+          });
+          if (!notes.length) return;
+          const fallbackTick = Number(bar?.masterBar?.start || 0) + Number(beat?.playbackStart || 0);
+          const tick = Number.isFinite(Number(beat?.absolutePlaybackStart)) ? Number(beat.absolutePlaybackStart) : fallbackTick;
+          const key = String(Math.round(tick));
+          if (!groups.has(key)) groups.set(key, { tick, notes:[] });
+          groups.get(key).notes.push(...notes);
+        });
+      });
+    });
+    const ordered = [...groups.values()].sort((a,b) => a.tick - b.tick);
+    if (!ordered.length) throw new Error('No playable notes were found in this section.');
+    const firstTick = ordered[0].tick;
+    const tempo = Math.max(30, Number(score?.tempo) || 80);
+    const gameBpm = tempo * spec.speed;
+    const raw = [];
+    ordered.forEach(group => {
+      const unique = [];
+      const seen = new Set();
+      group.notes.forEach(note => {
+        const stringNumber = Number(note.string);
+        const fret = Number(note.fret);
+        const midiRaw = Number(note.realValue);
+        const midi = Number.isFinite(midiRaw) ? Math.round(midiRaw) : Math.round(Number(note.stringTuning) + fret);
+        if (!Number.isFinite(midi)) return;
+        const key = `${stringNumber}:${fret}:${midi}`;
+        if (seen.has(key)) return;
+        seen.add(key);
+        unique.push({ stringNumber, fret, midi, note });
+      });
+      if (!unique.length) return;
+      if (unique.length > 1) chordGroups++;
+      unique.sort((a,b) => a.midi - b.midi);
+      const chosen = spec.lineMode === 'high' ? unique.at(-1) : unique[0];
+      const quarterBeats = (group.tick - firstTick) / 960;
+      raw.push({ string:chosen.stringNumber - 1, fret:chosen.fret, midi:chosen.midi, beat:2 + quarterBeats });
+    });
+    const notes = raw.filter((n, i) => i === 0 || n.beat !== raw[i-1].beat || n.midi !== raw[i-1].midi);
+    if (!notes.length) throw new Error('No scored notes remained after simplifying this section.');
+    if (notes.length > 420) throw new Error('This 8-bar section is unusually dense. Choose a different guitar track for now.');
+    const stringInfo = makeStringInfoFromStaff(staff);
+    const trackName = track?.name || track?.shortName || `Track ${spec.trackIndex + 1}`;
+    const sectionName = `Bars ${spec.startBar + 1}–${spec.endBar}`;
+    return {
+      id:`song:${currentSong?.id || 'local'}:${spec.trackIndex}:${spec.startBar}:${spec.endBar}:${spec.lineMode}:${spec.speed}`,
+      mode:'song',
+      songId:currentSong?.id || 'local',
+      songKey:`${currentSong?.id || 'local'}:${spec.trackIndex}:${spec.startBar}:${spec.endBar}:${spec.lineMode}`,
+      trackIndex:spec.trackIndex,
+      trackName,
+      songSpec:{ ...spec },
+      stringInfo,
+      title:`${stripExtension(currentSong?.name || score?.title || 'Imported Song')} · ${sectionName}`,
+      tag:'SONG GAME · BETA',
+      headline:`${trackName} · ${sectionName}`,
+      lesson:spec.lineMode === 'high' ? 'Lead mode scores the highest note whenever the tab contains a chord. Follow the falling fret blocks and play clean single notes.' : 'Riff mode scores the lowest/root note whenever the tab contains a chord. Follow the falling fret blocks and play clean single notes.',
+      hint:'The live tab below mirrors the simplified playable line generated from your imported file.',
+      bpm:gameBpm,
+      notes,
+      chordsSimplified:chordGroups,
+      previewOnly
+    };
+  }
+
+  function makeStringInfoFromStaff(staff) {
+    const tuningTopToBottom = getStaffTuning(staff);
+    const tuningLowToHigh = tuningTopToBottom.length === 6 ? [...tuningTopToBottom].reverse() : STRING_INFO.map(s => s.openMidi);
+    return tuningLowToHigh.map((midi, i) => {
+      const name = midiToName(Math.round(midi));
+      const pitch = name.replace(/\d+$/, '');
+      return { label:i === 5 && pitch === 'E' ? 'e' : pitch, number:6 - i, name:`String ${6 - i} (${name})`, openMidi:Math.round(midi) };
+    });
+  }
+
+  function destroyAlphaTab() {
+    if (alphaApi) { try { alphaApi.destroy(); } catch {} alphaApi=null; }
+    loadedSongScore = null;
+    loadedSongTracks = [];
+    $('#alphaTab').innerHTML='';
+  }
+
+  function closePlayer() {
+    destroyAlphaTab();
+    currentSong=null;
+    songLevelSpec=null;
+    $('#songGameSetup').hidden=true;
+    $('#playerContent').hidden=true;
+    $('#playerEmpty').hidden=false;
+  }
 
   function bindProgress() {
     $('#resetProgress').addEventListener('click', () => {
@@ -1071,7 +1393,13 @@
     apply(); window.addEventListener('online', apply); window.addEventListener('offline', apply);
   }
 
-  function registerServiceWorker() { if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(console.error); }
+  async function registerServiceWorker() {
+    if (!('serviceWorker' in navigator)) return;
+    try {
+      const reg = await navigator.serviceWorker.register('./sw.js?v=0.3.0');
+      reg.update().catch(() => null);
+    } catch (err) { console.error(err); }
+  }
 
   function toast(message) {
     const el = $('#toast'); el.textContent = message; el.classList.add('show'); clearTimeout(toast.timer); toast.timer = setTimeout(() => el.classList.remove('show'), 2600);

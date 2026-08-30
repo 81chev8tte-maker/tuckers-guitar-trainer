@@ -6,11 +6,11 @@
   <meta name="theme-color" content="#0d1117" />
   <meta name="description" content="A free game-style guitar trainer that listens while you play." />
   <title>Tucker's Guitar Quest</title>
-  <link rel="manifest" href="./manifest.webmanifest" />
+  <link rel="manifest" href="./manifest.webmanifest?v=0.3.0" />
   <link rel="icon" href="./icons/icon.svg" />
-  <link rel="stylesheet" href="./styles.css" />
+  <link rel="stylesheet" href="./styles.css?v=0.3.0" />
   <script defer src="https://cdn.jsdelivr.net/npm/@coderline/alphatab@1.8.4/dist/alphaTab.min.js"></script>
-  <script defer src="./app.js"></script>
+  <script defer src="./app.js?v=0.3.0"></script>
 </head>
 <body>
   <header class="topbar">
@@ -99,8 +99,8 @@
         <button class="button secondary" data-view-target="find-tabs">Find Tabs</button>
       </div>
       <div class="song-game-note panel compact-panel">
-        <strong>🎮 Song Game is coming next.</strong>
-        <span>For now imported Guitar Pro files open in the practice player. The new mission engine is what we’ll use to turn them into falling-note levels.</span>
+        <strong>🎮 Imported tabs can become levels.</strong>
+        <span>Open a Guitar Pro or MusicXML file, choose a guitar track and section, then hit <b>Play as Level</b>. Chords are simplified to one note in this first song-game version so the mic can score them reliably.</span>
       </div>
       <div id="dropZone" class="drop-zone" tabindex="0">
         <div class="drop-icon">⬇️</div><strong>Drop a tab file here</strong><span>or</span>
@@ -122,6 +122,27 @@
               <label>Speed <select id="alphaSpeed"><option value="0.5">50%</option><option value="0.6">60%</option><option value="0.75">75%</option><option value="0.85">85%</option><option value="1" selected>100%</option></select></label>
               <span id="alphaStatus" class="muted">Loading…</span>
             </div>
+            <section id="songGameSetup" class="song-level-builder" hidden aria-labelledby="songGameTitle">
+              <div class="song-level-head">
+                <div><p class="eyebrow">TURN THIS TAB INTO A GAME</p><h3 id="songGameTitle">Play as Level</h3><p id="songGameInfo" class="muted small-text">Reading tracks…</p></div>
+                <span class="song-beta-badge">BETA</span>
+              </div>
+              <div class="song-level-grid">
+                <label class="field">Guitar track
+                  <select id="songTrackSelect"></select>
+                </label>
+                <label class="field">Section
+                  <select id="songSectionSelect"></select>
+                </label>
+                <label class="field">Chord simplification
+                  <select id="songLineMode"><option value="low" selected>Riff / lowest note</option><option value="high">Lead / highest note</option></select>
+                </label>
+                <label class="field">Game speed
+                  <select id="songGameSpeed"><option value="0.5">50%</option><option value="0.6">60%</option><option value="0.75" selected>75%</option><option value="0.85">85%</option><option value="1">100%</option></select>
+                </label>
+              </div>
+              <div class="song-level-actions"><button id="playSongAsLevel" class="button big">🎮 Play as Level</button><span id="songLevelPreview" class="muted small-text">Choose a track and section.</span></div>
+            </section>
             <div id="tabViewport" class="tab-viewport"><div id="alphaTab"></div><pre id="textTab" class="text-tab" hidden></pre></div>
           </div>
         </article>
@@ -205,7 +226,7 @@
         <div id="laneBackground" class="lane-background"></div>
         <div class="hit-line"><span>HIT</span></div>
         <div id="noteLayer" class="note-layer"></div>
-        <div class="string-labels"><span>E<small>6 thick</small></span><span>A<small>5</small></span><span>D<small>4</small></span><span>G<small>3</small></span><span>B<small>2</small></span><span>e<small>1 thin</small></span></div>
+        <div id="stringLabels" class="string-labels"><span>E<small>6 thick</small></span><span>A<small>5</small></span><span>D<small>4</small></span><span>G<small>3</small></span><span>B<small>2</small></span><span>e<small>1 thin</small></span></div>
         <div id="countdown" class="countdown" hidden>3</div>
         <div id="gameFeedback" class="game-feedback" aria-live="polite"></div>
       </div>
@@ -220,7 +241,7 @@
 
   <section id="resultScreen" class="result-screen" hidden aria-label="Mission results">
     <div class="result-card panel">
-      <p class="eyebrow">MISSION COMPLETE</p>
+      <p id="resultEyebrow" class="eyebrow">MISSION COMPLETE</p>
       <h1 id="resultTitle">Nice!</h1>
       <div id="resultStars" class="result-stars">☆☆☆</div>
       <div class="result-stats"><div><span>Accuracy</span><strong id="resultAccuracy">0%</strong></div><div><span>Best combo</span><strong id="resultCombo">0</strong></div><div><span>XP earned</span><strong id="resultXp">+0</strong></div></div>
