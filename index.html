@@ -3,9 +3,9 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <meta name="theme-color" content="#101319" />
-  <meta name="description" content="A free, offline-friendly beginner guitar trainer with lessons, tuner, metronome, chord practice and personal tab imports." />
-  <title>Tucker's Guitar Trainer</title>
+  <meta name="theme-color" content="#0d1117" />
+  <meta name="description" content="A free game-style guitar trainer that listens while you play." />
+  <title>Tucker's Guitar Quest</title>
   <link rel="manifest" href="./manifest.webmanifest" />
   <link rel="icon" href="./icons/icon.svg" />
   <link rel="stylesheet" href="./styles.css" />
@@ -14,131 +14,115 @@
 </head>
 <body>
   <header class="topbar">
-    <button class="brand" data-view-target="home" aria-label="Home">
+    <button class="brand" data-view-target="play" aria-label="Home">
       <span class="brand-mark">🎸</span>
-      <span><strong>Tucker's</strong><small>Guitar Trainer</small></span>
+      <span><strong>Tucker's</strong><small>Guitar Quest</small></span>
     </button>
-    <div class="topbar-actions">
+    <div class="topbar-stats">
+      <span class="xp-pill"><b id="headerLevel">Lv 1</b><span id="headerXp">0 XP</span></span>
       <span id="offlineBadge" class="badge">Online</span>
-      <button id="installButton" class="button small secondary" hidden>Install App</button>
+      <button id="installButton" class="button small secondary" hidden>Install</button>
     </div>
   </header>
 
   <main>
-    <section id="view-home" class="view active" aria-labelledby="homeTitle">
-      <div class="hero panel">
+    <section id="view-play" class="view active" aria-labelledby="playTitle">
+      <article class="hero game-hero panel">
         <div>
-          <p class="eyebrow">FREE • NO ACCOUNT • YOUR FILES STAY HERE</p>
-          <h1 id="homeTitle">Pick up the guitar. Play something.</h1>
-          <p class="muted">Short lessons, useful tools, and a place for the tabs you choose to import.</p>
+          <p class="eyebrow">PLUG IN • PLAY • LEVEL UP</p>
+          <h1 id="playTitle">Learn guitar by actually playing guitar.</h1>
+          <p class="muted">Notes fall toward the hit line. Play the fret on your real guitar and the Chromebook listens for the answer.</p>
           <div class="hero-actions">
-            <button class="button" data-view-target="learn">Continue Learning</button>
-            <button class="button secondary" data-view-target="songs">My Songs</button>
+            <button id="continueMission" class="button big">▶ Start Next Mission</button>
+            <button class="button secondary" data-view-target="input">🎙 Check Guitar Input</button>
           </div>
         </div>
-        <div class="practice-ring" aria-label="Lesson progress">
-          <strong id="homeProgressPercent">0%</strong>
-          <span>lessons</span>
+        <div class="rank-card" aria-label="Current player level">
+          <span>PLAYER LEVEL</span>
+          <strong id="heroLevel">1</strong>
+          <small id="heroXpText">0 / 300 XP</small>
+          <div class="xp-track"><span id="heroXpBar"></span></div>
         </div>
-      </div>
+      </article>
 
       <div class="stat-grid">
-        <article class="stat-card"><span>Lessons done</span><strong id="statLessons">0</strong></article>
-        <article class="stat-card"><span>Practice minutes</span><strong id="statMinutes">0</strong></article>
-        <article class="stat-card"><span>Practice days</span><strong id="statDays">0</strong></article>
-        <article class="stat-card"><span>Saved songs</span><strong id="statSongs">0</strong></article>
+        <article class="stat-card"><span>⭐ Stars</span><strong id="statStars">0</strong></article>
+        <article class="stat-card"><span>🔥 Best combo</span><strong id="statCombo">0</strong></article>
+        <article class="stat-card"><span>🎯 Notes hit</span><strong id="statHits">0</strong></article>
+        <article class="stat-card"><span>⏱ Play time</span><strong><span id="statMinutes">0</span>m</strong></article>
       </div>
 
-      <div class="two-col">
-        <article class="panel">
-          <div class="section-heading">
-            <div><p class="eyebrow">TODAY</p><h2>10-minute practice</h2></div>
-            <span id="practiceTimer" class="timer">10:00</span>
-          </div>
-          <ol class="practice-plan">
-            <li>2 min — tune up</li>
-            <li>3 min — current lesson</li>
-            <li>3 min — chord or riff drill</li>
-            <li>2 min — play something fun</li>
-          </ol>
-          <div class="row gap">
-            <button id="practiceStart" class="button">Start Timer</button>
-            <button id="practiceReset" class="button secondary">Reset</button>
-          </div>
-        </article>
-
-        <article class="panel">
-          <p class="eyebrow">QUICK TOOLS</p>
-          <h2>Need something now?</h2>
-          <div class="quick-grid">
-            <button class="quick-button" data-view-target="tools" data-focus-tool="tuner">🎙️<span>Tuner</span></button>
-            <button class="quick-button" data-view-target="tools" data-focus-tool="metronome">🥁<span>Metronome</span></button>
-            <button class="quick-button" data-view-target="tools" data-focus-tool="chords">🎼<span>Chords</span></button>
-            <button class="quick-button" data-view-target="find-tabs">🔎<span>Find Tabs</span></button>
-          </div>
-        </article>
+      <div class="section-heading world-heading">
+        <div><p class="eyebrow">MISSION MAP</p><h2>Learn one skill at a time</h2></div>
+        <span class="muted small-text">Earn 1 star to unlock the next mission</span>
       </div>
+      <div id="worldMap" class="world-map"></div>
     </section>
 
-    <section id="view-learn" class="view" aria-labelledby="learnTitle">
-      <div class="section-heading page-heading">
-        <div><p class="eyebrow">BEGINNER PATH</p><h1 id="learnTitle">Learn Guitar</h1><p class="muted">Go in order. Mark a lesson complete when it feels comfortable — not perfect.</p></div>
-        <div><strong id="learnProgressText">0 / 0</strong><span class="muted small-text"> completed</span></div>
+    <section id="view-input" class="view" aria-labelledby="inputTitle">
+      <div class="page-heading">
+        <p class="eyebrow">LIVE GUITAR INPUT</p>
+        <h1 id="inputTitle">Can the Chromebook hear the guitar?</h1>
+        <p class="muted">Use the built-in mic near the amp, or plug in a USB audio/guitar interface for a cleaner signal.</p>
       </div>
-      <div id="lessonList" class="lesson-list"></div>
+      <article class="panel input-panel">
+        <div class="section-heading">
+          <div><h2>1. Turn on listening</h2><p class="muted">Use a clean or lightly distorted guitar sound while learning.</p></div>
+          <button id="inputToggle" class="button">Enable Guitar Input</button>
+        </div>
+        <div class="input-grid">
+          <label class="field">Input device
+            <select id="audioDeviceSelect" disabled><option>Default microphone</option></select>
+          </label>
+          <label class="field">Noise gate
+            <input id="noiseGate" type="range" min="0.005" max="0.08" value="0.018" step="0.001" />
+            <span id="noiseGateText" class="muted small-text">Normal</span>
+          </label>
+        </div>
+        <div class="live-note-card">
+          <div><span class="muted">HEARING</span><strong id="inputNote">—</strong><small id="inputFreq">Play one string</small></div>
+          <div class="signal-wrap"><span>Signal</span><div class="signal-track"><i id="signalBar"></i></div></div>
+          <div id="inputAccuracy" class="input-status">Waiting for input</div>
+        </div>
+        <p class="tip">Tip: if the note jumps around, turn the amp gain/distortion down and move the Chromebook a little closer to the speaker.</p>
+      </article>
+      <article class="panel">
+        <p class="eyebrow">QUICK TEST</p>
+        <h2>Play these open strings</h2>
+        <div id="inputChallenges" class="input-challenges"></div>
+      </article>
     </section>
 
     <section id="view-songs" class="view" aria-labelledby="songsTitle">
       <div class="section-heading page-heading">
-        <div><p class="eyebrow">PERSONAL LIBRARY</p><h1 id="songsTitle">My Songs</h1><p class="muted">Import your own Guitar Pro, MusicXML, or text-tab files. They are saved only in this browser.</p></div>
+        <div><p class="eyebrow">PERSONAL LIBRARY</p><h1 id="songsTitle">My Songs</h1><p class="muted">Import Guitar Pro, MusicXML, or text tabs. Files stay in this browser.</p></div>
         <button class="button secondary" data-view-target="find-tabs">Find Tabs</button>
       </div>
-
+      <div class="song-game-note panel compact-panel">
+        <strong>🎮 Song Game is coming next.</strong>
+        <span>For now imported Guitar Pro files open in the practice player. The new mission engine is what we’ll use to turn them into falling-note levels.</span>
+      </div>
       <div id="dropZone" class="drop-zone" tabindex="0">
-        <div class="drop-icon">⬇️</div>
-        <strong>Drop a tab file here</strong>
-        <span>or</span>
+        <div class="drop-icon">⬇️</div><strong>Drop a tab file here</strong><span>or</span>
         <label class="button" for="songFileInput">Choose File</label>
         <input id="songFileInput" type="file" accept=".gp,.gpx,.gp3,.gp4,.gp5,.musicxml,.xml,.txt,.tab" multiple hidden />
-        <small>Supported now: .gp, .gpx, .gp3, .gp4, .gp5, .musicxml, .xml, .txt, .tab</small>
+        <small>.gp · .gpx · .gp3 · .gp4 · .gp5 · .musicxml · .xml · .txt · .tab</small>
       </div>
-
       <div class="two-col songs-layout">
         <article class="panel songs-panel">
           <div class="section-heading"><h2>Saved files</h2><span id="songCount" class="badge">0</span></div>
           <div id="songList" class="song-list empty-state">No songs imported yet.</div>
         </article>
-
         <article class="panel player-panel">
-          <div id="playerEmpty" class="empty-state player-empty">
-            <div class="big-emoji">🎵</div>
-            <strong>Select a song</strong>
-            <span>Your tab player will appear here.</span>
-          </div>
+          <div id="playerEmpty" class="empty-state player-empty"><div class="big-emoji">🎵</div><strong>Select a song</strong><span>Your tab player will appear here.</span></div>
           <div id="playerContent" hidden>
-            <div class="section-heading player-heading">
-              <div><p class="eyebrow">NOW PRACTICING</p><h2 id="playerSongName">Song</h2></div>
-              <button id="closePlayer" class="icon-button" aria-label="Close player">✕</button>
-            </div>
+            <div class="section-heading player-heading"><div><p class="eyebrow">NOW PRACTICING</p><h2 id="playerSongName">Song</h2></div><button id="closePlayer" class="icon-button" aria-label="Close player">✕</button></div>
             <div id="alphaControls" class="player-controls" hidden>
-              <button id="alphaPlay" class="button">▶ Play</button>
-              <button id="alphaStop" class="button secondary">■ Stop</button>
-              <label>Speed
-                <select id="alphaSpeed">
-                  <option value="0.5">50%</option>
-                  <option value="0.6">60%</option>
-                  <option value="0.75">75%</option>
-                  <option value="0.85">85%</option>
-                  <option value="1" selected>100%</option>
-                  <option value="1.1">110%</option>
-                </select>
-              </label>
+              <button id="alphaPlay" class="button">▶ Play</button><button id="alphaStop" class="button secondary">■ Stop</button>
+              <label>Speed <select id="alphaSpeed"><option value="0.5">50%</option><option value="0.6">60%</option><option value="0.75">75%</option><option value="0.85">85%</option><option value="1" selected>100%</option></select></label>
               <span id="alphaStatus" class="muted">Loading…</span>
             </div>
-            <div id="tabViewport" class="tab-viewport">
-              <div id="alphaTab"></div>
-              <pre id="textTab" class="text-tab" hidden></pre>
-            </div>
+            <div id="tabViewport" class="tab-viewport"><div id="alphaTab"></div><pre id="textTab" class="text-tab" hidden></pre></div>
           </div>
         </article>
       </div>
@@ -146,89 +130,111 @@
 
     <section id="view-tools" class="view" aria-labelledby="toolsTitle">
       <div class="page-heading"><p class="eyebrow">PRACTICE TOOLS</p><h1 id="toolsTitle">Tuner, Metronome & Chords</h1></div>
-
       <article id="tool-tuner" class="panel tool-panel">
-        <div class="section-heading">
-          <div><p class="eyebrow">TUNER</p><h2>Chromatic Tuner</h2><p class="muted">Allow microphone access, then play one string at a time.</p></div>
-          <button id="tunerToggle" class="button">Start Tuner</button>
-        </div>
+        <div class="section-heading"><div><p class="eyebrow">TUNER</p><h2>Chromatic Tuner</h2></div><button id="tunerToggle" class="button">Start Tuner</button></div>
         <div class="tuner-display">
           <div><span id="tunerNote" class="tuner-note">—</span><span id="tunerOctave" class="tuner-octave"></span></div>
           <strong id="tunerFrequency">0.0 Hz</strong>
-          <div class="tuner-meter" aria-label="Tuning cents">
-            <span class="flat">♭</span><div class="meter-track"><div class="meter-center"></div><div id="tunerNeedle" class="meter-needle"></div></div><span class="sharp">♯</span>
-          </div>
-          <p id="tunerMessage" class="muted">Tuner is off.</p>
-          <div class="standard-tuning"><span>Standard tuning:</span><strong>E2 · A2 · D3 · G3 · B3 · E4</strong></div>
+          <div class="tuner-meter"><span>♭</span><div class="meter-track"><div class="meter-center"></div><div id="tunerNeedle" class="meter-needle"></div></div><span>♯</span></div>
+          <p id="tunerMessage" class="muted">Tuner is off.</p><div class="standard-tuning"><span>Standard:</span><strong>E2 · A2 · D3 · G3 · B3 · E4</strong></div>
         </div>
       </article>
-
       <article id="tool-metronome" class="panel tool-panel">
-        <div class="section-heading">
-          <div><p class="eyebrow">METRONOME</p><h2>Keep Time</h2><p class="muted">Start slow. Clean and steady beats fast and sloppy beats.</p></div>
-          <button id="metroToggle" class="button">Start</button>
-        </div>
-        <div class="metronome-controls">
-          <button id="bpmDown" class="round-button" aria-label="Decrease BPM">−</button>
-          <div class="bpm-display"><strong id="bpmValue">80</strong><span>BPM</span></div>
-          <button id="bpmUp" class="round-button" aria-label="Increase BPM">+</button>
-        </div>
-        <input id="bpmSlider" type="range" min="40" max="220" value="80" aria-label="BPM" />
+        <div class="section-heading"><div><p class="eyebrow">METRONOME</p><h2>Keep Time</h2></div><button id="metroToggle" class="button">Start</button></div>
+        <div class="metronome-controls"><button id="bpmDown" class="round-button">−</button><div class="bpm-display"><strong id="bpmValue">80</strong><span>BPM</span></div><button id="bpmUp" class="round-button">+</button></div>
+        <input id="bpmSlider" type="range" min="40" max="220" value="80" />
         <div id="beatDots" class="beat-dots"><span></span><span></span><span></span><span></span></div>
       </article>
-
-      <article id="tool-chords" class="panel tool-panel">
-        <div class="section-heading"><div><p class="eyebrow">CHORD LIBRARY</p><h2>Starter Chords</h2></div></div>
-        <div id="chordGrid" class="chord-grid"></div>
-      </article>
+      <article id="tool-chords" class="panel tool-panel"><div class="section-heading"><div><p class="eyebrow">CHORD LIBRARY</p><h2>Starter Chords</h2></div></div><div id="chordGrid" class="chord-grid"></div></article>
     </section>
 
     <section id="view-find-tabs" class="view" aria-labelledby="findTabsTitle">
-      <div class="page-heading">
-        <p class="eyebrow">EXTERNAL SOURCES</p>
-        <h1 id="findTabsTitle">Find Tabs</h1>
-        <p class="muted">These sites open in a new tab. This app does not copy or host their song tabs.</p>
-      </div>
+      <div class="page-heading"><p class="eyebrow">EXTERNAL SOURCES</p><h1 id="findTabsTitle">Find Tabs</h1><p class="muted">These open outside the app. Guitar Quest does not host their song files.</p></div>
       <div class="source-grid">
-        <a class="source-card" href="https://www.guitar-pro.com/free-tabs" target="_blank" rel="noopener noreferrer"><strong>Guitar Pro Free Tabs</strong><span>Official free tab packs and exercises.</span><small>Look for Guitar Pro files</small></a>
+        <a class="source-card" href="https://www.guitar-pro.com/free-tabs" target="_blank" rel="noopener noreferrer"><strong>Guitar Pro Free Tabs</strong><span>Official free tab packs and exercises.</span><small>Best first stop</small></a>
         <a class="source-card" href="https://guitarprotabs.org/" target="_blank" rel="noopener noreferrer"><strong>GuitarProTabs.org</strong><span>Community Guitar Pro file library.</span><small>Try .gp3 / .gp4 / .gp5</small></a>
         <a class="source-card" href="https://www.911tabs.com/" target="_blank" rel="noopener noreferrer"><strong>911Tabs</strong><span>Search engine for tabs around the web.</span><small>Check the source before downloading</small></a>
-        <a class="source-card" href="https://www.ultimate-guitar.com/" target="_blank" rel="noopener noreferrer"><strong>Ultimate Guitar</strong><span>Large community tab and chord catalogue.</span><small>Text tabs can be saved as .txt</small></a>
-        <a class="source-card" href="https://www.songsterr.com/" target="_blank" rel="noopener noreferrer"><strong>Songsterr</strong><span>Excellent for browsing and previewing tabs.</span><small>File downloads may require Plus</small></a>
+        <a class="source-card" href="https://www.ultimate-guitar.com/" target="_blank" rel="noopener noreferrer"><strong>Ultimate Guitar</strong><span>Large community catalogue.</span><small>Some features are paid</small></a>
+        <a class="source-card" href="https://www.songsterr.com/" target="_blank" rel="noopener noreferrer"><strong>Songsterr</strong><span>Great for browsing and previewing.</span><small>File downloads may require Plus</small></a>
       </div>
-      <article class="panel info-panel">
-        <h2>What file should I grab?</h2>
-        <p>Best choice: <strong>.gp, .gpx, .gp5, .gp4 or .gp3</strong>. MusicXML also works. Plain text tabs can be imported as <strong>.txt</strong> or <strong>.tab</strong>.</p>
-        <button class="button" data-view-target="songs">Go to My Songs</button>
-      </article>
+      <article class="panel info-panel"><h2>Best file types</h2><p><strong>.gp, .gpx, .gp5, .gp4, .gp3</strong> are best. MusicXML also works.</p><button class="button" data-view-target="songs">Go to My Songs</button></article>
     </section>
 
     <section id="view-progress" class="view" aria-labelledby="progressTitle">
-      <div class="page-heading"><p class="eyebrow">YOUR STATS</p><h1 id="progressTitle">Progress</h1><p class="muted">Stored only on this Chromebook/browser.</p></div>
-      <div class="stat-grid big-stats">
-        <article class="stat-card"><span>Lessons completed</span><strong id="progressLessons">0</strong></article>
-        <article class="stat-card"><span>Total practice</span><strong><span id="progressMinutes">0</span> min</strong></article>
-        <article class="stat-card"><span>Practice days</span><strong id="progressDays">0</strong></article>
-        <article class="stat-card"><span>Personal songs</span><strong id="progressSongs">0</strong></article>
+      <div class="page-heading"><p class="eyebrow">PLAYER PROFILE</p><h1 id="progressTitle">Progress</h1><p class="muted">Game progress is stored only on this device/browser.</p></div>
+      <div class="profile-panel panel">
+        <div class="profile-rank"><span>LEVEL</span><strong id="progressLevel">1</strong></div>
+        <div class="profile-main"><h2 id="progressTitleRank">Garage Rookie</h2><div class="xp-track large"><span id="progressXpBar"></span></div><p id="progressXpText" class="muted">0 XP</p></div>
       </div>
-      <article class="panel">
-        <div class="section-heading"><div><p class="eyebrow">ACHIEVEMENTS</p><h2>Milestones</h2></div></div>
-        <div id="achievementGrid" class="achievement-grid"></div>
-      </article>
-      <article class="panel danger-zone">
-        <h2>Reset lesson & practice progress</h2>
-        <p class="muted">This does not delete imported song files.</p>
-        <button id="resetProgress" class="button danger">Reset Progress</button>
-      </article>
+      <div class="stat-grid big-stats">
+        <article class="stat-card"><span>Stars earned</span><strong id="progressStars">0</strong></article>
+        <article class="stat-card"><span>Notes hit</span><strong id="progressHits">0</strong></article>
+        <article class="stat-card"><span>Best combo</span><strong id="progressCombo">0</strong></article>
+        <article class="stat-card"><span>Practice time</span><strong><span id="progressMinutes">0</span>m</strong></article>
+      </div>
+      <article class="panel"><div class="section-heading"><div><p class="eyebrow">ACHIEVEMENTS</p><h2>Milestones</h2></div></div><div id="achievementGrid" class="achievement-grid"></div></article>
+      <article class="panel danger-zone"><h2>Reset game progress</h2><p class="muted">Imported songs are not deleted.</p><button id="resetProgress" class="button danger">Reset Progress</button></article>
     </section>
   </main>
 
+  <section id="gameScreen" class="game-screen" hidden aria-label="Guitar mission">
+    <div class="game-shell">
+      <header class="game-header">
+        <button id="exitGame" class="icon-button game-exit" aria-label="Exit mission">✕</button>
+        <div class="game-title"><span id="gameWorldLabel">WORLD 1</span><strong id="gameLevelTitle">Mission</strong></div>
+        <div class="game-score"><span>SCORE</span><strong id="gameScore">0</strong></div>
+      </header>
+
+      <div class="game-hud">
+        <div><span>🎯 ACCURACY</span><strong id="gameAccuracy">100%</strong></div>
+        <div class="combo-box"><span>🔥 COMBO</span><strong id="gameCombo">0</strong></div>
+        <div><span>🎵 HEARING</span><strong id="gameHearing">—</strong></div>
+      </div>
+
+      <article id="gameLessonCard" class="game-lesson-card">
+        <div><p class="eyebrow" id="gameLessonTag">TAB DECODER</p><h2 id="gameLessonHeadline">0 means open</h2><p id="gameLessonText">When you see 0, don't hold any fret. Just pick that string.</p></div>
+        <button id="gameStart" class="button big">Enable Guitar & Start</button>
+      </article>
+
+      <div class="tab-teacher">
+        <div class="tab-teacher-head"><strong>LIVE TAB</strong><span id="tabHint">Watch the falling block and the matching tab column.</span></div>
+        <div id="liveTab" class="live-tab" aria-label="Current tablature"></div>
+      </div>
+
+      <div id="gameBoard" class="game-board">
+        <div id="laneBackground" class="lane-background"></div>
+        <div class="hit-line"><span>HIT</span></div>
+        <div id="noteLayer" class="note-layer"></div>
+        <div class="string-labels"><span>E<small>6 thick</small></span><span>A<small>5</small></span><span>D<small>4</small></span><span>G<small>3</small></span><span>B<small>2</small></span><span>e<small>1 thin</small></span></div>
+        <div id="countdown" class="countdown" hidden>3</div>
+        <div id="gameFeedback" class="game-feedback" aria-live="polite"></div>
+      </div>
+
+      <footer class="game-footer">
+        <div><span>NEXT</span><strong id="nextNoteText">—</strong></div>
+        <div class="game-progress-track"><span id="gameProgressBar"></span></div>
+        <button id="gamePause" class="button secondary" disabled>Pause</button>
+      </footer>
+    </div>
+  </section>
+
+  <section id="resultScreen" class="result-screen" hidden aria-label="Mission results">
+    <div class="result-card panel">
+      <p class="eyebrow">MISSION COMPLETE</p>
+      <h1 id="resultTitle">Nice!</h1>
+      <div id="resultStars" class="result-stars">☆☆☆</div>
+      <div class="result-stats"><div><span>Accuracy</span><strong id="resultAccuracy">0%</strong></div><div><span>Best combo</span><strong id="resultCombo">0</strong></div><div><span>XP earned</span><strong id="resultXp">+0</strong></div></div>
+      <p id="resultMessage" class="muted">Keep going.</p>
+      <div class="result-actions"><button id="retryLevel" class="button secondary">↻ Retry</button><button id="nextLevel" class="button">Next Mission ▶</button><button id="backToMap" class="button ghost">Mission Map</button></div>
+    </div>
+  </section>
+
   <nav class="bottom-nav" aria-label="Main navigation">
-    <button class="nav-button active" data-view-target="home"><span>⌂</span>Home</button>
-    <button class="nav-button" data-view-target="learn"><span>▤</span>Learn</button>
+    <button class="nav-button active" data-view-target="play"><span>🎮</span>Play</button>
     <button class="nav-button" data-view-target="songs"><span>♫</span>Songs</button>
     <button class="nav-button" data-view-target="tools"><span>♬</span>Tools</button>
-    <button class="nav-button" data-view-target="progress"><span>★</span>Progress</button>
+    <button class="nav-button" data-view-target="input"><span>🎙</span>Input</button>
+    <button class="nav-button" data-view-target="progress"><span>★</span>Profile</button>
   </nav>
 
   <div id="toast" class="toast" role="status" aria-live="polite"></div>

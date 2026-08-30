@@ -1,162 +1,236 @@
 (() => {
   'use strict';
 
-  const APP_VERSION = '0.1.0';
-  const PROGRESS_KEY = 'tgt-progress-v1';
+  const APP_VERSION = '0.2.0';
+  const PROGRESS_KEY = 'tgq-progress-v2';
+  const OLD_PROGRESS_KEY = 'tgt-progress-v1';
   const DB_NAME = 'tucker-guitar-trainer';
   const DB_VERSION = 1;
   const STORE_SONGS = 'songs';
+  const HIT_WINDOW = 0.46;
+  const NOTE_LOOKAHEAD = 3.2;
 
-  const lessons = [
+  const STRING_INFO = [
+    { label:'E', number:6, name:'Low E', openMidi:40 },
+    { label:'A', number:5, name:'A', openMidi:45 },
+    { label:'D', number:4, name:'D', openMidi:50 },
+    { label:'G', number:3, name:'G', openMidi:55 },
+    { label:'B', number:2, name:'B', openMidi:59 },
+    { label:'e', number:1, name:'High e', openMidi:64 }
+  ];
+
+  const NOTE_NAMES = ['C','C♯','D','D♯','E','F','F♯','G','G♯','A','A♯','B'];
+
+  const chords = [
+    { name:'Em', frets:'0 2 2 0 0 0', note:'Easy first chord. Strum all 6 strings.' },
+    { name:'E', frets:'0 2 2 1 0 0', note:'Like Em with one extra finger.' },
+    { name:'A', frets:'x 0 2 2 2 0', note:'Start from the A string.' },
+    { name:'D', frets:'x x 0 2 3 2', note:'Use the four thinnest strings.' },
+    { name:'C', frets:'x 3 2 0 1 0', note:'Avoid the low E string.' },
+    { name:'G', frets:'3 2 0 0 0 3', note:'Let the middle strings ring.' },
+    { name:'Am', frets:'x 0 2 2 1 0', note:'Useful minor open chord.' },
+    { name:'Dm', frets:'x x 0 2 3 1', note:'Use the four thinnest strings.' }
+  ];
+
+  function seq(pattern, startBeat = 1, step = 1) {
+    return pattern.map((p, i) => ({ string:p[0], fret:p[1], beat:startBeat + i * step }));
+  }
+
+  const worlds = [
     {
-      id: 'parts', title: 'Meet the Guitar', time: '5 min',
-      summary: 'Strings, frets, pickups, controls and the basic names you need.',
-      body: `<p>An electric guitar is easier to learn when the parts stop being mysterious. The six strings are numbered from the thinnest string to the thickest: 1 through 6.</p>
-      <h3>String names</h3><p>From thickest to thinnest in standard tuning: <strong>E A D G B E</strong>.</p>
-      <h3>Try this</h3><p>Point to each string and say its name out loud twice. Then find fret 1, fret 3, fret 5 and fret 12.</p>`
+      id:'tab-decoder', number:1, title:'Tab Decoder', subtitle:'Learn what tab means by playing it',
+      levels:[
+        {
+          id:'zero-open', title:'0 = Open', short:'Open-string hits', bpm:60,
+          tag:'TAB DECODER', headline:'0 means OPEN',
+          lesson:'The bottom E line in tab is your thickest string. A 0 means do not hold a fret — just pick the string.',
+          hint:'Bottom E line + 0 = open low E.',
+          notes:seq([[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0]])
+        },
+        {
+          id:'fret-numbers', title:'Numbers = Frets', short:'0, 3 and 5', bpm:60,
+          tag:'TAB DECODER', headline:'The number tells you the fret',
+          lesson:'A 3 means hold the 3rd fret on that string. A 5 means the 5th fret. Read the number on the falling block and the matching tab column.',
+          hint:'Number = fret. 0 = open.',
+          notes:seq([[0,0],[0,3],[0,0],[0,5],[0,3],[0,0],[0,3],[0,5]])
+        },
+        {
+          id:'a-string', title:'Meet the A String', short:'Move one string', bpm:60,
+          tag:'TAB DECODER', headline:'Each tab line is a different string',
+          lesson:'The A line is the next string up from the bottom E line. Same rule: 0 is open, 2 means 2nd fret, 3 means 3rd fret.',
+          hint:'Watch the A line light up in the live tab.',
+          notes:seq([[1,0],[1,2],[1,3],[1,2],[1,0],[1,3],[1,2],[1,0]])
+        },
+        {
+          id:'string-jump', title:'String Jump', short:'E ↔ A', bpm:64,
+          tag:'TAB DECODER', headline:'Follow the line AND the number',
+          lesson:'Now the notes move between the low E and A strings. First find the string, then play the fret number.',
+          hint:'Lane tells you the string. Number tells you the fret.',
+          notes:seq([[0,0],[1,0],[0,3],[1,2],[0,5],[1,3],[0,3],[1,2],[0,0]])
+        },
+        {
+          id:'first-riff', title:'First Riff', short:'Read a real pattern', bpm:68,
+          tag:'WORLD 1 BOSS', headline:'You are reading tab now',
+          lesson:'No new rule here. Read the string and fret, keep the beat, and try to finish with a combo.',
+          hint:'Don’t stare at your hands — glance down only when you need to.',
+          notes:seq([[0,0],[0,0],[0,3],[0,0],[0,5],[0,3],[1,0],[1,2],[0,3],[0,0],[1,3],[1,2]])
+        }
+      ]
     },
     {
-      id: 'pick', title: 'Hold the Pick & Make a Clean Note', time: '7 min',
-      summary: 'Relaxed grip, small pick movement, clean single notes.',
-      body: `<p>Hold the pick between your thumb and the side of your index finger. Only a small point of the pick needs to stick out. Keep your wrist loose.</p>
-      <h3>Drill</h3><p>Pick the open low E string eight times slowly. Then fret the 3rd fret and do it again. Aim for a clear note with no buzzing.</p>`
+      id:'riff-runner', number:2, title:'Riff Runner', subtitle:'Timing, string changes and faster reactions',
+      levels:[
+        {
+          id:'d-string', title:'Add the D String', short:'Three strings', bpm:68,
+          tag:'RIFF RUNNER', headline:'Third string unlocked',
+          lesson:'The D string is string 4. Watch how its tab line sits above A and low E.',
+          hint:'Low E → A → D climbs upward in tab.',
+          notes:seq([[0,0],[1,0],[2,0],[1,2],[2,2],[1,3],[0,3],[2,0],[1,2],[0,0]])
+        },
+        {
+          id:'steady-eights', title:'Steady Eighths', short:'Quicker picking', bpm:72,
+          tag:'RHYTHM', headline:'Two notes per beat',
+          lesson:'The blocks are closer together now. Use small pick movements and try alternate down-up picking.',
+          hint:'Stay relaxed. Speed comes from smaller movement.',
+          notes:seq([[0,0],[0,0],[0,3],[0,3],[1,0],[1,0],[1,2],[1,2],[0,5],[0,5],[0,3],[0,3]],1,.5)
+        },
+        {
+          id:'three-string-riff', title:'Three-String Riff', short:'E, A and D', bpm:74,
+          tag:'RIFF RUNNER', headline:'Track the lane changes',
+          lesson:'The notes can jump across three strings. Read ahead by one block instead of waiting until the note reaches the line.',
+          hint:'Eyes ahead, hands follow.',
+          notes:seq([[0,0],[1,2],[2,2],[1,0],[0,3],[1,3],[2,0],[1,2],[0,5],[2,2],[1,0],[0,3]])
+        },
+        {
+          id:'speed-run', title:'Speed Run', short:'80 BPM', bpm:80,
+          tag:'SPEED RUN', headline:'Same rules, less time',
+          lesson:'Nothing new to memorize. This level is about recognizing tab quickly and hitting the right note on time.',
+          hint:'If it falls apart, retry until 75% feels easy.',
+          notes:seq([[0,0],[0,3],[1,0],[1,2],[0,5],[1,3],[2,0],[2,2],[1,2],[0,3],[0,0],[1,0],[2,2],[1,3]])
+        },
+        {
+          id:'garage-boss', title:'Garage Boss', short:'Long riff', bpm:82,
+          tag:'WORLD 2 BOSS', headline:'Put the pieces together',
+          lesson:'Longer pattern, faster tempo, three strings. Build the combo instead of chasing a perfect score.',
+          hint:'A clean 80% is better than a frantic 100% attempt.',
+          notes:seq([[0,0],[0,0],[0,3],[1,0],[1,2],[0,5],[0,3],[1,3],[2,0],[2,2],[1,2],[0,3],[0,0],[1,0],[1,3],[2,2],[1,2],[0,5]])
+        }
+      ]
     },
     {
-      id: 'tab', title: 'Read Guitar Tab', time: '8 min',
-      summary: 'Understand strings, fret numbers and reading left to right.',
-      body: `<p>Tab has six lines. The top line is the thin high E string and the bottom line is the thick low E string. A number tells you which fret to play.</p>
-      <pre>e|----------------|\nB|----------------|\nG|----------------|\nD|----------------|\nA|----------------|\nE|0--0--3--0--5--3|</pre>
-      <p>Play the numbers from left to right. A <strong>0</strong> means play the string open.</p>`
-    },
-    {
-      id: 'alternate-pick', title: 'Alternate Picking', time: '8 min',
-      summary: 'Down-up picking for smoother, faster playing.',
-      body: `<p>Instead of using only downstrokes, alternate: down, up, down, up. Keep the movement small.</p>
-      <pre>e|0-0-0-0-0-0-0-0-|\n   D U D U D U D U</pre>
-      <p>Start at 60 BPM with the metronome. One note per click.</p>`
-    },
-    {
-      id: 'power-chords', title: 'Power Chords', time: '12 min',
-      summary: 'The shape behind a huge amount of rock guitar.',
-      body: `<p>A basic two-note power chord uses a root note plus the note two frets higher on the next thinner string.</p>
-      <pre>   G5      A5\ne|---------|---------|\nB|---------|---------|\nG|---------|---------|\nD|5--------|7--------|\nA|5--------|7--------|\nE|3--------|5--------|</pre>
-      <p>Use your index finger on the lower fret and ring finger on the higher fret. Try to mute the strings you are not playing.</p>`
-    },
-    {
-      id: 'palm-mute', title: 'Palm Muting', time: '10 min',
-      summary: 'Turn open, ringing power into tight rock rhythm.',
-      body: `<p>Rest the edge of your picking-hand palm lightly on the strings right where they leave the bridge. Too far forward kills the note; too far back does nothing.</p>
-      <p>Try eight steady low-E notes. Move your palm a few millimetres until you get a tight <em>chunk</em> instead of a dead click.</p>`
-    },
-    {
-      id: 'open-chords', title: 'First Open Chords', time: '15 min',
-      summary: 'Em, E, A, D, C and G — useful shapes for thousands of songs.',
-      body: `<p>Start with <strong>Em</strong> because it is friendly: 0 2 2 0 0 0 from low E to high e. Strum slowly and listen for every string.</p>
-      <p>Then use the Chord Library in Tools to work through E, A, D, C and G. Do not worry about changing fast yet.</p>`
-    },
-    {
-      id: 'changes', title: 'Chord Changes', time: '10 min',
-      summary: 'Switch cleanly without rushing.',
-      body: `<p>Pick two chords. Set the metronome to 60 BPM. Play the first chord for four clicks, switch, then play the second chord for four clicks.</p>
-      <p>Do five clean switches before increasing the speed.</p>`
-    },
-    {
-      id: 'hammer-pull', title: 'Hammer-ons & Pull-offs', time: '10 min',
-      summary: 'Make two notes with one pick stroke.',
-      body: `<p>For a hammer-on, pick the first note then bring another finger down firmly on a higher fret. For a pull-off, pull the fretting finger slightly downward as it leaves the string.</p>
-      <pre>e|----------------|\nB|----------------|\nG|----------------|\nD|----------------|\nA|----------------|\nE|0h3--3p0--0h5p0-|</pre>`
-    },
-    {
-      id: 'slides-bends', title: 'Slides & Bends', time: '12 min',
-      summary: 'Give single notes movement and attitude.',
-      body: `<p>For a slide, keep pressure on the string and move to the target fret. For a bend, support the bending finger with the fingers behind it and push the string sideways.</p>
-      <pre>e|----------------|\nB|----------------|\nG|5/7--7\\5--7b9--|\nD|----------------|</pre>
-      <p>Bends must land in tune. Compare the bent note to the target fret before practicing faster.</p>`
-    },
-    {
-      id: 'minor-pent', title: 'Minor Pentatonic Box 1', time: '15 min',
-      summary: 'A five-note scale shape for riffs and beginner lead guitar.',
-      body: `<p>Start with A minor pentatonic at the 5th fret. Use one finger per fret area and play slowly.</p>
-      <pre>e|5--8|\nB|5--8|\nG|5--7|\nD|5--7|\nA|5--7|\nE|5--8|</pre>
-      <p>Play up and down using alternate picking. Start at 60 BPM.</p>`
-    },
-    {
-      id: 'first-riff', title: 'Build Your Own Riff', time: '15 min',
-      summary: 'Use what you learned instead of only copying other players.',
-      body: `<p>Choose three notes from the low E string: open, 3rd fret and 5th fret. Create a four-beat rhythm and repeat it. Add a palm mute, a rest, or one power chord.</p>
-      <p>Record it on a phone if you like it. The goal is not to write a masterpiece — it is to turn technique into music.</p>`
+      id:'fretboard-explorer', number:3, title:'Fretboard Explorer', subtitle:'Use all six strings and higher notes',
+      levels:[
+        {
+          id:'g-string', title:'G String', short:'String 3', bpm:70,
+          tag:'FRETBOARD EXPLORER', headline:'Meet the G string',
+          lesson:'The G line is the third line from the top in normal tab. Play open, 2nd and 4th fret.',
+          hint:'G string = string 3.',
+          notes:seq([[3,0],[3,2],[3,4],[3,2],[3,0],[3,4],[3,2],[3,0]])
+        },
+        {
+          id:'b-string', title:'B String', short:'String 2', bpm:70,
+          tag:'FRETBOARD EXPLORER', headline:'One string from the top',
+          lesson:'The B string is the second-thinnest string. In tab it is the second line from the top.',
+          hint:'B line is directly under high e.',
+          notes:seq([[4,0],[4,1],[4,3],[4,1],[4,0],[4,3],[4,1],[4,0]])
+        },
+        {
+          id:'high-e', title:'High e', short:'String 1', bpm:70,
+          tag:'FRETBOARD EXPLORER', headline:'The TOP tab line',
+          lesson:'The top line in tab is the thinnest high-e string. That is why tab can look upside down at first.',
+          hint:'Top tab line = thinnest string.',
+          notes:seq([[5,0],[5,1],[5,3],[5,5],[5,3],[5,1],[5,0],[5,3]])
+        },
+        {
+          id:'six-string-scan', title:'Six-String Scan', short:'All strings', bpm:74,
+          tag:'FRETBOARD EXPLORER', headline:'Read the whole tab staff',
+          lesson:'Every string is now in play. The falling highway and live tab show the same note in two different ways.',
+          hint:'Use the tab to understand; use the highway to react.',
+          notes:seq([[0,0],[1,0],[2,0],[3,0],[4,0],[5,0],[5,3],[4,3],[3,2],[2,2],[1,2],[0,3]])
+        },
+        {
+          id:'tab-boss', title:'Tab Boss', short:'All six strings', bpm:78,
+          tag:'WORLD 3 BOSS', headline:'You can read beginner tab',
+          lesson:'This final starter mission uses all six strings. One star means you have the basics needed to start learning simple songs.',
+          hint:'Read ahead and keep moving after a miss.',
+          notes:seq([[0,0],[1,2],[2,2],[3,0],[4,1],[5,0],[5,3],[4,3],[3,2],[2,0],[1,3],[0,3],[2,2],[4,1],[5,0],[3,0]])
+        }
+      ]
     }
   ];
 
-  const chords = [
-    { name: 'Em', frets: '0 2 2 0 0 0', note: 'Easy first chord. Strum all 6 strings.' },
-    { name: 'E',  frets: '0 2 2 1 0 0', note: 'Like Em with one extra finger.' },
-    { name: 'A',  frets: 'x 0 2 2 2 0', note: 'Start strumming from the A string.' },
-    { name: 'D',  frets: 'x x 0 2 3 2', note: 'Use only the four thinnest strings.' },
-    { name: 'C',  frets: 'x 3 2 0 1 0', note: 'Avoid the low E string.' },
-    { name: 'G',  frets: '3 2 0 0 0 3', note: 'Let the middle strings ring clearly.' },
-    { name: 'Am', frets: 'x 0 2 2 1 0', note: 'A useful minor open chord.' },
-    { name: 'Dm', frets: 'x x 0 2 3 1', note: 'Use only the four thinnest strings.' }
-  ];
+  const flatLevels = worlds.flatMap(w => w.levels.map((l, i) => ({ ...l, worldId:w.id, worldNumber:w.number, worldTitle:w.title, worldIndex:worlds.indexOf(w), levelIndex:i })));
 
   const achievements = [
-    { id: 'lesson1', icon: '🎸', title: 'First Step', text: 'Complete 1 lesson', test: s => s.completedLessons.length >= 1 },
-    { id: 'lesson5', icon: '⚡', title: 'Getting Loud', text: 'Complete 5 lessons', test: s => s.completedLessons.length >= 5 },
-    { id: 'allLessons', icon: '🏁', title: 'Beginner Path', text: 'Complete every lesson', test: s => s.completedLessons.length >= lessons.length },
-    { id: 'practice10', icon: '⏱️', title: 'Ten Minutes', text: 'Log 10 practice minutes', test: s => s.practiceMinutes >= 10 },
-    { id: 'practice60', icon: '🔥', title: 'One Hour', text: 'Log 60 practice minutes', test: s => s.practiceMinutes >= 60 },
-    { id: 'days3', icon: '📅', title: 'Three Days', text: 'Practice on 3 different days', test: s => Object.keys(s.practiceDays).length >= 3 },
-    { id: 'song1', icon: '🎵', title: 'My First Tab', text: 'Import a song file', asyncTest: true },
-    { id: 'song5', icon: '💿', title: 'Mini Library', text: 'Save 5 song files', asyncTest: true }
+    { icon:'🎸', title:'First Note', text:'Hit your first note', test:s => s.totalHits >= 1 },
+    { icon:'⭐', title:'First Star', text:'Earn your first mission star', test:s => totalStars(s) >= 1 },
+    { icon:'🔥', title:'On Fire', text:'Reach a 10-note combo', test:s => s.bestCombo >= 10 },
+    { icon:'🎯', title:'Bullseye', text:'Finish a mission at 90%+', test:s => s.bestAccuracy >= 90 },
+    { icon:'🏁', title:'Tab Decoder', text:'Clear World 1', test:s => worldCleared(0, s) },
+    { icon:'⚡', title:'Riff Runner', text:'Clear World 2', test:s => worldCleared(1, s) },
+    { icon:'🗺️', title:'Fretboard Explorer', text:'Clear World 3', test:s => worldCleared(2, s) },
+    { icon:'💯', title:'Century Club', text:'Hit 100 notes', test:s => s.totalHits >= 100 }
   ];
 
   let state = loadProgress();
-  let deferredInstallPrompt = null;
   let dbPromise = null;
   let currentSong = null;
   let alphaApi = null;
-  let practiceInterval = null;
-  let practiceSecondsLeft = 600;
-  let practiceRunning = false;
+  let deferredInstallPrompt = null;
   let metronomeTimer = null;
   let metronomeBeat = 0;
-  let audioContext = null;
-  let tunerStream = null;
-  let tunerRaf = null;
-  let tunerAnalyser = null;
+  let bpm = 80;
+  let tunerActive = false;
+  let selectedDeviceId = '';
+  let game = null;
+  let feedbackTimer = null;
+  let tabCurrentIndex = -1;
+  let inputChallengeHits = new Set();
 
   const $ = (sel, root = document) => root.querySelector(sel);
   const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
 
+  const audio = createAudioEngine();
+
   document.addEventListener('DOMContentLoaded', init);
 
   function init() {
-    renderLessons();
-    renderChords();
     bindNavigation();
-    bindPracticeTimer();
+    bindGameControls();
+    bindInput();
     bindSongImport();
-    bindTuner();
     bindMetronome();
-    bindProgressReset();
+    bindTuner();
+    bindProgress();
     bindPwaInstall();
-    updateNetworkBadge();
+    renderWorldMap();
+    renderChords();
+    renderInputChallenges();
     updateStats();
     refreshSongs();
+    updateNetworkBadge();
     registerServiceWorker();
+    audio.subscribe(handleAudioFrame);
+  }
+
+  function defaultState() {
+    return { xp:0, stars:{}, totalHits:0, totalMisses:0, bestCombo:0, bestAccuracy:0, practiceSeconds:0, practiceDays:{}, missionsPlayed:0 };
   }
 
   function loadProgress() {
+    const base = defaultState();
     try {
       const saved = JSON.parse(localStorage.getItem(PROGRESS_KEY));
-      return {
-        completedLessons: Array.isArray(saved?.completedLessons) ? saved.completedLessons : [],
-        practiceMinutes: Number(saved?.practiceMinutes || 0),
-        practiceDays: saved?.practiceDays && typeof saved.practiceDays === 'object' ? saved.practiceDays : {}
-      };
-    } catch {
-      return { completedLessons: [], practiceMinutes: 0, practiceDays: {} };
-    }
+      if (saved && typeof saved === 'object') return { ...base, ...saved, stars:saved.stars || {}, practiceDays:saved.practiceDays || {} };
+    } catch {}
+    try {
+      const old = JSON.parse(localStorage.getItem(OLD_PROGRESS_KEY));
+      if (old) {
+        base.practiceSeconds = Number(old.practiceMinutes || 0) * 60;
+        base.practiceDays = old.practiceDays || {};
+      }
+    } catch {}
+    return base;
   }
 
   function saveProgress() {
@@ -165,100 +239,705 @@
   }
 
   function bindNavigation() {
-    $$('[data-view-target]').forEach(el => {
-      el.addEventListener('click', () => {
-        const view = el.dataset.viewTarget;
-        showView(view);
-        const tool = el.dataset.focusTool;
-        if (tool) requestAnimationFrame(() => $(`#tool-${tool}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
-      });
-    });
+    $$('[data-view-target]').forEach(el => el.addEventListener('click', () => showView(el.dataset.viewTarget)));
   }
 
   function showView(name) {
+    if (!name) return;
     $$('.view').forEach(v => v.classList.toggle('active', v.id === `view-${name}`));
     $$('.nav-button').forEach(b => b.classList.toggle('active', b.dataset.viewTarget === name));
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    window.scrollTo({ top:0, behavior:'smooth' });
     if (name === 'progress') renderAchievements();
   }
 
-  function renderLessons() {
-    const list = $('#lessonList');
-    list.innerHTML = lessons.map((lesson, i) => {
-      const done = state.completedLessons.includes(lesson.id);
-      return `<details class="lesson ${done ? 'complete' : ''}" data-lesson-id="${lesson.id}">
-        <summary>
-          <span class="lesson-number">${i + 1}</span>
-          <span class="lesson-title"><strong>${escapeHtml(lesson.title)}</strong><span>${escapeHtml(lesson.time)} · ${escapeHtml(lesson.summary)}</span></span>
-          <span class="lesson-check">${done ? '✓' : '○'}</span>
-        </summary>
-        <div class="lesson-body">${lesson.body}
-          <div class="lesson-actions"><button class="button lesson-complete">${done ? 'Completed ✓' : 'Mark Complete'}</button></div>
-        </div>
-      </details>`;
+  function renderWorldMap() {
+    const map = $('#worldMap');
+    map.innerHTML = worlds.map((world, wi) => {
+      const missionCards = world.levels.map(level => {
+        const flatIndex = flatLevels.findIndex(l => l.id === level.id);
+        const unlocked = isLevelUnlocked(flatIndex);
+        const stars = Number(state.stars[level.id] || 0);
+        const current = flatIndex === nextLevelIndex();
+        return `<button class="mission-card ${stars ? 'complete' : ''} ${current ? 'current' : ''}" data-level-id="${level.id}" ${unlocked ? '' : 'disabled'}>
+          <span class="mission-num">MISSION ${flatIndex + 1}</span>
+          <strong>${escapeHtml(level.title)}</strong>
+          <small>${escapeHtml(level.short)}</small>
+          <span class="mission-stars">${starsText(stars)}</span>
+        </button>`;
+      }).join('');
+      return `<section class="world ${wi > 0 && !isLevelUnlocked(worldStartIndex(wi)) ? 'locked-world' : ''}">
+        <div class="world-head"><div><p class="eyebrow">WORLD ${world.number}</p><h3>${escapeHtml(world.title)}</h3><span>${escapeHtml(world.subtitle)}</span></div><span>${worldStars(wi)} / ${world.levels.length * 3} stars</span></div>
+        <div class="mission-row">${missionCards}</div>
+      </section>`;
     }).join('');
+    $$('[data-level-id]', map).forEach(btn => btn.addEventListener('click', () => launchLevel(btn.dataset.levelId)));
+  }
 
-    $$('.lesson-complete', list).forEach(btn => {
-      btn.addEventListener('click', e => {
-        const lessonEl = e.target.closest('.lesson');
-        toggleLesson(lessonEl.dataset.lessonId);
-      });
+  function worldStartIndex(worldIndex) {
+    let n = 0;
+    for (let i = 0; i < worldIndex; i++) n += worlds[i].levels.length;
+    return n;
+  }
+
+  function isLevelUnlocked(index) {
+    if (index <= 0) return true;
+    const prev = flatLevels[index - 1];
+    return Number(state.stars[prev.id] || 0) >= 1;
+  }
+
+  function nextLevelIndex() {
+    const idx = flatLevels.findIndex((level, i) => isLevelUnlocked(i) && Number(state.stars[level.id] || 0) < 1);
+    return idx >= 0 ? idx : flatLevels.length - 1;
+  }
+
+  function worldStars(worldIndex) {
+    return worlds[worldIndex].levels.reduce((n, l) => n + Number(state.stars[l.id] || 0), 0);
+  }
+
+  function totalStars(s = state) {
+    return Object.values(s.stars || {}).reduce((n, v) => n + Number(v || 0), 0);
+  }
+
+  function worldCleared(worldIndex, s = state) {
+    return worlds[worldIndex].levels.every(l => Number(s.stars?.[l.id] || 0) >= 1);
+  }
+
+  function starsText(n) {
+    return `${'★'.repeat(n)}${'☆'.repeat(3 - n)}`;
+  }
+
+  function bindGameControls() {
+    $('#continueMission').addEventListener('click', () => launchLevel(flatLevels[nextLevelIndex()].id));
+    $('#exitGame').addEventListener('click', exitGame);
+    $('#gameStart').addEventListener('click', startMission);
+    $('#gamePause').addEventListener('click', togglePause);
+    $('#retryLevel').addEventListener('click', () => {
+      const id = game?.level?.id || flatLevels[nextLevelIndex()].id;
+      $('#resultScreen').hidden = true;
+      launchLevel(id);
+    });
+    $('#nextLevel').addEventListener('click', () => {
+      const currentIndex = game ? flatLevels.findIndex(l => l.id === game.level.id) : nextLevelIndex();
+      const next = Math.min(flatLevels.length - 1, currentIndex + 1);
+      $('#resultScreen').hidden = true;
+      launchLevel(flatLevels[next].id);
+    });
+    $('#backToMap').addEventListener('click', () => {
+      $('#resultScreen').hidden = true;
+      $('#gameScreen').hidden = true;
+      renderWorldMap();
+      showView('play');
     });
   }
 
-  function toggleLesson(id) {
-    const i = state.completedLessons.indexOf(id);
-    if (i >= 0) state.completedLessons.splice(i, 1);
-    else state.completedLessons.push(id);
-    saveProgress();
-    renderLessons();
-    toast(i >= 0 ? 'Lesson marked incomplete.' : 'Lesson completed!');
+  function launchLevel(levelId) {
+    const level = flatLevels.find(l => l.id === levelId);
+    if (!level) return;
+    if (!isLevelUnlocked(flatLevels.findIndex(l => l.id === level.id))) {
+      toast('Earn a star on the previous mission first.');
+      return;
+    }
+    stopGameLoop();
+    const secondsPerBeat = 60 / level.bpm;
+    const events = level.notes.map((n, i) => ({
+      ...n,
+      index:i,
+      time:n.beat * secondsPerBeat,
+      midi:STRING_INFO[n.string].openMidi + n.fret,
+      status:'pending',
+      element:null
+    }));
+    game = {
+      level,
+      events,
+      running:false,
+      paused:false,
+      startPerf:0,
+      pausedAt:0,
+      raf:0,
+      hits:0,
+      misses:0,
+      combo:0,
+      bestCombo:0,
+      score:0,
+      lastAcceptedPitchClass:null,
+      lastAcceptedEvent:-1,
+      startedAtDate:Date.now(),
+      endTime:(events.at(-1)?.time || 0) + 1.2
+    };
+    tabCurrentIndex = -1;
+    $('#gameScreen').hidden = false;
+    $('#resultScreen').hidden = true;
+    $('#gameWorldLabel').textContent = `WORLD ${level.worldNumber} · ${level.worldTitle.toUpperCase()}`;
+    $('#gameLevelTitle').textContent = level.title;
+    $('#gameLessonTag').textContent = level.tag;
+    $('#gameLessonHeadline').textContent = level.headline;
+    $('#gameLessonText').textContent = level.lesson;
+    $('#tabHint').textContent = level.hint;
+    $('#gameStart').textContent = audio.active ? 'Start Mission' : 'Enable Guitar & Start';
+    $('#gameStart').disabled = false;
+    $('#gamePause').disabled = true;
+    $('#gamePause').textContent = 'Pause';
+    $('#gameScore').textContent = '0';
+    $('#gameAccuracy').textContent = '100%';
+    $('#gameCombo').textContent = '0';
+    $('#gameHearing').textContent = audio.lastResult?.note || '—';
+    $('#nextNoteText').textContent = formatExpected(events[0]);
+    $('#gameProgressBar').style.width = '0%';
+    renderLiveTab();
+    renderGameNotes();
+    updateGameBoard(0);
   }
 
-  function bindPracticeTimer() {
-    $('#practiceStart').addEventListener('click', () => {
-      if (practiceRunning) stopPracticeTimer(false);
-      else startPracticeTimer();
-    });
-    $('#practiceReset').addEventListener('click', () => {
-      stopPracticeTimer(false);
-      practiceSecondsLeft = 600;
-      updatePracticeClock();
-    });
-    updatePracticeClock();
-  }
-
-  function startPracticeTimer() {
-    practiceRunning = true;
-    $('#practiceStart').textContent = 'Pause';
-    practiceInterval = setInterval(() => {
-      practiceSecondsLeft--;
-      updatePracticeClock();
-      if (practiceSecondsLeft <= 0) {
-        stopPracticeTimer(true);
-        practiceSecondsLeft = 600;
-        updatePracticeClock();
-      }
-    }, 1000);
-  }
-
-  function stopPracticeTimer(completed) {
-    clearInterval(practiceInterval);
-    practiceInterval = null;
-    practiceRunning = false;
-    $('#practiceStart').textContent = 'Start Timer';
-    if (completed) {
-      state.practiceMinutes += 10;
-      state.practiceDays[new Date().toISOString().slice(0,10)] = true;
-      saveProgress();
-      toast('10 practice minutes logged!');
+  async function startMission() {
+    if (!game || game.running) return;
+    $('#gameStart').disabled = true;
+    $('#gameStart').textContent = 'Getting input…';
+    try {
+      if (!audio.active) await startAudioInput(selectedDeviceId);
+      await runCountdown();
+      game.running = true;
+      game.startPerf = performance.now();
+      game.paused = false;
+      $('#gameStart').hidden = true;
+      $('#gamePause').disabled = false;
+      game.raf = requestAnimationFrame(gameLoop);
+    } catch (err) {
+      console.error(err);
+      $('#gameStart').disabled = false;
+      $('#gameStart').textContent = 'Try Guitar Input Again';
+      toast('I could not access the guitar input. Check Chrome microphone permission.');
     }
   }
 
-  function updatePracticeClock() {
-    const min = Math.floor(practiceSecondsLeft / 60);
-    const sec = practiceSecondsLeft % 60;
-    $('#practiceTimer').textContent = `${String(min).padStart(2,'0')}:${String(sec).padStart(2,'0')}`;
+  function runCountdown() {
+    return new Promise(resolve => {
+      const el = $('#countdown');
+      el.hidden = false;
+      const steps = ['3','2','1','GO!'];
+      let i = 0;
+      el.textContent = steps[i];
+      clickSound(true);
+      const timer = setInterval(() => {
+        i++;
+        if (i >= steps.length) {
+          clearInterval(timer);
+          el.hidden = true;
+          resolve();
+          return;
+        }
+        el.textContent = steps[i];
+        clickSound(i === steps.length - 1);
+      }, 650);
+    });
+  }
+
+  function gameLoop(now) {
+    if (!game?.running) return;
+    if (game.paused) {
+      game.raf = requestAnimationFrame(gameLoop);
+      return;
+    }
+    const t = (now - game.startPerf) / 1000;
+    updateGameBoard(t);
+    markExpiredNotes(t);
+    updateCurrentTab(t);
+    const total = game.events.length;
+    const done = game.hits + game.misses;
+    $('#gameProgressBar').style.width = `${Math.min(100, (done / total) * 100)}%`;
+    if (t >= game.endTime && done >= total) {
+      finishMission();
+      return;
+    }
+    game.raf = requestAnimationFrame(gameLoop);
+  }
+
+  function updateGameBoard(t) {
+    if (!game) return;
+    const board = $('#gameBoard');
+    const rect = board.getBoundingClientRect();
+    const hitY = rect.height - 72;
+    const spawnY = -28;
+    const laneWidth = rect.width / 6;
+    game.events.forEach(ev => {
+      const dt = ev.time - t;
+      const el = ev.element;
+      if (!el) return;
+      const inRange = dt <= NOTE_LOOKAHEAD && dt >= -0.75;
+      el.hidden = !inRange;
+      if (!inRange) return;
+      const progress = 1 - dt / NOTE_LOOKAHEAD;
+      const y = spawnY + progress * (hitY - spawnY);
+      const x = laneWidth * (ev.string + .5);
+      el.style.left = `${x}px`;
+      el.style.top = `${y}px`;
+    });
+    const next = game.events.find(e => e.status === 'pending');
+    $('#nextNoteText').textContent = next ? formatExpected(next) : 'Finish strong!';
+  }
+
+  function markExpiredNotes(t) {
+    game.events.forEach(ev => {
+      if (ev.status === 'pending' && t > ev.time + HIT_WINDOW) markMiss(ev);
+    });
+  }
+
+  function updateCurrentTab(t) {
+    if (!game) return;
+    let closest = -1;
+    let closestDelta = Infinity;
+    game.events.forEach(ev => {
+      if (ev.status !== 'pending') return;
+      const d = Math.abs(ev.time - t);
+      if (d < closestDelta) { closestDelta = d; closest = ev.index; }
+    });
+    if (closest === tabCurrentIndex) return;
+    tabCurrentIndex = closest;
+    $$('.tab-cell.current', $('#liveTab')).forEach(c => c.classList.remove('current'));
+    if (closest >= 0) {
+      $$(`[data-tab-col="${closest}"]`, $('#liveTab')).forEach(c => c.classList.add('current'));
+      const target = $(`[data-tab-col="${closest}"]`, $('#liveTab'));
+      target?.scrollIntoView({ behavior:'smooth', inline:'center', block:'nearest' });
+    }
+  }
+
+  function renderGameNotes() {
+    const layer = $('#noteLayer');
+    layer.innerHTML = '';
+    game.events.forEach(ev => {
+      const el = document.createElement('div');
+      el.className = `falling-note s${6 - ev.string}`;
+      el.textContent = ev.fret;
+      el.hidden = true;
+      el.dataset.eventIndex = ev.index;
+      layer.appendChild(el);
+      ev.element = el;
+    });
+  }
+
+  function renderLiveTab() {
+    const wrap = $('#liveTab');
+    const rows = [5,4,3,2,1,0];
+    wrap.innerHTML = `<div class="tab-grid" style="--tab-cols:${game.events.length}">${rows.map(stringIndex => {
+      const label = STRING_INFO[stringIndex].label;
+      const cells = game.events.map(ev => {
+        const isNote = ev.string === stringIndex;
+        return `<span class="tab-cell ${isNote ? 'note' : ''}" data-tab-col="${ev.index}" data-tab-event="${ev.index}">${isNote ? ev.fret : '—'}</span>`;
+      }).join('');
+      return `<div class="tab-row"><span class="tab-row-label">${label}</span>${cells}</div>`;
+    }).join('')}</div>`;
+  }
+
+  function updateTabEvent(ev) {
+    $$(`[data-tab-event="${ev.index}"]`, $('#liveTab')).forEach(c => c.classList.add(ev.status));
+  }
+
+  function handleAudioFrame(result) {
+    updateInputMonitor(result);
+    if (tunerActive) updateTuner(result);
+    if (!game?.running || game.paused || !result.freq) return;
+    $('#gameHearing').textContent = result.note || '—';
+    const now = performance.now();
+    const t = (now - game.startPerf) / 1000;
+    const candidates = game.events
+      .filter(ev => ev.status === 'pending' && Math.abs(ev.time - t) <= HIT_WINDOW && pitchMatches(result.freq, midiToFreq(ev.midi)))
+      .sort((a,b) => Math.abs(a.time - t) - Math.abs(b.time - t));
+    if (!candidates.length) return;
+    const ev = candidates[0];
+    const pitchClass = ev.midi % 12;
+    const repeatedPitch = game.lastAcceptedPitchClass === pitchClass;
+    if (repeatedPitch && !result.onset) return;
+    markHit(ev, t);
+    game.lastAcceptedPitchClass = pitchClass;
+    game.lastAcceptedEvent = ev.index;
+  }
+
+  function markHit(ev, t) {
+    if (ev.status !== 'pending') return;
+    ev.status = 'hit';
+    game.hits++;
+    game.combo++;
+    game.bestCombo = Math.max(game.bestCombo, game.combo);
+    const timing = Math.abs(ev.time - t);
+    const timingBonus = timing < .12 ? 60 : timing < .24 ? 30 : 0;
+    game.score += 100 + timingBonus + Math.min(100, game.combo * 4);
+    ev.element?.classList.add('hit');
+    updateTabEvent(ev);
+    showGameFeedback(timing < .12 ? 'PERFECT!' : 'HIT!', 'hit');
+    updateGameHud();
+  }
+
+  function markMiss(ev) {
+    if (ev.status !== 'pending') return;
+    ev.status = 'miss';
+    game.misses++;
+    game.combo = 0;
+    ev.element?.classList.add('miss');
+    updateTabEvent(ev);
+    showGameFeedback('MISS', 'miss');
+    updateGameHud();
+  }
+
+  function updateGameHud() {
+    const attempts = game.hits + game.misses;
+    const accuracy = attempts ? Math.round(game.hits / attempts * 100) : 100;
+    $('#gameScore').textContent = game.score.toLocaleString();
+    $('#gameCombo').textContent = game.combo;
+    $('#gameAccuracy').textContent = `${accuracy}%`;
+  }
+
+  function showGameFeedback(text, type) {
+    const el = $('#gameFeedback');
+    clearTimeout(feedbackTimer);
+    el.textContent = text;
+    el.className = `game-feedback show ${type}`;
+    feedbackTimer = setTimeout(() => { el.className = 'game-feedback'; }, 350);
+  }
+
+  function finishMission() {
+    if (!game) return;
+    stopGameLoop();
+    const total = game.events.length;
+    const accuracy = total ? Math.round(game.hits / total * 100) : 0;
+    const stars = accuracy >= 90 ? 3 : accuracy >= 75 ? 2 : accuracy >= 55 ? 1 : 0;
+    const oldStars = Number(state.stars[game.level.id] || 0);
+    state.stars[game.level.id] = Math.max(oldStars, stars);
+    state.totalHits += game.hits;
+    state.totalMisses += game.misses;
+    state.bestCombo = Math.max(state.bestCombo, game.bestCombo);
+    state.bestAccuracy = Math.max(state.bestAccuracy, accuracy);
+    state.missionsPlayed++;
+    const elapsed = Math.max(0, (Date.now() - game.startedAtDate) / 1000);
+    state.practiceSeconds += Math.min(900, elapsed);
+    state.practiceDays[new Date().toISOString().slice(0,10)] = true;
+    const xpEarned = Math.round(game.hits * 7 + stars * 40 + game.bestCombo * 2);
+    state.xp += xpEarned;
+    saveProgress();
+    renderWorldMap();
+
+    $('#gameScreen').hidden = true;
+    $('#resultScreen').hidden = false;
+    $('#resultStars').textContent = starsText(stars);
+    $('#resultAccuracy').textContent = `${accuracy}%`;
+    $('#resultCombo').textContent = game.bestCombo;
+    $('#resultXp').textContent = `+${xpEarned}`;
+    $('#resultTitle').textContent = stars === 3 ? 'Crushed it!' : stars === 2 ? 'Nice run!' : stars === 1 ? 'Mission cleared!' : 'Almost there!';
+    $('#resultMessage').textContent = stars ? 'You unlocked the next mission. Retry anytime to chase more stars.' : 'Get to 55% accuracy to earn the first star and unlock the next mission.';
+    const currentIndex = flatLevels.findIndex(l => l.id === game.level.id);
+    const atEnd = currentIndex >= flatLevels.length - 1;
+    $('#nextLevel').hidden = atEnd || stars < 1;
+  }
+
+  function togglePause() {
+    if (!game?.running) return;
+    if (!game.paused) {
+      game.paused = true;
+      game.pausedAt = performance.now();
+      $('#gamePause').textContent = 'Resume';
+      showGameFeedback('PAUSED', 'hit');
+    } else {
+      game.startPerf += performance.now() - game.pausedAt;
+      game.paused = false;
+      $('#gamePause').textContent = 'Pause';
+    }
+  }
+
+  function exitGame() {
+    stopGameLoop();
+    $('#gameScreen').hidden = true;
+    $('#resultScreen').hidden = true;
+    $('#gameStart').hidden = false;
+    showView('play');
+  }
+
+  function stopGameLoop() {
+    if (game?.raf) cancelAnimationFrame(game.raf);
+    if (game) { game.running = false; game.paused = false; game.raf = 0; }
+  }
+
+  function formatExpected(ev) {
+    if (!ev) return '—';
+    const s = STRING_INFO[ev.string];
+    return `${s.name} · fret ${ev.fret} · ${midiToName(ev.midi)}`;
+  }
+
+  function bindInput() {
+    $('#inputToggle').addEventListener('click', async () => {
+      if (audio.active) {
+        audio.stop();
+        updateInputButtons();
+        return;
+      }
+      try { await startAudioInput(selectedDeviceId); } catch (err) { console.error(err); toast('Microphone/input permission was blocked.'); }
+    });
+    $('#audioDeviceSelect').addEventListener('change', async e => {
+      selectedDeviceId = e.target.value;
+      if (audio.active) {
+        try { await startAudioInput(selectedDeviceId); } catch (err) { console.error(err); toast('Could not switch input device.'); }
+      }
+    });
+    $('#noiseGate').addEventListener('input', e => {
+      audio.noiseGate = Number(e.target.value);
+      const v = audio.noiseGate;
+      $('#noiseGateText').textContent = v < .012 ? 'Very sensitive' : v < .025 ? 'Normal' : v < .045 ? 'Less sensitive' : 'High noise room';
+    });
+  }
+
+  async function startAudioInput(deviceId = '') {
+    await audio.start(deviceId);
+    selectedDeviceId = audio.deviceId || deviceId || '';
+    await refreshAudioDevices();
+    updateInputButtons();
+  }
+
+  async function refreshAudioDevices() {
+    if (!navigator.mediaDevices?.enumerateDevices) return;
+    const devices = (await navigator.mediaDevices.enumerateDevices()).filter(d => d.kind === 'audioinput');
+    const select = $('#audioDeviceSelect');
+    select.innerHTML = devices.map((d, i) => `<option value="${escapeHtml(d.deviceId)}">${escapeHtml(d.label || `Audio input ${i + 1}`)}</option>`).join('');
+    select.disabled = devices.length <= 1;
+    if (selectedDeviceId && devices.some(d => d.deviceId === selectedDeviceId)) select.value = selectedDeviceId;
+  }
+
+  function updateInputButtons() {
+    $('#inputToggle').textContent = audio.active ? 'Stop Listening' : 'Enable Guitar Input';
+    $('#gameStart')?.classList.toggle('input-ready', audio.active);
+  }
+
+  function renderInputChallenges() {
+    $('#inputChallenges').innerHTML = STRING_INFO.map((s, i) => `<div class="input-challenge" data-input-challenge="${i}"><strong>${s.label}${Math.floor(s.openMidi / 12) - 1}</strong><span>${s.name} · open</span></div>`).join('');
+  }
+
+  function updateInputMonitor(result) {
+    const signal = Math.min(100, Math.max(0, result.rms * 1500));
+    $('#signalBar').style.width = `${signal}%`;
+    if (!audio.active) {
+      $('#inputNote').textContent = '—';
+      $('#inputFreq').textContent = 'Play one string';
+      $('#inputAccuracy').textContent = 'Input is off';
+      $('#inputAccuracy').className = 'input-status';
+      return;
+    }
+    if (!result.freq) {
+      $('#inputNote').textContent = '…';
+      $('#inputFreq').textContent = 'Listening';
+      $('#inputAccuracy').textContent = result.rms > audio.noiseGate ? 'Finding pitch…' : 'Play a clean single note';
+      $('#inputAccuracy').className = 'input-status';
+      return;
+    }
+    $('#inputNote').textContent = result.note;
+    $('#inputFreq').textContent = `${result.freq.toFixed(1)} Hz`;
+    $('#inputAccuracy').textContent = result.onset ? 'Attack detected ✓' : 'Signal locked';
+    $('#inputAccuracy').className = 'input-status good';
+    STRING_INFO.forEach((s, i) => {
+      const f = midiToFreq(s.openMidi);
+      if (exactOrHarmonicMatch(result.freq, f)) {
+        inputChallengeHits.add(i);
+        $(`[data-input-challenge="${i}"]`)?.classList.add('hit');
+      }
+    });
+  }
+
+  function bindTuner() {
+    $('#tunerToggle').addEventListener('click', async () => {
+      if (!tunerActive) {
+        try {
+          if (!audio.active) await startAudioInput(selectedDeviceId);
+          tunerActive = true;
+          $('#tunerToggle').textContent = 'Stop Tuner';
+        } catch (err) { console.error(err); toast('Could not access the guitar input.'); }
+      } else {
+        tunerActive = false;
+        $('#tunerToggle').textContent = 'Start Tuner';
+        $('#tunerMessage').textContent = 'Tuner is off.';
+      }
+    });
+  }
+
+  function updateTuner(result) {
+    if (!result.freq) {
+      $('#tunerMessage').textContent = 'Play one string clearly.';
+      return;
+    }
+    const midi = 69 + 12 * Math.log2(result.freq / 440);
+    const nearest = Math.round(midi);
+    const cents = (midi - nearest) * 100;
+    const name = NOTE_NAMES[(nearest % 12 + 12) % 12];
+    const octave = Math.floor(nearest / 12) - 1;
+    $('#tunerNote').textContent = name;
+    $('#tunerOctave').textContent = octave;
+    $('#tunerFrequency').textContent = `${result.freq.toFixed(1)} Hz`;
+    $('#tunerNeedle').style.left = `${50 + Math.max(-50, Math.min(50, cents))}%`;
+    $('#tunerMessage').textContent = Math.abs(cents) < 5 ? 'In tune ✓' : cents < 0 ? `${Math.abs(cents).toFixed(0)} cents flat` : `${Math.abs(cents).toFixed(0)} cents sharp`;
+  }
+
+  function createAudioEngine() {
+    const listeners = new Set();
+    return {
+      context:null, stream:null, source:null, analyser:null, buffer:null, active:false, raf:0, lastTick:0,
+      lastResult:{ freq:null, rms:0, note:'—', onset:false, midi:null }, envelope:0, lastMidi:null, noiseGate:.018, deviceId:'',
+      subscribe(fn) { listeners.add(fn); return () => listeners.delete(fn); },
+      async ensureContext() {
+        if (!this.context) this.context = new (window.AudioContext || window.webkitAudioContext)();
+        if (this.context.state === 'suspended') await this.context.resume();
+        return this.context;
+      },
+      async start(deviceId = '') {
+        if (!navigator.mediaDevices?.getUserMedia) throw new Error('Audio input is not supported in this browser.');
+        this.stop(false);
+        const constraints = { audio:{ echoCancellation:false, noiseSuppression:false, autoGainControl:false, channelCount:1 } };
+        if (deviceId) constraints.audio.deviceId = { exact:deviceId };
+        this.stream = await navigator.mediaDevices.getUserMedia(constraints);
+        this.deviceId = this.stream.getAudioTracks()[0]?.getSettings()?.deviceId || deviceId || '';
+        const ctx = await this.ensureContext();
+        this.source = ctx.createMediaStreamSource(this.stream);
+        this.analyser = ctx.createAnalyser();
+        this.analyser.fftSize = 2048;
+        this.analyser.smoothingTimeConstant = 0;
+        this.buffer = new Float32Array(this.analyser.fftSize);
+        this.source.connect(this.analyser);
+        this.active = true;
+        this.envelope = 0;
+        this.lastMidi = null;
+        const tick = now => {
+          if (!this.active) return;
+          if (now - this.lastTick >= 42) {
+            this.lastTick = now;
+            this.analyser.getFloatTimeDomainData(this.buffer);
+            const raw = autoCorrelate(this.buffer, ctx.sampleRate, this.noiseGate);
+            const prevEnvelope = this.envelope;
+            this.envelope = prevEnvelope * .82 + raw.rms * .18;
+            const onset = raw.rms > this.noiseGate && raw.rms > Math.max(this.noiseGate * 1.4, prevEnvelope * 1.38);
+            let result = { freq:raw.freq, rms:raw.rms, onset, note:'—', midi:null };
+            if (raw.freq) {
+              const midiFloat = 69 + 12 * Math.log2(raw.freq / 440);
+              const midi = Math.round(midiFloat);
+              result.midi = midi;
+              result.note = midiToName(midi);
+            }
+            this.lastResult = result;
+            listeners.forEach(fn => { try { fn(result); } catch (err) { console.error(err); } });
+          }
+          this.raf = requestAnimationFrame(tick);
+        };
+        this.raf = requestAnimationFrame(tick);
+      },
+      stop(updateUi = true) {
+        if (this.raf) cancelAnimationFrame(this.raf);
+        this.raf = 0;
+        this.stream?.getTracks().forEach(t => t.stop());
+        try { this.source?.disconnect(); } catch {}
+        this.stream = null; this.source = null; this.analyser = null; this.buffer = null; this.active = false;
+        this.lastResult = { freq:null, rms:0, note:'—', onset:false, midi:null };
+        if (updateUi) updateInputButtons();
+      }
+    };
+  }
+
+  function autoCorrelate(input, sampleRate, gate) {
+    const size = input.length;
+    let rms = 0;
+    for (let i = 0; i < size; i++) rms += input[i] * input[i];
+    rms = Math.sqrt(rms / size);
+    if (rms < gate) return { freq:null, rms };
+
+    let r1 = 0, r2 = size - 1;
+    const trim = .2;
+    for (let i = 0; i < size / 2; i++) { if (Math.abs(input[i]) < trim) { r1 = i; break; } }
+    for (let i = 1; i < size / 2; i++) { if (Math.abs(input[size - i]) < trim) { r2 = size - i; break; } }
+    const buf = input.slice(r1, r2);
+    const n = buf.length;
+    if (n < 128) return { freq:null, rms };
+    const c = new Float32Array(n);
+    for (let lag = 0; lag < n; lag++) {
+      let sum = 0;
+      for (let i = 0; i < n - lag; i++) sum += buf[i] * buf[i + lag];
+      c[lag] = sum;
+    }
+    let d = 0;
+    while (d + 1 < n && c[d] > c[d + 1]) d++;
+    let maxVal = -Infinity, maxPos = -1;
+    const maxLag = Math.min(n - 2, Math.floor(sampleRate / 55));
+    for (let i = Math.max(d, Math.floor(sampleRate / 1200)); i <= maxLag; i++) {
+      if (c[i] > maxVal) { maxVal = c[i]; maxPos = i; }
+    }
+    if (maxPos <= 1 || !Number.isFinite(maxVal)) return { freq:null, rms };
+    let T0 = maxPos;
+    const x1 = c[T0 - 1], x2 = c[T0], x3 = c[T0 + 1];
+    const denom = x1 - 2 * x2 + x3;
+    if (denom !== 0) T0 += .5 * (x1 - x3) / denom;
+    const freq = sampleRate / T0;
+    if (!Number.isFinite(freq) || freq < 55 || freq > 1300) return { freq:null, rms };
+    return { freq, rms };
+  }
+
+  function pitchMatches(freq, targetFreq) {
+    if (!freq || !targetFreq) return false;
+    let cents = 1200 * Math.log2(freq / targetFreq);
+    cents = ((cents + 600) % 1200 + 1200) % 1200 - 600;
+    return Math.abs(cents) <= 58;
+  }
+
+  function exactOrHarmonicMatch(freq, targetFreq) {
+    if (!freq || !targetFreq) return false;
+    const ratios = [1,2,.5];
+    return ratios.some(r => Math.abs(1200 * Math.log2(freq / (targetFreq * r))) < 70);
+  }
+
+  function midiToFreq(midi) { return 440 * Math.pow(2, (midi - 69) / 12); }
+  function midiToName(midi) { return `${NOTE_NAMES[(midi % 12 + 12) % 12]}${Math.floor(midi / 12) - 1}`; }
+
+  function bindMetronome() {
+    $('#metroToggle').addEventListener('click', () => metronomeTimer ? stopMetronome() : startMetronome());
+    $('#bpmDown').addEventListener('click', () => setBpm(bpm - 5));
+    $('#bpmUp').addEventListener('click', () => setBpm(bpm + 5));
+    $('#bpmSlider').addEventListener('input', e => setBpm(Number(e.target.value), true));
+  }
+
+  function setBpm(value, fromSlider = false) {
+    bpm = Math.max(40, Math.min(220, Math.round(value)));
+    $('#bpmValue').textContent = bpm;
+    if (!fromSlider) $('#bpmSlider').value = bpm;
+    if (metronomeTimer) { stopMetronome(); startMetronome(); }
+  }
+
+  async function startMetronome() {
+    await audio.ensureContext();
+    metronomeBeat = 0;
+    clickBeat();
+    metronomeTimer = setInterval(clickBeat, 60000 / bpm);
+    $('#metroToggle').textContent = 'Stop';
+  }
+
+  function stopMetronome() {
+    clearInterval(metronomeTimer);
+    metronomeTimer = null;
+    $('#metroToggle').textContent = 'Start';
+    $$('#beatDots span').forEach(d => d.classList.remove('active'));
+  }
+
+  function clickBeat() {
+    clickSound(metronomeBeat === 0);
+    $$('#beatDots span').forEach((d, i) => d.classList.toggle('active', i === metronomeBeat));
+    metronomeBeat = (metronomeBeat + 1) % 4;
+  }
+
+  async function clickSound(accent = false) {
+    try {
+      const ctx = await audio.ensureContext();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.frequency.value = accent ? 1200 : 820;
+      gain.gain.setValueAtTime(.0001, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(.12, ctx.currentTime + .003);
+      gain.gain.exponentialRampToValueAtTime(.0001, ctx.currentTime + .055);
+      osc.connect(gain).connect(ctx.destination);
+      osc.start(); osc.stop(ctx.currentTime + .06);
+    } catch {}
+  }
+
+  function renderChords() {
+    $('#chordGrid').innerHTML = chords.map(c => `<article class="chord-card"><strong>${c.name}</strong><code>${c.frets}</code><span>${c.note}</span></article>`).join('');
   }
 
   function bindSongImport() {
@@ -272,9 +951,7 @@
     $('#closePlayer').addEventListener('click', closePlayer);
     $('#alphaPlay').addEventListener('click', () => alphaApi?.playPause());
     $('#alphaStop').addEventListener('click', () => alphaApi?.stop());
-    $('#alphaSpeed').addEventListener('change', e => {
-      if (alphaApi) alphaApi.playbackSpeed = Number(e.target.value);
-    });
+    $('#alphaSpeed').addEventListener('change', e => { if (alphaApi) alphaApi.playbackSpeed = Number(e.target.value); });
   }
 
   async function importFiles(files) {
@@ -282,387 +959,119 @@
     let imported = 0;
     for (const file of files) {
       const ext = extensionOf(file.name);
-      if (!allowed.includes(ext)) {
-        toast(`Skipped ${file.name}: unsupported file type.`);
-        continue;
-      }
-      const record = {
-        id: `${Date.now()}-${crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2)}`,
-        name: file.name,
-        ext,
-        size: file.size,
-        createdAt: Date.now(),
-        blob: file
-      };
-      await putSong(record);
+      if (!allowed.includes(ext)) { toast(`Skipped ${file.name}: unsupported file type.`); continue; }
+      await putSong({ id:`${Date.now()}-${crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2)}`, name:file.name, ext, size:file.size, createdAt:Date.now(), blob:file });
       imported++;
     }
-    inputReset();
+    $('#songFileInput').value = '';
     await refreshSongs();
     if (imported) toast(`${imported} file${imported === 1 ? '' : 's'} saved.`);
   }
-
-  function inputReset() { $('#songFileInput').value = ''; }
 
   function getDb() {
     if (dbPromise) return dbPromise;
     dbPromise = new Promise((resolve, reject) => {
       const req = indexedDB.open(DB_NAME, DB_VERSION);
-      req.onupgradeneeded = () => {
-        const db = req.result;
-        if (!db.objectStoreNames.contains(STORE_SONGS)) db.createObjectStore(STORE_SONGS, { keyPath: 'id' });
-      };
+      req.onupgradeneeded = () => { if (!req.result.objectStoreNames.contains(STORE_SONGS)) req.result.createObjectStore(STORE_SONGS, { keyPath:'id' }); };
       req.onsuccess = () => resolve(req.result);
       req.onerror = () => reject(req.error);
     });
     return dbPromise;
   }
 
-  async function putSong(record) {
-    const db = await getDb();
-    return txPromise(db, 'readwrite', store => store.put(record));
-  }
-
-  async function getSongs() {
-    const db = await getDb();
-    const songs = await txPromise(db, 'readonly', store => store.getAll());
-    return songs.sort((a,b) => b.createdAt - a.createdAt);
-  }
-
-  async function getSong(id) {
-    const db = await getDb();
-    return txPromise(db, 'readonly', store => store.get(id));
-  }
-
-  async function deleteSong(id) {
-    const db = await getDb();
-    return txPromise(db, 'readwrite', store => store.delete(id));
-  }
-
-  function txPromise(db, mode, fn) {
-    return new Promise((resolve, reject) => {
-      const tx = db.transaction(STORE_SONGS, mode);
-      const store = tx.objectStore(STORE_SONGS);
-      const req = fn(store);
-      req.onsuccess = () => resolve(req.result);
-      req.onerror = () => reject(req.error);
-    });
-  }
+  async function putSong(record) { const db = await getDb(); return txPromise(db, 'readwrite', s => s.put(record)); }
+  async function getSongs() { const db = await getDb(); const songs = await txPromise(db, 'readonly', s => s.getAll()); return songs.sort((a,b) => b.createdAt - a.createdAt); }
+  async function getSong(id) { const db = await getDb(); return txPromise(db, 'readonly', s => s.get(id)); }
+  async function deleteSong(id) { const db = await getDb(); return txPromise(db, 'readwrite', s => s.delete(id)); }
+  function txPromise(db, mode, fn) { return new Promise((resolve,reject) => { const tx=db.transaction(STORE_SONGS,mode); const req=fn(tx.objectStore(STORE_SONGS)); req.onsuccess=()=>resolve(req.result); req.onerror=()=>reject(req.error); }); }
 
   async function refreshSongs() {
     let songs = [];
     try { songs = await getSongs(); } catch (err) { console.error(err); }
-    const list = $('#songList');
     $('#songCount').textContent = songs.length;
-    if (!songs.length) {
-      list.className = 'song-list empty-state';
-      list.textContent = 'No songs imported yet.';
-    } else {
-      list.className = 'song-list';
-      list.innerHTML = songs.map(s => `<div class="song-item">
-        <button class="song-main" data-open-song="${s.id}"><strong>${escapeHtml(stripExtension(s.name))}</strong><span>${s.ext.toUpperCase()} · ${formatBytes(s.size)}</span></button>
-        <button class="icon-button" data-delete-song="${s.id}" aria-label="Delete ${escapeHtml(s.name)}">🗑</button>
-      </div>`).join('');
-      $$('[data-open-song]', list).forEach(b => b.addEventListener('click', () => openSong(b.dataset.openSong)));
-      $$('[data-delete-song]', list).forEach(b => b.addEventListener('click', async () => {
-        const song = await getSong(b.dataset.deleteSong);
-        if (song && confirm(`Delete ${song.name} from this browser?`)) {
-          if (currentSong?.id === song.id) closePlayer();
-          await deleteSong(song.id);
-          await refreshSongs();
-          toast('Song removed.');
-        }
-      }));
-    }
-    updateStats(songs.length);
+    const list = $('#songList');
+    if (!songs.length) { list.className='song-list empty-state'; list.textContent='No songs imported yet.'; return; }
+    list.className='song-list';
+    list.innerHTML = songs.map(s => `<div class="song-item"><button class="song-main" data-open-song="${s.id}"><strong>${escapeHtml(stripExtension(s.name))}</strong><span>${s.ext.toUpperCase()} · ${formatBytes(s.size)}</span></button><button class="icon-button" data-delete-song="${s.id}" aria-label="Delete ${escapeHtml(s.name)}">🗑</button></div>`).join('');
+    $$('[data-open-song]', list).forEach(b => b.addEventListener('click', () => openSong(b.dataset.openSong)));
+    $$('[data-delete-song]', list).forEach(b => b.addEventListener('click', async () => {
+      const song = await getSong(b.dataset.deleteSong);
+      if (song && confirm(`Delete ${song.name} from this browser?`)) { if (currentSong?.id === song.id) closePlayer(); await deleteSong(song.id); await refreshSongs(); toast('Song removed.'); }
+    }));
   }
 
   async function openSong(id) {
-    const song = await getSong(id);
-    if (!song) return;
+    const song = await getSong(id); if (!song) return;
     currentSong = song;
-    $('#playerEmpty').hidden = true;
-    $('#playerContent').hidden = false;
-    $('#playerSongName').textContent = stripExtension(song.name);
-    $('#textTab').hidden = true;
-    $('#alphaTab').hidden = false;
-    $('#alphaControls').hidden = false;
-    $('#alphaStatus').textContent = 'Loading…';
-
+    $('#playerEmpty').hidden = true; $('#playerContent').hidden = false; $('#playerSongName').textContent = stripExtension(song.name);
+    $('#textTab').hidden = true; $('#alphaTab').hidden = false; $('#alphaControls').hidden = false; $('#alphaStatus').textContent = 'Loading…';
     if (song.ext === 'txt' || song.ext === 'tab') {
-      destroyAlphaTab();
-      $('#alphaControls').hidden = true;
-      $('#alphaTab').hidden = true;
-      $('#textTab').hidden = false;
-      $('#textTab').textContent = await song.blob.text();
-      return;
+      destroyAlphaTab(); $('#alphaControls').hidden = true; $('#alphaTab').hidden = true; $('#textTab').hidden = false; $('#textTab').textContent = await song.blob.text(); return;
     }
-
     try {
-      if (!window.alphaTab) throw new Error('Tab player library is not available. Connect to the internet once and reload.');
+      if (!window.alphaTab) throw new Error('Tab player library is unavailable. Connect to the internet once and reload.');
       destroyAlphaTab();
       const viewport = $('#tabViewport');
       alphaApi = new alphaTab.AlphaTabApi($('#alphaTab'), {
-        player: {
-          enablePlayer: true,
-          enableCursor: true,
-          enableUserInteraction: true,
-          soundFont: 'https://cdn.jsdelivr.net/npm/@coderline/alphatab@1.8.4/dist/soundfont/sonivox.sf2',
-          scrollElement: viewport
-        },
-        display: { scale: 0.9 }
+        player:{ enablePlayer:true, enableCursor:true, enableUserInteraction:true, soundFont:'https://cdn.jsdelivr.net/npm/@coderline/alphatab@1.8.4/dist/soundfont/sonivox.sf2', scrollElement:viewport },
+        display:{ scale:.9 }
       });
       alphaApi.renderStarted.on(() => { $('#alphaStatus').textContent = 'Rendering…'; });
       alphaApi.renderFinished.on(() => { $('#alphaStatus').textContent = 'Ready'; });
       alphaApi.playerReady.on(() => { $('#alphaStatus').textContent = 'Ready to play'; });
-      alphaApi.playerStateChanged.on(args => {
-        const playing = args.state === 1;
-        $('#alphaPlay').textContent = playing ? '❚❚ Pause' : '▶ Play';
-      });
-      alphaApi.error.on(err => {
-        console.error(err);
-        $('#alphaStatus').textContent = 'Could not open this file';
-      });
+      alphaApi.playerStateChanged.on(args => { $('#alphaPlay').textContent = args.state === 1 ? '❚❚ Pause' : '▶ Play'; });
+      alphaApi.error.on(err => { console.error(err); $('#alphaStatus').textContent = 'Could not open this file'; });
       alphaApi.load(await song.blob.arrayBuffer());
-    } catch (err) {
-      console.error(err);
-      $('#alphaStatus').textContent = err.message || 'Could not load tab.';
-      toast(err.message || 'Could not load tab.');
-    }
+    } catch (err) { console.error(err); $('#alphaStatus').textContent = err.message || 'Could not load tab.'; toast(err.message || 'Could not load tab.'); }
   }
 
-  function destroyAlphaTab() {
-    if (alphaApi) {
-      try { alphaApi.destroy(); } catch {}
-      alphaApi = null;
-    }
-    $('#alphaTab').innerHTML = '';
-  }
+  function destroyAlphaTab() { if (alphaApi) { try { alphaApi.destroy(); } catch {} alphaApi=null; } $('#alphaTab').innerHTML=''; }
+  function closePlayer() { destroyAlphaTab(); currentSong=null; $('#playerContent').hidden=true; $('#playerEmpty').hidden=false; }
 
-  function closePlayer() {
-    destroyAlphaTab();
-    currentSong = null;
-    $('#playerContent').hidden = true;
-    $('#playerEmpty').hidden = false;
-  }
-
-  function bindTuner() {
-    $('#tunerToggle').addEventListener('click', () => tunerStream ? stopTuner() : startTuner());
-  }
-
-  async function startTuner() {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation:false, autoGainControl:false, noiseSuppression:false }, video:false });
-      tunerStream = stream;
-      audioContext = audioContext || new (window.AudioContext || window.webkitAudioContext)();
-      if (audioContext.state === 'suspended') await audioContext.resume();
-      const source = audioContext.createMediaStreamSource(stream);
-      tunerAnalyser = audioContext.createAnalyser();
-      tunerAnalyser.fftSize = 2048;
-      source.connect(tunerAnalyser);
-      $('#tunerToggle').textContent = 'Stop Tuner';
-      $('#tunerMessage').textContent = 'Play one string and let it ring.';
-      tuneLoop();
-    } catch (err) {
-      console.error(err);
-      $('#tunerMessage').textContent = 'Microphone access was blocked or unavailable.';
-      toast('Allow microphone access to use the tuner.');
-    }
-  }
-
-  function stopTuner() {
-    cancelAnimationFrame(tunerRaf);
-    tunerRaf = null;
-    tunerStream?.getTracks().forEach(t => t.stop());
-    tunerStream = null;
-    tunerAnalyser = null;
-    $('#tunerToggle').textContent = 'Start Tuner';
-    $('#tunerNote').textContent = '—';
-    $('#tunerOctave').textContent = '';
-    $('#tunerFrequency').textContent = '0.0 Hz';
-    $('#tunerNeedle').style.left = '50%';
-    $('#tunerMessage').textContent = 'Tuner is off.';
-  }
-
-  function tuneLoop() {
-    if (!tunerAnalyser || !audioContext) return;
-    const buffer = new Float32Array(tunerAnalyser.fftSize);
-    tunerAnalyser.getFloatTimeDomainData(buffer);
-    const freq = autoCorrelate(buffer, audioContext.sampleRate);
-    if (freq > 0) {
-      const noteNum = 12 * (Math.log(freq / 440) / Math.log(2));
-      const rounded = Math.round(noteNum) + 69;
-      const names = ['C','C♯','D','D♯','E','F','F♯','G','G♯','A','A♯','B'];
-      const note = names[((rounded % 12) + 12) % 12];
-      const octave = Math.floor(rounded / 12) - 1;
-      const targetFreq = 440 * Math.pow(2, (rounded - 69) / 12);
-      const cents = Math.max(-50, Math.min(50, 1200 * Math.log2(freq / targetFreq)));
-      $('#tunerNote').textContent = note;
-      $('#tunerOctave').textContent = octave;
-      $('#tunerFrequency').textContent = `${freq.toFixed(1)} Hz`;
-      $('#tunerNeedle').style.left = `${50 + cents}%`;
-      $('#tunerMessage').textContent = Math.abs(cents) < 5 ? 'In tune ✓' : cents < 0 ? `${Math.abs(Math.round(cents))} cents flat` : `${Math.round(cents)} cents sharp`;
-    }
-    tunerRaf = requestAnimationFrame(tuneLoop);
-  }
-
-  function autoCorrelate(buffer, sampleRate) {
-    let rms = 0;
-    for (const v of buffer) rms += v * v;
-    rms = Math.sqrt(rms / buffer.length);
-    if (rms < 0.01) return -1;
-
-    let r1 = 0, r2 = buffer.length - 1, threshold = 0.2;
-    for (let i = 0; i < buffer.length / 2; i++) { if (Math.abs(buffer[i]) < threshold) { r1 = i; break; } }
-    for (let i = 1; i < buffer.length / 2; i++) { if (Math.abs(buffer[buffer.length - i]) < threshold) { r2 = buffer.length - i; break; } }
-    const buf = buffer.slice(r1, r2);
-    const c = new Array(buf.length).fill(0);
-    for (let i = 0; i < buf.length; i++) for (let j = 0; j < buf.length - i; j++) c[i] += buf[j] * buf[j + i];
-    let d = 0;
-    while (c[d] > c[d + 1] && d < c.length - 2) d++;
-    let maxValue = -1, maxPos = -1;
-    for (let i = d; i < c.length; i++) if (c[i] > maxValue) { maxValue = c[i]; maxPos = i; }
-    let t0 = maxPos;
-    if (t0 <= 0 || t0 >= c.length - 1) return -1;
-    const x1 = c[t0 - 1], x2 = c[t0], x3 = c[t0 + 1];
-    const a = (x1 + x3 - 2 * x2) / 2;
-    const b = (x3 - x1) / 2;
-    if (a) t0 -= b / (2 * a);
-    return sampleRate / t0;
-  }
-
-  function bindMetronome() {
-    const slider = $('#bpmSlider');
-    const setBpm = value => {
-      const bpm = Math.max(40, Math.min(220, Number(value)));
-      slider.value = bpm;
-      $('#bpmValue').textContent = bpm;
-      if (metronomeTimer) restartMetronome();
-    };
-    slider.addEventListener('input', e => setBpm(e.target.value));
-    $('#bpmDown').addEventListener('click', () => setBpm(Number(slider.value) - 5));
-    $('#bpmUp').addEventListener('click', () => setBpm(Number(slider.value) + 5));
-    $('#metroToggle').addEventListener('click', () => metronomeTimer ? stopMetronome() : startMetronome());
-  }
-
-  async function startMetronome() {
-    audioContext = audioContext || new (window.AudioContext || window.webkitAudioContext)();
-    if (audioContext.state === 'suspended') await audioContext.resume();
-    metronomeBeat = 0;
-    clickBeat();
-    const interval = 60000 / Number($('#bpmSlider').value);
-    metronomeTimer = setInterval(clickBeat, interval);
-    $('#metroToggle').textContent = 'Stop';
-  }
-
-  function restartMetronome() {
-    stopMetronome();
-    startMetronome();
-  }
-
-  function stopMetronome() {
-    clearInterval(metronomeTimer);
-    metronomeTimer = null;
-    $('#metroToggle').textContent = 'Start';
-    $$('#beatDots span').forEach(d => d.classList.remove('active'));
-  }
-
-  function clickBeat() {
-    const dots = $$('#beatDots span');
-    dots.forEach((d,i) => d.classList.toggle('active', i === metronomeBeat));
-    const osc = audioContext.createOscillator();
-    const gain = audioContext.createGain();
-    osc.frequency.value = metronomeBeat === 0 ? 1100 : 760;
-    gain.gain.setValueAtTime(0.0001, audioContext.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.25, audioContext.currentTime + 0.002);
-    gain.gain.exponentialRampToValueAtTime(0.0001, audioContext.currentTime + 0.055);
-    osc.connect(gain).connect(audioContext.destination);
-    osc.start();
-    osc.stop(audioContext.currentTime + 0.06);
-    metronomeBeat = (metronomeBeat + 1) % 4;
-  }
-
-  function renderChords() {
-    $('#chordGrid').innerHTML = chords.map(c => `<div class="chord-card"><strong>${c.name}</strong><code>E A D G B e<br>${c.frets}</code><span>${c.note}</span></div>`).join('');
-  }
-
-  function bindProgressReset() {
+  function bindProgress() {
     $('#resetProgress').addEventListener('click', () => {
-      if (!confirm('Reset all lesson and practice progress? Imported songs will stay saved.')) return;
-      state = { completedLessons: [], practiceMinutes: 0, practiceDays: {} };
-      saveProgress();
-      renderLessons();
-      renderAchievements();
-      toast('Progress reset.');
+      if (!confirm('Reset all Guitar Quest mission progress and XP?')) return;
+      state = defaultState(); saveProgress(); renderWorldMap(); renderAchievements(); toast('Game progress reset.');
     });
   }
 
-  async function updateStats(knownSongCount = null) {
-    let songCount = knownSongCount;
-    if (songCount == null) {
-      try { songCount = (await getSongs()).length; } catch { songCount = 0; }
-    }
-    const done = state.completedLessons.length;
-    const days = Object.keys(state.practiceDays).length;
-    const pct = Math.round((done / lessons.length) * 100);
-    $('#statLessons').textContent = `${done}/${lessons.length}`;
-    $('#statMinutes').textContent = state.practiceMinutes;
-    $('#statDays').textContent = days;
-    $('#statSongs').textContent = songCount;
-    $('#homeProgressPercent').textContent = `${pct}%`;
-    $('#learnProgressText').textContent = `${done} / ${lessons.length}`;
-    $('#progressLessons').textContent = `${done}/${lessons.length}`;
-    $('#progressMinutes').textContent = state.practiceMinutes;
-    $('#progressDays').textContent = days;
-    $('#progressSongs').textContent = songCount;
-    renderAchievements(songCount);
+  function playerLevel(xp) { return Math.floor(Math.max(0,xp) / 300) + 1; }
+  function rankName(level) { return level >= 10 ? 'Stage Monster' : level >= 7 ? 'Riff Hunter' : level >= 4 ? 'Garage Player' : 'Garage Rookie'; }
+
+  function updateStats() {
+    const level = playerLevel(state.xp);
+    const into = state.xp % 300;
+    const pct = into / 300 * 100;
+    const minutes = Math.floor(state.practiceSeconds / 60);
+    $('#headerLevel').textContent = `Lv ${level}`; $('#headerXp').textContent = `${state.xp} XP`;
+    $('#heroLevel').textContent = level; $('#heroXpText').textContent = `${into} / 300 XP`; $('#heroXpBar').style.width = `${pct}%`;
+    $('#statStars').textContent = totalStars(); $('#statCombo').textContent = state.bestCombo; $('#statHits').textContent = state.totalHits; $('#statMinutes').textContent = minutes;
+    $('#progressLevel').textContent = level; $('#progressTitleRank').textContent = rankName(level); $('#progressXpBar').style.width = `${pct}%`; $('#progressXpText').textContent = `${state.xp} XP total · ${into} / 300 to next level`;
+    $('#progressStars').textContent = totalStars(); $('#progressHits').textContent = state.totalHits; $('#progressCombo').textContent = state.bestCombo; $('#progressMinutes').textContent = minutes;
+    renderAchievements();
   }
 
-  async function renderAchievements(knownSongCount = null) {
-    let songCount = knownSongCount;
-    if (songCount == null) {
-      try { songCount = (await getSongs()).length; } catch { songCount = 0; }
-    }
-    $('#achievementGrid').innerHTML = achievements.map(a => {
-      const unlocked = a.asyncTest ? (a.id === 'song1' ? songCount >= 1 : songCount >= 5) : a.test(state);
-      return `<div class="achievement ${unlocked ? 'unlocked' : ''}"><div class="achievement-icon">${a.icon}</div><strong>${a.title}</strong><span>${a.text}${unlocked ? ' · Unlocked!' : ''}</span></div>`;
-    }).join('');
+  function renderAchievements() {
+    $('#achievementGrid').innerHTML = achievements.map(a => { const unlocked = a.test(state); return `<article class="achievement ${unlocked ? 'unlocked' : ''}"><div class="achievement-icon">${a.icon}</div><strong>${a.title}</strong><span>${a.text}</span></article>`; }).join('');
   }
 
   function bindPwaInstall() {
-    window.addEventListener('beforeinstallprompt', e => {
-      e.preventDefault();
-      deferredInstallPrompt = e;
-      $('#installButton').hidden = false;
-    });
+    window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); deferredInstallPrompt = e; $('#installButton').hidden = false; });
     $('#installButton').addEventListener('click', async () => {
       if (!deferredInstallPrompt) return;
-      deferredInstallPrompt.prompt();
-      await deferredInstallPrompt.userChoice;
-      deferredInstallPrompt = null;
-      $('#installButton').hidden = true;
+      deferredInstallPrompt.prompt(); await deferredInstallPrompt.userChoice; deferredInstallPrompt = null; $('#installButton').hidden = true;
     });
-    window.addEventListener('appinstalled', () => toast('App installed.'));
-    window.addEventListener('online', updateNetworkBadge);
-    window.addEventListener('offline', updateNetworkBadge);
   }
 
   function updateNetworkBadge() {
-    const badge = $('#offlineBadge');
-    const online = navigator.onLine;
-    badge.textContent = online ? 'Online' : 'Offline';
+    const apply = () => { $('#offlineBadge').textContent = navigator.onLine ? 'Online' : 'Offline'; };
+    apply(); window.addEventListener('online', apply); window.addEventListener('offline', apply);
   }
 
-  function registerServiceWorker() {
-    if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(console.error);
-  }
+  function registerServiceWorker() { if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(console.error); }
 
   function toast(message) {
-    const el = $('#toast');
-    el.textContent = message;
-    el.classList.add('show');
-    clearTimeout(el._timer);
-    el._timer = setTimeout(() => el.classList.remove('show'), 2600);
+    const el = $('#toast'); el.textContent = message; el.classList.add('show'); clearTimeout(toast.timer); toast.timer = setTimeout(() => el.classList.remove('show'), 2600);
   }
 
   function extensionOf(name) { return (name.split('.').pop() || '').toLowerCase(); }
@@ -670,5 +1079,5 @@
   function formatBytes(n) { if (n < 1024) return `${n} B`; if (n < 1024*1024) return `${(n/1024).toFixed(1)} KB`; return `${(n/1024/1024).toFixed(1)} MB`; }
   function escapeHtml(s) { return String(s).replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c])); }
 
-  console.info(`Tucker's Guitar Trainer v${APP_VERSION}`);
+  console.info(`Tucker's Guitar Quest ${APP_VERSION}`);
 })();

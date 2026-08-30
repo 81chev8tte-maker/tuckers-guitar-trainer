@@ -1,4 +1,4 @@
-const CACHE = 'tucker-guitar-trainer-v1';
+const CACHE = 'tucker-guitar-quest-v2';
 const CORE = [
   './',
   './index.html',
@@ -21,16 +21,20 @@ self.addEventListener('activate', event => {
 
 self.addEventListener('fetch', event => {
   if (event.request.method !== 'GET') return;
-  event.respondWith(
-    caches.match(event.request).then(cached => {
-      const network = fetch(event.request).then(response => {
-        if (response && (response.ok || response.type === 'opaque')) {
-          const clone = response.clone();
-          caches.open(CACHE).then(cache => cache.put(event.request, clone));
-        }
-        return response;
-      }).catch(() => cached);
-      return cached || network;
-    })
-  );
+  const url = new URL(event.request.url);
+  if (event.request.mode === 'navigate') {
+    event.respondWith(fetch(event.request).then(response => {
+      const clone = response.clone();
+      caches.open(CACHE).then(cache => cache.put('./index.html', clone));
+      return response;
+    }).catch(() => caches.match('./index.html')));
+    return;
+  }
+  event.respondWith(caches.match(event.request).then(cached => cached || fetch(event.request).then(response => {
+    if (response && (response.ok || response.type === 'opaque')) {
+      const clone = response.clone();
+      caches.open(CACHE).then(cache => cache.put(event.request, clone));
+    }
+    return response;
+  })));
 });
