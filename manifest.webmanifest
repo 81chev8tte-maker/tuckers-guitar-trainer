@@ -1,0 +1,14 @@
+{
+  "name": "Tucker's Guitar Trainer",
+  "short_name": "Guitar Trainer",
+  "description": "Free beginner guitar lessons, tuner, metronome, chords and personal tab imports.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0b0e12",
+  "theme_color": "#101319",
+  "icons": [
+    { "src": "./icons/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}
