@@ -2,6 +2,13 @@
 
 A free Chromebook-friendly PWA that teaches beginner electric guitar as a game.
 
+## v0.5.0 — Beginner Curriculum & Chromebook Fit
+
+- Expands the lesson map from 15 to 35 free missions across seven progressive worlds
+- Adds rhythm, alternate picking, rests, fretting control, riff building, recovery and song-readiness practice
+- Collapses lesson setup and compacts the gameplay HUD on short Chromebook screens once play begins
+- Lets imported tabs run as either focused 8-bar sections or a complete song level
+
 ## v0.4.0 — Synchronized Backing Instruments
 
 - Imported song levels can play AlphaTab's synthesized backing instruments

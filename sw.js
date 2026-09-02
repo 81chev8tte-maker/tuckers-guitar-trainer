@@ -1,10 +1,10 @@
-const CACHE = 'tucker-guitar-quest-v4.0';
+const CACHE = 'tucker-guitar-quest-v5.0';
 const CORE = [
   './',
   './index.html',
-  './styles.css?v=0.4.0',
-  './app.js?v=0.4.0',
-  './manifest.webmanifest?v=0.4.0',
+  './styles.css?v=0.5.0',
+  './app.js?v=0.5.0',
+  './manifest.webmanifest?v=0.5.0',
   './icon.svg',
   'https://cdn.jsdelivr.net/npm/@coderline/alphatab@1.8.4/dist/alphaTab.min.js'
 ];
