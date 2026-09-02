@@ -100,7 +100,7 @@
       </div>
       <div class="song-game-note panel compact-panel">
         <strong>🎮 Imported tabs can become levels.</strong>
-        <span>Open a Guitar Pro or MusicXML file, choose a guitar track and section, then hit <b>Play as Level</b>. Chords are simplified to one note in this first song-game version so the mic can score them reliably.</span>
+        <span>Open a Guitar Pro or MusicXML file, choose a guitar track, then practice an 8-bar section or play the full song as a level. Chords are simplified to one note so the mic can score them reliably.</span>
       </div>
       <div id="dropZone" class="drop-zone" tabindex="0">
         <div class="drop-icon">⬇️</div><strong>Drop a tab file here</strong><span>or</span>
@@ -131,7 +131,7 @@
                 <label class="field">Guitar track
                   <select id="songTrackSelect"></select>
                 </label>
-                <label class="field">Section
+                <label class="field">Practice range
                   <select id="songSectionSelect"></select>
                 </label>
                 <label class="field">Chord simplification
@@ -148,7 +148,7 @@
                   <span id="songBackingVolumeText" class="muted small-text">80%</span>
                 </label>
               </div>
-              <div class="song-level-actions"><button id="playSongAsLevel" class="button big">🎮 Play as Level</button><span id="songLevelPreview" class="muted small-text">Choose a track and section.</span></div>
+              <div class="song-level-actions"><button id="playSongAsLevel" class="button big">🎮 Play as Level</button><span id="songLevelPreview" class="muted small-text">Choose a track and practice range.</span></div>
             </section>
             <div id="tabViewport" class="tab-viewport"><div id="alphaTab"></div><pre id="textTab" class="text-tab" hidden></pre></div>
           </div>

@@ -738,9 +738,10 @@
     $('#resultCombo').textContent = game.bestCombo;
     $('#resultXp').textContent = `+${xpEarned}`;
     if (isSong) {
-      $('#resultTitle').textContent = stars === 3 ? 'Section crushed!' : stars === 2 ? 'Nice run!' : stars === 1 ? 'Section cleared!' : 'Run it again!';
-      $('#resultMessage').textContent = stars ? 'That section is now scored. Retry it for more stars or move on to the next chunk.' : 'Slow it down or retry this section until the notes start to feel automatic.';
       const spec = game.level.songSpec;
+      const rangeName = spec?.fullSong ? 'song' : 'section';
+      $('#resultTitle').textContent = stars === 3 ? `${rangeName === 'song' ? 'Song' : 'Section'} crushed!` : stars === 2 ? 'Nice run!' : stars === 1 ? `${rangeName === 'song' ? 'Song' : 'Section'} cleared!` : 'Run it again!';
+      $('#resultMessage').textContent = stars ? `That ${rangeName} is now scored. Retry it for more stars${rangeName === 'section' ? ' or move on to the next chunk' : ''}.` : `Slow it down or retry this ${rangeName} until the notes start to feel automatic.`;
       const hasNext = Boolean(spec && spec.endBar < spec.totalBars);
       $('#nextLevel').hidden = !hasNext;
       $('#nextLevel').textContent = 'Next Section ▶';
@@ -1313,14 +1314,14 @@
     if (!meta?.playable) { select.innerHTML = '<option>No playable sections</option>'; return; }
     const total = meta.bars.length;
     const chunk = 8;
-    const options = [];
+    const options = [`<option value="full">Full song · Bars 1–${total}</option>`];
     for (let start = 0; start < total; start += chunk) {
       const end = Math.min(total, start + chunk);
-      options.push(`<option value="${start}:${end}">Bars ${start + 1}–${end}</option>`);
+      options.push(`<option value="${start}:${end}" ${start === 0 ? 'selected' : ''}>Bars ${start + 1}–${end}</option>`);
     }
     select.innerHTML = options.join('');
     if (songLevelSpec && songLevelSpec.trackIndex === meta.index) {
-      const wanted = `${songLevelSpec.startBar}:${songLevelSpec.endBar}`;
+      const wanted = songLevelSpec.fullSong ? 'full' : `${songLevelSpec.startBar}:${songLevelSpec.endBar}`;
       if ([...select.options].some(o => o.value === wanted)) select.value = wanted;
     }
   }
@@ -1329,13 +1330,16 @@
     const trackIndex = Number($('#songTrackSelect').value);
     const meta = loadedSongTracks.find(t => t.index === trackIndex);
     if (!meta?.playable) return null;
-    const parts = String($('#songSectionSelect').value || '0:8').split(':').map(Number);
-    const startBar = Math.max(0, Number.isFinite(parts[0]) ? parts[0] : 0);
-    const endBar = Math.min(meta.bars.length, Number.isFinite(parts[1]) ? parts[1] : startBar + 8);
+    const sectionValue = String($('#songSectionSelect').value || '0:8');
+    const fullSong = sectionValue === 'full';
+    const parts = sectionValue.split(':').map(Number);
+    const startBar = fullSong ? 0 : Math.max(0, Number.isFinite(parts[0]) ? parts[0] : 0);
+    const endBar = fullSong ? meta.bars.length : Math.min(meta.bars.length, Number.isFinite(parts[1]) ? parts[1] : startBar + 8);
     return {
       trackIndex,
       startBar,
       endBar,
+      fullSong,
       totalBars:meta.bars.length,
       lineMode:$('#songLineMode').value === 'high' ? 'high' : 'low',
       speed:Math.max(.4, Math.min(1, Number($('#songGameSpeed').value) || .75)),
@@ -1440,10 +1444,11 @@
     });
     const notes = raw.filter((n, i) => i === 0 || n.beat !== raw[i-1].beat || n.midi !== raw[i-1].midi);
     if (!notes.length) throw new Error('No scored notes remained after simplifying this section.');
-    if (notes.length > 420) throw new Error('This 8-bar section is unusually dense. Choose a different guitar track for now.');
+    const noteLimit = spec.fullSong ? 2000 : 420;
+    if (notes.length > noteLimit) throw new Error(spec.fullSong ? 'This song has more than 2,000 scored notes. Choose an 8-bar section for smoother play.' : 'This 8-bar section is unusually dense. Choose a different guitar track for now.');
     const stringInfo = makeStringInfoFromStaff(staff);
     const trackName = track?.name || track?.shortName || `Track ${spec.trackIndex + 1}`;
-    const sectionName = `Bars ${spec.startBar + 1}–${spec.endBar}`;
+    const sectionName = spec.fullSong ? 'Full Song' : `Bars ${spec.startBar + 1}–${spec.endBar}`;
     const sectionStartTick = Number(bars[0]?.masterBar?.start ?? firstTick);
     const nextBar = meta.bars[spec.endBar];
     const finalTick = ordered.at(-1)?.tick ?? firstTick;
