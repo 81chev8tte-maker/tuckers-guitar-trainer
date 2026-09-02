@@ -2,6 +2,16 @@
 
 A free Chromebook-friendly PWA that teaches beginner electric guitar as a game.
 
+## v0.6.0 — Learning Highway
+
+- Adds a perspective six-string Note Highway with consistent string colours, chord shapes, open-note rings, sustain trails and technique badges
+- Adds a dedicated Learn Tabs section while preserving the playable flat Tab View
+- Remembers Note Highway or Tab View and offers a compact split-tab strip during play
+- Adds eight stages of imported-song difficulty plus manual 50%, 75% and 100% note density
+- Adds looping, early/late/wrong-note feedback and a virtualized 32-note tab window for smooth full songs
+- Expands the built-in course from 35 to 50 missions with player setup, tuning, power chords, strumming and techniques
+- Preserves IndexedDB imports, `tgq-progress-v2` progress, section/full-song play, AlphaTab backing and offline caching
+
 ## v0.5.0 — Beginner Curriculum & Chromebook Fit
 
 - Expands the lesson map from 15 to 35 free missions across seven progressive worlds
