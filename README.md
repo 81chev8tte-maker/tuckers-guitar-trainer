@@ -2,6 +2,13 @@
 
 A free Chromebook-friendly PWA that teaches beginner electric guitar as a game.
 
+## v0.7.0 — Fretboard Runway
+
+- Replaces the six Guitar Hero-style columns with spatial fret lanes and a dedicated open-string area
+- Adds a moving five-fret hand-position window, beat/measure guides and a compact six-string strike zone
+- Enlarges beginner note targets, shortens sustain ribbons and gives the highway more room on Chromebook screens
+- Preserves the v0.6 lesson course, Learn Tabs mode, importing, backing audio, looping and saved progress
+
 ## v0.6.0 — Learning Highway
 
 - Adds a perspective six-string Note Highway with consistent string colours, chord shapes, open-note rings, sustain trails and technique badges

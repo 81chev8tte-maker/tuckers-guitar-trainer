@@ -57,3 +57,39 @@ main{width:min(1180px,calc(100% - 28px));margin:0 auto;padding:26px 0 10px}.view
 @media(max-width:700px){.tab-lesson-card{grid-template-columns:42px 1fr}.tab-lesson-card>.button{grid-column:1/-1}.tab-example{grid-template-columns:1fr}.tab-practice-panel{align-items:stretch;flex-direction:column}.bottom-nav{overflow-x:auto}.nav-button{font-size:.54rem}.nav-button span{font-size:.95rem}}
 @media(max-height:800px){.game-screen.playing{overflow:hidden}.game-screen.playing .game-shell{height:100dvh;display:grid;grid-template-rows:auto auto auto auto minmax(0,1fr) auto;padding-bottom:5px}.game-screen.playing .game-view-switch{margin-bottom:4px;padding:2px}.game-screen.playing .game-board{height:auto!important;min-height:0!important}.game-screen.playing .game-footer{min-height:46px}.game-screen.playing .tab-teacher{max-height:116px}.game-screen.playing.tab-mode .tab-teacher{max-height:154px}.game-screen.playing .live-tab{max-height:88px}.game-screen.playing .game-practice-controls .button{min-height:36px;padding:6px 10px}}
 @media(max-height:650px){.game-screen.playing .game-hud span{display:none}.game-screen.playing .tab-teacher{max-height:82px}.game-screen.playing .live-tab{max-height:62px}.game-screen.playing .game-footer>div:first-child{display:none}}
+
+/* v0.7 fretboard runway: time moves downscreen; frets are spatial lanes. */
+.game-board.note-highway{background:radial-gradient(ellipse at 50% 0,rgba(73,116,169,.26),transparent 52%),linear-gradient(180deg,#111b29 0,#090d13 78%,#05080c 100%)}
+.lane-background{inset:0 6% 52px;display:grid;grid-template-columns:repeat(6,1fr);clip-path:polygon(26% 0,74% 0,100% 100%,0 100%);background:linear-gradient(180deg,rgba(8,12,18,.12),rgba(15,23,34,.9));border-bottom:2px solid rgba(255,255,255,.24)}
+.lane-background .fret-lane{position:relative;display:block;border:0;border-right:2px solid rgba(205,220,235,.26);background:linear-gradient(90deg,rgba(255,255,255,.015),rgba(255,255,255,.055),rgba(255,255,255,.015));filter:none;opacity:1}
+.lane-background .fret-lane:first-child{border-left:2px solid rgba(255,255,255,.2)}
+.lane-background .fret-lane.open-lane{background:linear-gradient(90deg,rgba(168,242,61,.04),rgba(168,242,61,.13));border-right:5px solid rgba(240,246,252,.9);box-shadow:8px 0 22px rgba(255,255,255,.08)}
+.lane-background .fret-lane:after{display:none}
+.lane-background .fret-lane span{position:absolute;left:50%;top:12px;transform:translateX(-50%);font-size:.72rem;font-weight:1000;color:rgba(227,236,246,.68);text-shadow:0 2px 5px #000}
+.lane-background .open-lane span{color:var(--accent)}
+.beat-layer{position:absolute;inset:0;z-index:2;pointer-events:none}
+.beat-marker{position:absolute;left:50%;height:1px;transform:translateX(-50%);background:rgba(187,205,222,.18);box-shadow:0 1px 1px rgba(0,0,0,.35)}
+.beat-marker.measure{height:2px;background:rgba(199,222,241,.42)}
+.string-bed{position:absolute;left:6%;right:6%;bottom:25px;height:80px;z-index:3;pointer-events:none;display:grid;grid-template-rows:repeat(6,1fr);padding:0 1%;clip-path:polygon(3% 0,97% 0,100% 100%,0 100%)}
+.string-bed i{align-self:center;height:3px;background:linear-gradient(90deg,transparent,var(--string-color) 4%,var(--string-color) 96%,transparent);box-shadow:0 0 8px color-mix(in srgb,var(--string-color) 55%,transparent);opacity:.78}
+.hand-position{position:absolute;right:12px;top:10px;z-index:7;padding:6px 9px;border:1px solid rgba(168,242,61,.28);border-radius:9px;background:rgba(5,9,13,.82);text-align:right;pointer-events:none}
+.hand-position span{display:block;color:var(--muted);font-size:.48rem;font-weight:900;letter-spacing:.1em}
+.hand-position strong{display:block;color:var(--accent);font-size:.8rem}
+.fret-labels{position:absolute;left:6%;right:6%;bottom:5px;height:42px;display:grid;grid-template-columns:repeat(6,1fr);align-items:center;z-index:7;pointer-events:none}
+.fret-labels span{text-align:center;color:#b7c5d4;font-size:.62rem;font-weight:900;letter-spacing:.03em}
+.fret-labels .open-label{color:var(--accent);font-size:.66rem}
+.string-labels{left:5px;right:auto;top:50%;bottom:auto;width:48px;height:150px;transform:translateY(-50%);display:grid;grid-template-columns:1fr;grid-template-rows:repeat(6,1fr);align-items:center;padding:5px 4px;border:1px solid rgba(255,255,255,.1);border-radius:10px;background:rgba(5,8,12,.72);z-index:8}
+.string-labels span{font-size:.76rem;line-height:1;color:var(--string-color);text-align:left;text-shadow:0 0 10px color-mix(in srgb,var(--string-color) 65%,transparent)}
+.string-labels small{display:inline;margin-left:3px;font-size:.43rem;color:#a9b7c7}
+.hit-line{left:6%;right:6%;bottom:52px;height:5px;z-index:6}
+.hit-line span{left:5px;top:-25px}
+.falling-note{width:58px;height:40px;border-radius:9px}
+.falling-note:after{content:"";position:absolute;left:-4px;right:-4px;top:50%;height:4px;transform:translateY(-50%);background:var(--note-color);box-shadow:0 0 9px var(--note-color);z-index:-1}
+.falling-note:before{width:6px;opacity:.7}
+.falling-note.open-note{border-radius:999px;width:64px;background:#081017;color:#fff;border-color:var(--note-color);outline:2px solid color-mix(in srgb,var(--note-color) 35%,transparent)}
+.falling-note.open-note b:before{content:"OPEN ";font-size:.48rem;letter-spacing:.05em}
+.game-feedback{bottom:92px}
+.game-screen.tab-mode .lane-background{inset:0 0 52px;clip-path:none}.game-screen.tab-mode .lane-background .fret-lane{border-right:1px solid rgba(255,255,255,.08)}
+.game-screen.tab-mode .hand-position,.game-screen.tab-mode .fret-labels{display:none}.game-screen.tab-mode .string-labels{left:0;right:0;top:auto;bottom:2px;width:auto;height:50px;transform:none;display:grid;grid-template-columns:repeat(6,1fr);grid-template-rows:1fr;background:transparent;border:0}.game-screen.tab-mode .string-labels span{text-align:center;font-size:1.05rem}.game-screen.tab-mode .hit-line{left:0;right:0}
+@media(max-width:700px){.lane-background{left:7%;right:3%}.string-bed{left:7%;right:3%}.string-labels{width:42px}.falling-note{width:50px;height:36px}.fret-labels{left:7%;right:3%}.fret-labels span{font-size:.55rem}}
+@media(max-height:800px){.game-screen.playing:not(.tab-mode) .tab-teacher{max-height:58px}.game-screen.playing:not(.tab-mode) .tab-teacher-head span{display:none}.game-screen.playing:not(.tab-mode) .live-tab{max-height:34px}.game-screen.playing:not(.tab-mode) .tab-row{display:none}.game-screen.playing:not(.tab-mode) .tab-row:nth-child(1),.game-screen.playing:not(.tab-mode) .tab-row:nth-child(6){display:grid}.game-screen.playing .game-board{min-height:330px!important}}

@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const APP_VERSION = '0.6.0';
+  const APP_VERSION = '0.7.0';
   const PROGRESS_KEY = 'tgq-progress-v2';
   const OLD_PROGRESS_KEY = 'tgt-progress-v1';
   const DB_NAME = 'tucker-guitar-trainer';
@@ -541,6 +541,7 @@
       lastAcceptedPitchClass:null,
       lastAcceptedEvent:-1,
       tabWindowStart:0,
+      fretWindowStart:1,
       startedAtDate:Date.now(),
       endTime:(events.at(-1)?.time || 0) + 1.2,
       endClock:Number(level.sectionEndTick) > Number(level.sectionStartTick)
@@ -674,33 +675,95 @@
     if (!game) return;
     const board = $('#gameBoard');
     const rect = board.getBoundingClientRect();
-    const hitY = rect.height - 72;
-    const spawnY = 18;
+    const hitY = rect.height - 58;
+    const spawnY = 48;
+    const clock = gameClockWindows();
+    updateFretWindow(t, clock.lookahead);
+    renderBeatMarkers(t, clock, spawnY, hitY);
     game.events.forEach(ev => {
       const dt = ev.clock - t;
       if (!ev.elements?.length) return;
-      const clock = gameClockWindows();
       const inRange = dt <= clock.lookahead && dt >= -clock.expired;
       ev.elements.forEach(el => { el.hidden = !inRange; });
       if (!inRange) return;
       const progress = Math.max(0, Math.min(1.08, 1 - dt / clock.lookahead));
       const y = spawnY + progress * (hitY - spawnY);
       const flatView = $('#gameScreen').classList.contains('tab-mode');
-      const roadWidth = flatView ? rect.width : rect.width * (.34 + .66 * Math.min(1, progress));
-      const roadLeft = (rect.width - roadWidth) / 2;
       const scale = .58 + .42 * Math.min(1, progress);
-      const sustain = Math.max(0, Number(ev.durationClock || 0) / clock.lookahead * (hitY - spawnY));
+      const sustain = Math.min(110, Math.max(0, Number(ev.durationClock || 0) / clock.lookahead * (hitY - spawnY)));
       ev.elements.forEach(el => {
         const stringIndex = Number(el.dataset.stringIndex);
-        const x = roadLeft + roadWidth * ((stringIndex + .5) / 6);
+        const fret = Number(el.dataset.fret);
+        const slot = fret === 0 ? 0 : fret - game.fretWindowStart + 1;
+        const nearWidth = rect.width * .88;
+        const farWidth = rect.width * .46;
+        const roadWidth = farWidth + (nearWidth - farWidth) * Math.min(1, progress);
+        const roadLeft = (rect.width - roadWidth) / 2;
+        const x = flatView
+          ? rect.width * ((stringIndex + .5) / 6)
+          : roadLeft + roadWidth * ((Math.max(0, Math.min(5, slot)) + .5) / 6);
+        const stringOffset = flatView ? 0 : (stringIndex - 2.5) * (3 + 7 * Math.min(1, progress));
         el.style.left = `${x}px`;
-        el.style.top = `${y}px`;
+        el.style.top = `${y + stringOffset}px`;
         el.style.transform = `translate(-50%,-50%) scale(${scale})`;
         el.style.setProperty('--sustain-length', `${sustain}px`);
       });
     });
     const next = game.events.find(e => e.status === 'pending');
     $('#nextNoteText').textContent = next ? formatExpected(next) : 'Finish strong!';
+  }
+
+  function eventFrets(ev) {
+    const shape = Array.isArray(ev?.chordNotes) && ev.chordNotes.length ? ev.chordNotes : [ev];
+    return shape.map(note => Number(note?.fret)).filter(fret => Number.isFinite(fret) && fret > 0);
+  }
+
+  function updateFretWindow(t, lookahead) {
+    const upcoming = game.events.filter(ev => ev.status === 'pending' && ev.clock >= t - .15 * lookahead && ev.clock <= t + lookahead * .72);
+    const frets = upcoming.flatMap(eventFrets);
+    const anchor = frets.length ? Math.min(...frets) : 1;
+    let nextStart = Math.max(1, anchor - 1);
+    if (frets.length) {
+      const max = Math.max(...frets);
+      if (max - nextStart > 4) nextStart = Math.max(1, max - 4);
+    }
+    if (nextStart === game.fretWindowStart) return;
+    game.fretWindowStart = nextStart;
+    renderFretboard();
+  }
+
+  function renderFretboard() {
+    if (!game) return;
+    const start = Math.max(1, Number(game.fretWindowStart) || 1);
+    const frets = [0, start, start + 1, start + 2, start + 3, start + 4];
+    $('#laneBackground').innerHTML = frets.map((fret, i) => `<i class="fret-lane ${i === 0 ? 'open-lane' : ''}" data-fret="${fret}"><span>${i === 0 ? 'OPEN' : fret}</span></i>`).join('');
+    $('#fretLabels').innerHTML = frets.map((fret, i) => `<span class="${i === 0 ? 'open-label' : ''}">${i === 0 ? '0 · OPEN' : `FRET ${fret}`}</span>`).join('');
+    $('#handPositionText').textContent = `OPEN · ${start}–${start + 4}`;
+  }
+
+  function renderBeatMarkers(t, clock, spawnY, hitY) {
+    const layer = $('#beatLayer');
+    if (!layer || !game) return;
+    const unitsPerBeat = usesSongBackingClock() ? 960 : 60 / Math.max(20, Number(game.level?.bpm) || 80);
+    const first = Math.ceil(t / unitsPerBeat) * unitsPerBeat;
+    let markerIndex = 0;
+    for (let beat = first, i = 0; beat <= t + clock.lookahead && i < 12; beat += unitsPerBeat, i++) {
+      const progress = Math.max(0, Math.min(1, 1 - (beat - t) / clock.lookahead));
+      const y = spawnY + progress * (hitY - spawnY);
+      const width = 46 + 42 * progress;
+      const beatNumber = Math.round(beat / unitsPerBeat);
+      let marker = layer.children[markerIndex];
+      if (!marker) {
+        marker = document.createElement('i');
+        layer.appendChild(marker);
+      }
+      marker.className = `beat-marker ${beatNumber % 4 === 0 ? 'measure' : ''}`;
+      marker.style.top = `${y}px`;
+      marker.style.width = `${width}%`;
+      marker.hidden = false;
+      markerIndex++;
+    }
+    Array.from(layer.children).slice(markerIndex).forEach(marker => { marker.hidden = true; });
   }
 
   function markExpiredNotes(t) {
@@ -744,12 +807,13 @@
     const info = game?.stringInfo || STRING_INFO;
     const wrap = $('#stringLabels');
     if (!wrap) return;
-    $('#laneBackground').innerHTML = info.map((s, i) => `<i class="string-rail string-${i}" style="--string-color:${s.color || STRING_INFO[i]?.color}"></i>`).join('');
     wrap.innerHTML = info.map((s, i) => {
       const number = info.length - i;
       const edge = i === 0 ? ' thick' : i === info.length - 1 ? ' thin' : '';
       return `<span class="string-label-${i}" style="--string-color:${s.color || STRING_INFO[i]?.color}">${escapeHtml(s.label)}<small>${number}${edge}</small></span>`;
     }).join('');
+    $('#stringBed').innerHTML = info.map((s, i) => `<i style="--string-color:${s.color || STRING_INFO[i]?.color}"></i>`).join('');
+    renderFretboard();
   }
 
   function renderGameNotes() {
@@ -765,6 +829,7 @@
         el.hidden = true;
         el.dataset.eventIndex = ev.index;
         el.dataset.stringIndex = note.string;
+        el.dataset.fret = Number(note.fret) || 0;
         layer.appendChild(el);
         return el;
       });
@@ -1749,7 +1814,7 @@
   async function registerServiceWorker() {
     if (!('serviceWorker' in navigator)) return;
     try {
-      const reg = await navigator.serviceWorker.register('./sw.js?v=0.6.0');
+      const reg = await navigator.serviceWorker.register('./sw.js?v=0.7.0');
       reg.update().catch(() => null);
     } catch (err) { console.error(err); }
   }
