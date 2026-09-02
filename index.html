@@ -6,11 +6,11 @@
   <meta name="theme-color" content="#0d1117" />
   <meta name="description" content="A free game-style guitar trainer that listens while you play." />
   <title>Tucker's Guitar Quest</title>
-  <link rel="manifest" href="./manifest.webmanifest?v=0.5.0" />
+  <link rel="manifest" href="./manifest.webmanifest?v=0.6.0" />
   <link rel="icon" href="./icon.svg" />
-  <link rel="stylesheet" href="./styles.css?v=0.5.0" />
+  <link rel="stylesheet" href="./styles.css?v=0.6.0" />
   <script defer src="https://cdn.jsdelivr.net/npm/@coderline/alphatab@1.8.4/dist/alphaTab.min.js"></script>
-  <script defer src="./app.js?v=0.5.0"></script>
+  <script defer src="./app.js?v=0.6.0"></script>
 </head>
 <body>
   <header class="topbar">
@@ -34,6 +34,7 @@
           <p class="muted">Notes fall toward the hit line. Play the fret on your real guitar and the Chromebook listens for the answer.</p>
           <div class="hero-actions">
             <button id="continueMission" class="button big">▶ Start Next Mission</button>
+            <button id="startFoundations" class="button secondary">New Player Foundations</button>
             <button class="button secondary" data-view-target="input">🎙 Check Guitar Input</button>
           </div>
         </div>
@@ -57,6 +58,19 @@
         <span class="muted small-text">Earn 1 star to unlock the next mission</span>
       </div>
       <div id="worldMap" class="world-map"></div>
+    </section>
+
+    <section id="view-learn-tabs" class="view" aria-labelledby="learnTabsTitle">
+      <div class="page-heading learn-tabs-heading">
+        <p class="eyebrow">READ THE LANGUAGE</p>
+        <h1 id="learnTabsTitle">Learn Tabs</h1>
+        <p class="muted">Short explanations, a guitar-side example, then a playable flat-tab exercise. You can still play songs without finishing these.</p>
+      </div>
+      <div id="tabLessonGrid" class="tab-lesson-grid"></div>
+      <article class="panel tab-practice-panel">
+        <div><p class="eyebrow">PLAYABLE TAB COURSE</p><h2>Practice with the original flat highway</h2><p class="muted">The first 15 missions teach tab one step at a time and use the same string colours as Note Highway.</p></div>
+        <button id="startTabCourse" class="button big">Start Tab Course</button>
+      </article>
     </section>
 
     <section id="view-input" class="view" aria-labelledby="inputTitle">
@@ -100,7 +114,7 @@
       </div>
       <div class="song-game-note panel compact-panel">
         <strong>🎮 Imported tabs can become levels.</strong>
-        <span>Open a Guitar Pro or MusicXML file, choose a guitar track, then practice an 8-bar section or play the full song as a level. Chords are simplified to one note so the mic can score them reliably.</span>
+        <span>Open a Guitar Pro or MusicXML file, choose a guitar track, then practise an 8-bar section or play the full song. Chords appear as full shapes while the mic scores a reliable anchor note.</span>
       </div>
       <div id="dropZone" class="drop-zone" tabindex="0">
         <div class="drop-icon">⬇️</div><strong>Drop a tab file here</strong><span>or</span>
@@ -134,11 +148,14 @@
                 <label class="field">Practice range
                   <select id="songSectionSelect"></select>
                 </label>
-                <label class="field">Chord simplification
+                <label class="field">Chord scoring anchor
                   <select id="songLineMode"><option value="low" selected>Riff / lowest note</option><option value="high">Lead / highest note</option></select>
                 </label>
                 <label class="field">Game speed
                   <select id="songGameSpeed"><option value="0.5">50%</option><option value="0.6">60%</option><option value="0.75" selected>75%</option><option value="0.85">85%</option><option value="1">100%</option></select>
+                </label>
+                <label class="field">Learning difficulty
+                  <select id="songDifficulty"><option value="1">1 · Listen for the rhythm</option><option value="2">2 · One string, a few notes</option><option value="3">3 · Add the main riff notes</option><option value="4" selected>4 · Simplified riff</option><option value="5">5 · Correct rhythm</option><option value="6">6 · More notes & techniques</option><option value="7">7 · Complete section</option><option value="8">8 · Complete performance</option></select>
                 </label>
                 <label class="field">Backing instruments
                   <select id="songBackingEnabled"><option value="on" selected>On · mute my guitar track</option><option value="off">Off · note highway only</option></select>
@@ -213,6 +230,11 @@
         <div class="game-score"><span>SCORE</span><strong id="gameScore">0</strong></div>
       </header>
 
+      <div class="game-view-switch" role="group" aria-label="Game display">
+        <button id="showNoteHighway" class="view-switch active" type="button">Note Highway</button>
+        <button id="showTabHighway" class="view-switch" type="button">Tab View</button>
+      </div>
+
       <div class="game-hud">
         <div><span>🎯 ACCURACY</span><strong id="gameAccuracy">100%</strong></div>
         <div class="combo-box"><span>🔥 COMBO</span><strong id="gameCombo">0</strong></div>
@@ -221,17 +243,17 @@
 
       <article id="gameLessonCard" class="game-lesson-card">
         <div><p class="eyebrow" id="gameLessonTag">TAB DECODER</p><h2 id="gameLessonHeadline">0 means open</h2><p id="gameLessonText">When you see 0, don't hold any fret. Just pick that string.</p></div>
-        <button id="gameStart" class="button big">Enable Guitar & Start</button>
+        <div class="game-start-controls"><label class="field">Note amount<select id="gameNoteDensity"><option value="0.5">Starter · 50%</option><option value="0.75">Guided · 75%</option><option value="1" selected>Complete · 100%</option></select></label><button id="gameStart" class="button big">Enable Guitar & Start</button></div>
       </article>
 
-      <div class="tab-teacher">
+      <div class="tab-teacher" id="gameTabTeacher">
         <div class="tab-teacher-head"><strong>LIVE TAB</strong><span id="tabHint">Watch the falling block and the matching tab column.</span></div>
         <div id="liveTab" class="live-tab" aria-label="Current tablature"></div>
       </div>
 
-      <div id="gameBoard" class="game-board">
+      <div id="gameBoard" class="game-board note-highway">
         <div id="laneBackground" class="lane-background"></div>
-        <div class="hit-line"><span>HIT</span></div>
+        <div class="hit-line"><span>PLAY NOW</span></div>
         <div id="noteLayer" class="note-layer"></div>
         <div id="stringLabels" class="string-labels"><span>E<small>6 thick</small></span><span>A<small>5</small></span><span>D<small>4</small></span><span>G<small>3</small></span><span>B<small>2</small></span><span>e<small>1 thin</small></span></div>
         <div id="countdown" class="countdown" hidden>3</div>
@@ -241,7 +263,7 @@
       <footer class="game-footer">
         <div><span>NEXT</span><strong id="nextNoteText">—</strong></div>
         <div class="game-progress-track"><span id="gameProgressBar"></span></div>
-        <button id="gamePause" class="button secondary" disabled>Pause</button>
+        <div class="game-practice-controls"><button id="gameLoop" class="button secondary" aria-pressed="false">↻ Loop Off</button><button id="gamePause" class="button secondary" disabled>Pause</button></div>
       </footer>
     </div>
   </section>
@@ -259,6 +281,7 @@
 
   <nav class="bottom-nav" aria-label="Main navigation">
     <button class="nav-button active" data-view-target="play"><span>🎮</span>Play</button>
+    <button class="nav-button" data-view-target="learn-tabs"><span>𝄢</span>Learn Tabs</button>
     <button class="nav-button" data-view-target="songs"><span>♫</span>Songs</button>
     <button class="nav-button" data-view-target="tools"><span>♬</span>Tools</button>
     <button class="nav-button" data-view-target="input"><span>🎙</span>Input</button>

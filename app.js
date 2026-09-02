@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const APP_VERSION = '0.5.0';
+  const APP_VERSION = '0.6.0';
   const PROGRESS_KEY = 'tgq-progress-v2';
   const OLD_PROGRESS_KEY = 'tgt-progress-v1';
   const DB_NAME = 'tucker-guitar-trainer';
@@ -11,15 +11,24 @@
   const NOTE_LOOKAHEAD = 3.2;
 
   const STRING_INFO = [
-    { label:'E', number:6, name:'Low E', openMidi:40 },
-    { label:'A', number:5, name:'A', openMidi:45 },
-    { label:'D', number:4, name:'D', openMidi:50 },
-    { label:'G', number:3, name:'G', openMidi:55 },
-    { label:'B', number:2, name:'B', openMidi:59 },
-    { label:'e', number:1, name:'High e', openMidi:64 }
+    { label:'E', number:6, name:'Low E', openMidi:40, color:'#ef4444' },
+    { label:'A', number:5, name:'A', openMidi:45, color:'#f97316' },
+    { label:'D', number:4, name:'D', openMidi:50, color:'#facc15' },
+    { label:'G', number:3, name:'G', openMidi:55, color:'#22c55e' },
+    { label:'B', number:2, name:'B', openMidi:59, color:'#38bdf8' },
+    { label:'e', number:1, name:'High e', openMidi:64, color:'#a78bfa' }
   ];
 
   const NOTE_NAMES = ['C','C♯','D','D♯','E','F','F♯','G','G♯','A','A♯','B'];
+  const TAB_LESSONS = [
+    { icon:'⑥', title:'Six lines = six strings', text:'Each line follows one guitar string. The top line is thin high e; the bottom line is thick low E.', tab:'e|———\nB|———\nG|———\nD|———\nA|———\nE|———', fret:'Hold the guitar normally: the thick low E is physically closest to your face.' },
+    { icon:'↕', title:'Why low E is at the bottom', text:'Tab is drawn as if the guitar neck were tipped toward you. That makes the thick low E appear on the bottom.', tab:'e  ← thinnest\nB\nG\nD\nA\nE  ← thickest', fret:'The diagram matches what you see when you look down over the neck.' },
+    { icon:'3', title:'Numbers mean frets', text:'A number tells you which fret to press on that string. Read from left to right.', tab:'e|——3——5——|', fret:'Press just behind fret 3, play it, then move to fret 5.' },
+    { icon:'0', title:'Zero means open', text:'Play that string without holding any fret.', tab:'A|——0——2——|', fret:'Pick open A, then press the second fret on A.' },
+    { icon:'→', title:'Spacing shows timing', text:'Notes farther apart leave more time. Keep counting through empty space and rests.', tab:'E|—0—0———3—|', fret:'Two close open notes, wait, then fret 3.' },
+    { icon:'≡', title:'Stacked notes form chords', text:'Numbers directly above one another are played together.', tab:'e|—0—|\nB|—0—|\nG|—0—|\nD|—2—|\nA|—2—|\nE|—0—|', fret:'That stacked shape is an E minor chord.' },
+    { icon:'⌁', title:'Technique symbols', text:'Slides use / or \\, hammer-ons h, pull-offs p, bends b, vibrato ~, palm mute PM and muted notes x.', tab:'E|—3/5—5h7—7p5—x—|\n       PM——', fret:'The coloured highway also labels these techniques when the song file provides them.' }
+  ];
 
   const chords = [
     { name:'Em', frets:'0 2 2 0 0 0', note:'Easy first chord. Strum all 6 strings.' },
@@ -38,6 +47,13 @@
 
   function timed(pattern) {
     return pattern.map(p => ({ string:p[0], fret:p[1], beat:p[2] }));
+  }
+
+  function chordSeq(shapes, startBeat = 1, step = 2) {
+    return shapes.map((shape, i) => {
+      const chordNotes = shape.map(note => ({ string:note[0], fret:note[1] }));
+      return { ...chordNotes[0], beat:startBeat + i * step, duration:1, chordNotes };
+    });
   }
 
   const worlds = [
@@ -200,6 +216,36 @@
         { id:'section-practice', title:'Song Section', short:'Repeat a 4-bar idea', bpm:78, tag:'SONG READY', headline:'Practice sections, not whole songs', lesson:'Real songs become manageable when you loop a short section. Notice the same phrase returning and try to improve each repeat.', hint:'One section, four better attempts.', notes:seq([[0,0],[0,3],[1,0],[1,2],[0,5],[0,3],[1,0],[0,0],[0,0],[0,3],[1,0],[1,2],[0,5],[0,3],[1,0],[0,0],[0,0],[0,3],[1,0],[1,2],[0,5],[0,3],[1,0],[0,0]]) },
         { id:'first-set-boss', title:'First Set', short:'Everything together', bpm:80, tag:'WORLD 7 BOSS', headline:'You are ready to train on songs', lesson:'Use everything you have practiced: count, read ahead, stay loose, recognize chunks and recover after a miss. Finishing calmly is the win.', hint:'Keep going. The next note matters most.', notes:timed([[0,0,1],[0,3,1.5],[1,0,2],[1,2,2.5],[0,5,3],[0,3,3.5],[1,0,4],[0,0,5],[2,0,6],[2,2,6.5],[1,2,7],[0,3,7.5],[0,0,9],[1,0,10],[2,0,11],[3,0,12],[3,2,12.5],[2,2,13],[1,2,13.5],[0,3,14],[0,0,15],[0,3,15.5],[1,0,16],[1,2,16.5],[0,5,17],[1,3,17.5],[2,2,18],[1,2,18.5],[0,3,19],[0,0,20]]) }
       ]
+    },
+    {
+      id:'player-foundations', number:8, title:'Player Foundations', subtitle:'Posture, pick control, tuning and clean first notes',
+      levels:[
+        { id:'hold-and-pick', title:'Hold & Pick', short:'Relaxed setup', bpm:54, tag:'PLAYER FOUNDATIONS', headline:'Set up without fighting the guitar', lesson:'Sit tall, relax both shoulders and rest the guitar securely. Hold the pick between thumb and index finger with only the tip showing, then make tiny down-strokes.', hint:'Loose shoulder · light pick grip · small motion.', notes:seq([[0,0],[0,0],[1,0],[1,0],[2,0],[2,0]]) },
+        { id:'string-names', title:'String Names', short:'E A D G B e', bpm:56, tag:'PLAYER FOUNDATIONS', headline:'Know all six strings', lesson:'From thickest to thinnest the strings are E, A, D, G, B, e. Follow each colour across the highway and say its name before you pick.', hint:'Thick to thin: E A D G B e.', notes:seq([[0,0],[1,0],[2,0],[3,0],[4,0],[5,0],[5,0],[4,0],[3,0],[2,0],[1,0],[0,0]]) },
+        { id:'tuning-check', title:'Tuning Check', short:'Match the open notes', bpm:52, tag:'PLAYER FOUNDATIONS', headline:'Tune before practice', lesson:'Use the Tuner in Tools before starting. Each open string should settle on E2, A2, D3, G3, B3 or E4, then play this slow check.', hint:'Tune first. Turn the peg in tiny amounts.', notes:seq([[0,0],[1,0],[2,0],[3,0],[4,0],[5,0]],1,2) },
+        { id:'clean-pressure', title:'Clean Pressure', short:'Fret without squeezing', bpm:54, tag:'PLAYER FOUNDATIONS', headline:'Use only the pressure you need', lesson:'Curve the fingertip and place it just behind the fret wire. If it buzzes, move closer to the wire before squeezing harder.', hint:'Close behind the wire; thumb relaxed.', notes:seq([[0,1],[0,2],[1,1],[1,2],[2,1],[2,2]],1,1.5) },
+        { id:'foundation-boss', title:'Ready Position', short:'Set up and play clean', bpm:60, tag:'WORLD 8 BOSS', headline:'Good habits make playing easier', lesson:'Check posture, pick grip and tuning, then play across every string with clean open and fretted notes.', hint:'Stop and reset if your hands become tense.', notes:seq([[0,0],[0,2],[1,0],[1,2],[2,0],[2,2],[3,0],[3,2],[4,0],[4,1],[5,0],[5,1]]) }
+      ]
+    },
+    {
+      id:'chords-strumming', number:9, title:'Chords & Strumming', subtitle:'Power-chord shapes, changes and steady strums',
+      levels:[
+        { id:'first-power-chord', title:'First Power Chord', short:'E5 shape', bpm:56, tag:'CHORDS & STRUMMING', headline:'Two notes move as one shape', lesson:'Play open low E and fret 2 on the A string together. Keep the other strings quiet. The highway stacks chord notes at the same play line.', hint:'E open + A fret 2.', notes:chordSeq([[[0,0],[1,2]],[[0,0],[1,2]],[[0,0],[1,2]],[[0,0],[1,2]]]) },
+        { id:'moving-power-chord', title:'Moving Power Chord', short:'E5 to G5 to A5', bpm:58, tag:'CHORDS & STRUMMING', headline:'Keep the shape together', lesson:'Move the same two-fret power-chord relationship up the neck. Release pressure while moving, land both fingers, then strum.', hint:'Move the whole hand; do not stretch from behind.', notes:chordSeq([[[0,0],[1,2]],[[0,3],[1,5]],[[0,5],[1,7]],[[0,3],[1,5]],[[0,0],[1,2]]]) },
+        { id:'open-chord-change', title:'Open Chord Change', short:'Em to A', bpm:52, tag:'CHORDS & STRUMMING', headline:'Change shapes on the beat', lesson:'Form Em, strum, release, then form A. The mic scores an anchor note while the full coloured shape shows what both hands should play.', hint:'Move slowly enough to land every finger together.', notes:chordSeq([[[0,0],[1,2],[2,2],[3,0],[4,0],[5,0]],[[1,0],[2,2],[3,2],[4,2],[5,0]],[[0,0],[1,2],[2,2],[3,0],[4,0],[5,0]],[[1,0],[2,2],[3,2],[4,2],[5,0]]],1,3) },
+        { id:'down-up-strum', title:'Down-Up Strum', short:'1 & 2 & 3 & 4 &', bpm:58, tag:'CHORDS & STRUMMING', headline:'Keep the strumming hand moving', lesson:'Strum down on the numbers and up on each “and.” Keep the hand swinging even when a future pattern skips a strum.', hint:'Down on numbers · up on “and”.', notes:chordSeq(Array(8).fill([[0,0],[1,2],[2,2],[3,0],[4,0],[5,0]]),1,.5) },
+        { id:'chord-groove-boss', title:'Garage Groove', short:'Power chords & strumming', bpm:64, tag:'WORLD 9 BOSS', headline:'Make the changes feel musical', lesson:'Hold a steady pulse while the chord shape moves. A clean change that stays in time matters more than a rushed perfect shape.', hint:'Keep the beat moving through every change.', notes:chordSeq([[[0,0],[1,2]],[[0,0],[1,2]],[[0,3],[1,5]],[[0,3],[1,5]],[[0,5],[1,7]],[[0,5],[1,7]],[[0,3],[1,5]],[[0,0],[1,2]]],1,1) }
+      ]
+    },
+    {
+      id:'guitar-techniques', number:10, title:'Guitar Techniques', subtitle:'Slides, legato, palm muting and expressive notes',
+      levels:[
+        { id:'slide-start', title:'Slides', short:'3 into 5', bpm:56, tag:'GUITAR TECHNIQUES', headline:'Keep contact while the note moves', lesson:'Pick fret 3, keep light pressure and slide the same finger to fret 5. The SLIDE badge shows the movement.', hint:'Pick once, slide smoothly, arrive on time.', notes:timed([[0,3,1],[0,5,2],[1,3,4],[1,5,5]]).map((n,i)=>({ ...n, technique:i%2===0?'SLIDE':'', duration:1 })) },
+        { id:'hammer-on-start', title:'Hammer-Ons', short:'5h7', bpm:54, tag:'GUITAR TECHNIQUES', headline:'Make the second note with the fretting hand', lesson:'Pick fret 5, then hammer another finger firmly onto fret 7 without picking again. Keep the first finger planted.', hint:'One pick; two clear notes.', notes:timed([[0,5,1],[0,7,2],[1,5,4],[1,7,5]]).map((n,i)=>({ ...n, technique:i%2===0?'H':'', duration:1 })) },
+        { id:'pull-off-start', title:'Pull-Offs', short:'7p5', bpm:54, tag:'GUITAR TECHNIQUES', headline:'Release into the lower note', lesson:'Start with fingers on frets 5 and 7. Pick fret 7, then lightly pull that finger away so fret 5 rings.', hint:'A small sideways release makes the second note speak.', notes:timed([[0,7,1],[0,5,2],[1,7,4],[1,5,5]]).map((n,i)=>({ ...n, technique:i%2===0?'P':'', duration:1 })) },
+        { id:'palm-mute-start', title:'Palm Muting', short:'Tight low-E pulse', bpm:64, tag:'GUITAR TECHNIQUES', headline:'Rest the picking-hand edge near the bridge', lesson:'Lightly touch the strings beside the bridge with the edge of your palm. The notes should sound short and chunky, not completely dead.', hint:'Move toward the bridge if the note disappears.', notes:seq([[0,0],[0,0],[0,3],[0,3],[0,5],[0,5],[0,3],[0,0]],1,.5).map(n=>({ ...n, technique:'PM', duration:.35 })) },
+        { id:'technique-boss', title:'Technique Riff', short:'Slide, legato & mute', bpm:68, tag:'WORLD 10 BOSS', headline:'Use technique to shape the riff', lesson:'Follow the badges and combine palm-muted picking, a slide, hammer-on and pull-off in one original practice riff.', hint:'Learn one pair at a time, then connect them.', notes:[{string:0,fret:0,beat:1,technique:'PM',duration:.4},{string:0,fret:0,beat:1.5,technique:'PM',duration:.4},{string:0,fret:3,beat:2,technique:'SLIDE',duration:1},{string:0,fret:5,beat:3},{string:1,fret:5,beat:4,technique:'H',duration:1},{string:1,fret:7,beat:5},{string:1,fret:7,beat:6,technique:'P',duration:1},{string:1,fret:5,beat:7},{string:0,fret:3,beat:8},{string:0,fret:0,beat:9,technique:'PM',duration:1}] }
+      ]
     }
   ];
 
@@ -217,6 +263,9 @@
     { icon:'🖐️', title:'Clean Fingers', text:'Clear World 5', test:s => worldCleared(4, s) },
     { icon:'🧩', title:'Riff Builder', text:'Clear World 6', test:s => worldCleared(5, s) },
     { icon:'🚀', title:'Song Ready', text:'Clear World 7', test:s => worldCleared(6, s) },
+    { icon:'🤘', title:'Ready Position', text:'Clear Player Foundations', test:s => worldCleared(7, s) },
+    { icon:'🔊', title:'Chord Driver', text:'Clear Chords & Strumming', test:s => worldCleared(8, s) },
+    { icon:'✨', title:'Technique Starter', text:'Clear Guitar Techniques', test:s => worldCleared(9, s) },
     { icon:'💯', title:'Century Club', text:'Hit 100 notes', test:s => s.totalHits >= 100 }
   ];
 
@@ -260,6 +309,7 @@
     bindProgress();
     bindPwaInstall();
     renderWorldMap();
+    renderTabLessons();
     renderChords();
     renderInputChallenges();
     updateStats();
@@ -270,14 +320,14 @@
   }
 
   function defaultState() {
-    return { xp:0, stars:{}, songBest:{}, totalHits:0, totalMisses:0, bestCombo:0, bestAccuracy:0, practiceSeconds:0, practiceDays:{}, missionsPlayed:0, songRuns:0 };
+    return { xp:0, stars:{}, songBest:{}, totalHits:0, totalMisses:0, bestCombo:0, bestAccuracy:0, practiceSeconds:0, practiceDays:{}, missionsPlayed:0, songRuns:0, settings:{ gameView:'highway', noteDensity:1 } };
   }
 
   function loadProgress() {
     const base = defaultState();
     try {
       const saved = JSON.parse(localStorage.getItem(PROGRESS_KEY));
-      if (saved && typeof saved === 'object') return { ...base, ...saved, stars:saved.stars || {}, songBest:saved.songBest || {}, practiceDays:saved.practiceDays || {} };
+      if (saved && typeof saved === 'object') return { ...base, ...saved, stars:saved.stars || {}, songBest:saved.songBest || {}, practiceDays:saved.practiceDays || {}, settings:{ ...base.settings, ...(saved.settings || {}) } };
     } catch {}
     try {
       const old = JSON.parse(localStorage.getItem(OLD_PROGRESS_KEY));
@@ -304,6 +354,19 @@
     $$('.nav-button').forEach(b => b.classList.toggle('active', b.dataset.viewTarget === name));
     window.scrollTo({ top:0, behavior:'smooth' });
     if (name === 'progress') renderAchievements();
+  }
+
+  function renderTabLessons() {
+    const grid = $('#tabLessonGrid');
+    grid.innerHTML = TAB_LESSONS.map((lesson, i) => `<article class="tab-lesson-card" style="--lesson-string:${STRING_INFO[i % 6].color}"><div class="tab-lesson-icon">${lesson.icon}</div><div><h2>${escapeHtml(lesson.title)}</h2><p>${escapeHtml(lesson.text)}</p><div class="tab-example"><pre>${escapeHtml(lesson.tab)}</pre><span>${escapeHtml(lesson.fret)}</span></div></div><button class="button secondary" data-tab-exercise="${Math.min(i, 14)}">Try it</button></article>`).join('');
+    $$('[data-tab-exercise]', grid).forEach(button => button.addEventListener('click', () => {
+      setGameView('tab');
+      launchLevel(flatLevels[Number(button.dataset.tabExercise)]?.id || 'zero-open', true);
+    }));
+    $('#startTabCourse').addEventListener('click', () => {
+      setGameView('tab');
+      launchLevel('zero-open', true);
+    });
   }
 
   function renderWorldMap() {
@@ -337,6 +400,7 @@
 
   function isLevelUnlocked(index) {
     if (index <= 0) return true;
+    if (flatLevels[index]?.id === 'hold-and-pick') return true;
     const prev = flatLevels[index - 1];
     return Number(state.stars[prev.id] || 0) >= 1;
   }
@@ -363,10 +427,28 @@
   }
 
   function bindGameControls() {
-    $('#continueMission').addEventListener('click', () => launchLevel(flatLevels[nextLevelIndex()].id));
+    $('#continueMission').addEventListener('click', () => launchLevel(state.missionsPlayed === 0 && !state.stars['hold-and-pick'] ? 'hold-and-pick' : flatLevels[nextLevelIndex()].id));
+    $('#startFoundations').addEventListener('click', () => {
+      const foundation = worlds.find(world => world.id === 'player-foundations');
+      const next = foundation?.levels.find(level => Number(state.stars[level.id] || 0) < 1) || foundation?.levels[0];
+      launchLevel(next?.id || 'hold-and-pick');
+    });
     $('#exitGame').addEventListener('click', exitGame);
     $('#gameStart').addEventListener('click', startMission);
     $('#gamePause').addEventListener('click', togglePause);
+    $('#gameLoop').addEventListener('click', () => {
+      if (!game) return;
+      game.loop = !game.loop;
+      $('#gameLoop').textContent = game.loop ? '↻ Loop On' : '↻ Loop Off';
+      $('#gameLoop').setAttribute('aria-pressed', String(game.loop));
+    });
+    $('#showNoteHighway').addEventListener('click', () => setGameView('highway'));
+    $('#showTabHighway').addEventListener('click', () => setGameView('tab'));
+    $('#gameNoteDensity').addEventListener('change', e => {
+      state.settings = { ...(state.settings || {}), noteDensity:Number(e.target.value) || 1 };
+      localStorage.setItem(PROGRESS_KEY, JSON.stringify(state));
+      if (game?.level) launchLevel(game.level, true);
+    });
     $('#retryLevel').addEventListener('click', () => {
       $('#resultScreen').hidden = true;
       if (game?.mode === 'song' && game.level) launchLevel(game.level);
@@ -394,11 +476,20 @@
     });
   }
 
-  function launchLevel(levelOrId) {
+  function setGameView(view) {
+    const next = view === 'tab' ? 'tab' : 'highway';
+    state.settings = { ...(state.settings || {}), gameView:next };
+    localStorage.setItem(PROGRESS_KEY, JSON.stringify(state));
+    $('#gameScreen').classList.toggle('tab-mode', next === 'tab');
+    $('#showNoteHighway').classList.toggle('active', next === 'highway');
+    $('#showTabHighway').classList.toggle('active', next === 'tab');
+  }
+
+  function launchLevel(levelOrId, freePractice = false) {
     const isSongLevel = levelOrId && typeof levelOrId === 'object';
     const level = isSongLevel ? levelOrId : flatLevels.find(l => l.id === levelOrId);
     if (!level) return;
-    if (!isSongLevel && !isLevelUnlocked(flatLevels.findIndex(l => l.id === level.id))) {
+    if (!freePractice && !isSongLevel && !isLevelUnlocked(flatLevels.findIndex(l => l.id === level.id))) {
       toast('Earn a star on the previous mission first.');
       return;
     }
@@ -406,16 +497,22 @@
     $('#gameScreen').classList.remove('playing');
     const stringInfo = level.stringInfo || STRING_INFO;
     const secondsPerBeat = 60 / Math.max(20, Number(level.bpm) || 80);
-    const events = level.notes.map((n, i) => ({
+    const density = Math.max(.5, Math.min(1, Number(state.settings?.noteDensity) || 1));
+    const sourceNotes = density >= 1 ? level.notes : level.notes.filter((_, i) => i === 0 || Math.floor((i + 1) * density) > Math.floor(i * density));
+    const events = sourceNotes.map((n, i) => ({
       ...n,
       index:i,
       time:Number.isFinite(n.time) ? n.time : n.beat * secondsPerBeat,
       clock:level.mode === 'song' && level.songSpec?.backingEnabled && Number.isFinite(n.tick)
         ? n.tick - Number(level.sectionStartTick || 0)
         : (Number.isFinite(n.time) ? n.time : n.beat * secondsPerBeat),
+      durationClock:level.mode === 'song' && level.songSpec?.backingEnabled
+        ? Math.max(0, Number(n.durationTicks) || 0)
+        : Math.max(0, Number(n.duration) || (Number(n.durationTicks) || 0) / 960) * secondsPerBeat,
       midi:Number.isFinite(n.midi) ? n.midi : (stringInfo[n.string]?.openMidi ?? STRING_INFO[n.string]?.openMidi ?? 40) + n.fret,
       status:'pending',
-      element:null
+      element:null,
+      elements:[]
     })).sort((a,b) => a.clock - b.clock).map((e, i) => ({ ...e, index:i }));
     if (!events.length) {
       toast('This section has no playable guitar notes.');
@@ -438,8 +535,12 @@
       combo:0,
       bestCombo:0,
       score:0,
+      loop:false,
+      listenOnly:Boolean(level.listenOnly),
+      lastWrongFeedback:0,
       lastAcceptedPitchClass:null,
       lastAcceptedEvent:-1,
+      tabWindowStart:0,
       startedAtDate:Date.now(),
       endTime:(events.at(-1)?.time || 0) + 1.2,
       endClock:Number(level.sectionEndTick) > Number(level.sectionStartTick)
@@ -448,8 +549,10 @@
     };
     tabCurrentIndex = -1;
     $('#gameScreen').hidden = false;
+    setGameView(state.settings?.gameView || 'highway');
     $('#resultScreen').hidden = true;
     $('#gameStart').hidden = false;
+    $('#gameNoteDensity').value = String(density);
     $('#resultEyebrow').textContent = game.mode === 'song' ? 'SONG SECTION COMPLETE' : 'MISSION COMPLETE';
     $('#backToMap').textContent = game.mode === 'song' ? 'Back to Song' : 'Mission Map';
     $('#gameWorldLabel').textContent = game.mode === 'song'
@@ -464,6 +567,8 @@
     $('#gameStart').disabled = false;
     $('#gamePause').disabled = true;
     $('#gamePause').textContent = 'Pause';
+    $('#gameLoop').textContent = '↻ Loop Off';
+    $('#gameLoop').setAttribute('aria-pressed', 'false');
     $('#gameScore').textContent = '0';
     $('#gameAccuracy').textContent = '100%';
     $('#gameCombo').textContent = '0';
@@ -481,7 +586,7 @@
     $('#gameStart').disabled = true;
     $('#gameStart').textContent = 'Getting input…';
     try {
-      if (!audio.active) await startAudioInput(selectedDeviceId);
+      if (!game.listenOnly && !audio.active) await startAudioInput(selectedDeviceId);
       $('#gameScreen').classList.add('playing');
       await runCountdown();
       if (usesSongBackingClock()) {
@@ -540,8 +645,27 @@
     $('#gameProgressBar').style.width = `${Math.min(100, (done / total) * 100)}%`;
     const endClock = usesSongBackingClock() ? (game.endClock ?? game.events.at(-1)?.clock) : game.endTime;
     if (t >= endClock && done >= total) {
+      if (game.loop) {
+        restartPracticeLoop();
+        return;
+      }
       finishMission();
       return;
+    }
+    game.raf = requestAnimationFrame(gameLoop);
+  }
+
+  function restartPracticeLoop() {
+    game.events.forEach(ev => {
+      ev.status = 'pending';
+      ev.elements.forEach(el => { el.classList.remove('hit','miss','demo'); el.hidden = true; });
+    });
+    game.hits = 0; game.misses = 0; game.combo = 0; game.score = 0; game.startPerf = performance.now(); game.songClockTick = 0;
+    $$('.tab-cell.hit,.tab-cell.miss,.tab-cell.demo', $('#liveTab')).forEach(cell => cell.classList.remove('hit','miss','demo'));
+    updateGameHud();
+    if (usesSongBackingClock()) {
+      configureSongBacking(game.level);
+      alphaApi.play();
     }
     game.raf = requestAnimationFrame(gameLoop);
   }
@@ -551,21 +675,29 @@
     const board = $('#gameBoard');
     const rect = board.getBoundingClientRect();
     const hitY = rect.height - 72;
-    const spawnY = -28;
-    const laneWidth = rect.width / 6;
+    const spawnY = 18;
     game.events.forEach(ev => {
       const dt = ev.clock - t;
-      const el = ev.element;
-      if (!el) return;
+      if (!ev.elements?.length) return;
       const clock = gameClockWindows();
       const inRange = dt <= clock.lookahead && dt >= -clock.expired;
-      el.hidden = !inRange;
+      ev.elements.forEach(el => { el.hidden = !inRange; });
       if (!inRange) return;
-      const progress = 1 - dt / clock.lookahead;
+      const progress = Math.max(0, Math.min(1.08, 1 - dt / clock.lookahead));
       const y = spawnY + progress * (hitY - spawnY);
-      const x = laneWidth * (ev.string + .5);
-      el.style.left = `${x}px`;
-      el.style.top = `${y}px`;
+      const flatView = $('#gameScreen').classList.contains('tab-mode');
+      const roadWidth = flatView ? rect.width : rect.width * (.34 + .66 * Math.min(1, progress));
+      const roadLeft = (rect.width - roadWidth) / 2;
+      const scale = .58 + .42 * Math.min(1, progress);
+      const sustain = Math.max(0, Number(ev.durationClock || 0) / clock.lookahead * (hitY - spawnY));
+      ev.elements.forEach(el => {
+        const stringIndex = Number(el.dataset.stringIndex);
+        const x = roadLeft + roadWidth * ((stringIndex + .5) / 6);
+        el.style.left = `${x}px`;
+        el.style.top = `${y}px`;
+        el.style.transform = `translate(-50%,-50%) scale(${scale})`;
+        el.style.setProperty('--sustain-length', `${sustain}px`);
+      });
     });
     const next = game.events.find(e => e.status === 'pending');
     $('#nextNoteText').textContent = next ? formatExpected(next) : 'Finish strong!';
@@ -573,8 +705,17 @@
 
   function markExpiredNotes(t) {
     game.events.forEach(ev => {
-      if (ev.status === 'pending' && t > ev.clock + gameClockWindows().hit) markMiss(ev);
+      if (ev.status === 'pending' && game.listenOnly && t >= ev.clock) markDemo(ev);
+      else if (ev.status === 'pending' && t > ev.clock + gameClockWindows().hit) markMiss(ev);
     });
+  }
+
+  function markDemo(ev) {
+    ev.status = 'demo';
+    game.hits++;
+    ev.elements.forEach(el => el.classList.add('demo'));
+    updateTabEvent(ev);
+    updateGameHud();
   }
 
   function updateCurrentTab(t) {
@@ -588,6 +729,9 @@
     });
     if (closest === tabCurrentIndex) return;
     tabCurrentIndex = closest;
+    if (closest >= 0 && (closest < game.tabWindowStart + 4 || closest >= game.tabWindowStart + 28)) {
+      renderLiveTabWindow(Math.max(0, closest - 8));
+    }
     $$('.tab-cell.current', $('#liveTab')).forEach(c => c.classList.remove('current'));
     if (closest >= 0) {
       $$(`[data-tab-col="${closest}"]`, $('#liveTab')).forEach(c => c.classList.add('current'));
@@ -600,10 +744,11 @@
     const info = game?.stringInfo || STRING_INFO;
     const wrap = $('#stringLabels');
     if (!wrap) return;
+    $('#laneBackground').innerHTML = info.map((s, i) => `<i class="string-rail string-${i}" style="--string-color:${s.color || STRING_INFO[i]?.color}"></i>`).join('');
     wrap.innerHTML = info.map((s, i) => {
       const number = info.length - i;
       const edge = i === 0 ? ' thick' : i === info.length - 1 ? ' thin' : '';
-      return `<span>${escapeHtml(s.label)}<small>${number}${edge}</small></span>`;
+      return `<span class="string-label-${i}" style="--string-color:${s.color || STRING_INFO[i]?.color}">${escapeHtml(s.label)}<small>${number}${edge}</small></span>`;
     }).join('');
   }
 
@@ -611,25 +756,38 @@
     const layer = $('#noteLayer');
     layer.innerHTML = '';
     game.events.forEach(ev => {
-      const el = document.createElement('div');
-      el.className = `falling-note s${6 - ev.string}`;
-      el.textContent = ev.fret;
-      el.hidden = true;
-      el.dataset.eventIndex = ev.index;
-      layer.appendChild(el);
-      ev.element = el;
+      const shape = Array.isArray(ev.chordNotes) && ev.chordNotes.length ? ev.chordNotes : [{ string:ev.string, fret:ev.fret, midi:ev.midi, technique:ev.technique }];
+      ev.elements = shape.map(note => {
+        const el = document.createElement('div');
+        const technique = note.technique || ev.technique || '';
+        el.className = `falling-note string-${note.string} ${game.listenOnly ? 'listen-note' : ''} ${Number(note.fret) === 0 ? 'open-note' : ''} ${technique ? 'has-technique' : ''}`;
+        el.innerHTML = `<b>${Number(note.fret)}</b>${technique ? `<small>${escapeHtml(technique)}</small>` : ''}`;
+        el.hidden = true;
+        el.dataset.eventIndex = ev.index;
+        el.dataset.stringIndex = note.string;
+        layer.appendChild(el);
+        return el;
+      });
+      ev.element = ev.elements[0];
     });
   }
 
   function renderLiveTab() {
+    renderLiveTabWindow(0);
+  }
+
+  function renderLiveTabWindow(start = 0) {
     const wrap = $('#liveTab');
     const info = game?.stringInfo || STRING_INFO;
+    game.tabWindowStart = Math.max(0, Math.min(start, Math.max(0, game.events.length - 32)));
+    const visibleEvents = game.events.slice(game.tabWindowStart, game.tabWindowStart + 32);
     const rows = Array.from({ length:info.length }, (_, i) => info.length - 1 - i);
-    wrap.innerHTML = `<div class="tab-grid" style="--tab-cols:${game.events.length}">${rows.map(stringIndex => {
+    wrap.innerHTML = `<div class="tab-grid" style="--tab-cols:${visibleEvents.length}">${rows.map(stringIndex => {
       const label = info[stringIndex]?.label || `S${info.length - stringIndex}`;
-      const cells = game.events.map(ev => {
-        const isNote = ev.string === stringIndex;
-        return `<span class="tab-cell ${isNote ? 'note' : ''}" data-tab-col="${ev.index}" data-tab-event="${ev.index}">${isNote ? ev.fret : '—'}</span>`;
+      const cells = visibleEvents.map(ev => {
+        const shape = Array.isArray(ev.chordNotes) && ev.chordNotes.length ? ev.chordNotes : [ev];
+        const tabNote = shape.find(note => note.string === stringIndex);
+        return `<span class="tab-cell string-text-${stringIndex} ${tabNote ? 'note' : ''} ${ev.status !== 'pending' ? ev.status : ''}" data-tab-col="${ev.index}" data-tab-event="${ev.index}">${tabNote ? tabNote.fret : '—'}</span>`;
       }).join('');
       return `<div class="tab-row"><span class="tab-row-label">${escapeHtml(label)}</span>${cells}</div>`;
     }).join('')}</div>`;
@@ -649,7 +807,14 @@
     const candidates = game.events
       .filter(ev => ev.status === 'pending' && Math.abs(ev.clock - t) <= hitWindow && pitchMatches(result.freq, midiToFreq(ev.midi)))
       .sort((a,b) => Math.abs(a.clock - t) - Math.abs(b.clock - t));
-    if (!candidates.length) return;
+    if (!candidates.length) {
+      const expected = game.events.find(ev => ev.status === 'pending' && Math.abs(ev.clock - t) <= hitWindow);
+      if (expected && result.onset && performance.now() - game.lastWrongFeedback > 500) {
+        game.lastWrongFeedback = performance.now();
+        showGameFeedback('WRONG NOTE', 'miss');
+      }
+      return;
+    }
     const ev = candidates[0];
     const pitchClass = ev.midi % 12;
     const repeatedPitch = game.lastAcceptedPitchClass === pitchClass;
@@ -668,9 +833,11 @@
     const timing = Math.abs(ev.clock - t) / gameClockWindows().unitsPerSecond;
     const timingBonus = timing < .12 ? 60 : timing < .24 ? 30 : 0;
     game.score += 100 + timingBonus + Math.min(100, game.combo * 4);
-    ev.element?.classList.add('hit');
+    ev.elements.forEach(el => el.classList.add('hit'));
     updateTabEvent(ev);
-    showGameFeedback(timing < .12 ? 'PERFECT!' : 'HIT!', 'hit');
+    const signedTiming = (t - ev.clock) / gameClockWindows().unitsPerSecond;
+    const feedback = timing < .1 ? 'PERFECT!' : signedTiming < 0 ? 'EARLY' : 'LATE';
+    showGameFeedback(feedback, 'hit');
     updateGameHud();
   }
 
@@ -679,7 +846,7 @@
     ev.status = 'miss';
     game.misses++;
     game.combo = 0;
-    ev.element?.classList.add('miss');
+    ev.elements.forEach(el => el.classList.add('miss'));
     updateTabEvent(ev);
     showGameFeedback('MISS', 'miss');
     updateGameHud();
@@ -1141,6 +1308,7 @@
     $('#songSectionSelect').addEventListener('change', updateSongLevelPreview);
     $('#songLineMode').addEventListener('change', updateSongLevelPreview);
     $('#songGameSpeed').addEventListener('change', updateSongLevelPreview);
+    $('#songDifficulty').addEventListener('change', updateSongLevelPreview);
     $('#songBackingEnabled').addEventListener('change', updateSongLevelPreview);
     $('#songBackingVolume').addEventListener('input', e => {
       $('#songBackingVolumeText').textContent = `${Math.round(Number(e.target.value) * 100)}%`;
@@ -1271,7 +1439,7 @@
     select.value = String(playable[0].index);
     $('#playSongAsLevel').disabled = false;
     $('#songGameSetup').hidden = false;
-    $('#songGameInfo').textContent = `${playable.length} playable guitar track${playable.length === 1 ? '' : 's'} found. Song-game beta uses the file's fret/string data and simplifies simultaneous chords to one scored note.`;
+    $('#songGameInfo').textContent = `${playable.length} playable guitar track${playable.length === 1 ? '' : 's'} found. Full chord shapes are shown; the selected low or high anchor lets the microphone score them reliably.`;
     updateSongSectionOptions();
     updateSongLevelPreview();
   }
@@ -1343,6 +1511,7 @@
       totalBars:meta.bars.length,
       lineMode:$('#songLineMode').value === 'high' ? 'high' : 'low',
       speed:Math.max(.4, Math.min(1, Number($('#songGameSpeed').value) || .75)),
+      difficulty:Math.max(1, Math.min(8, Number($('#songDifficulty').value) || 4)),
       backingEnabled:$('#songBackingEnabled').value !== 'off',
       backingVolume:Math.max(0, Math.min(1, Number($('#songBackingVolume').value) || 0))
     };
@@ -1355,7 +1524,8 @@
       const level = buildImportedLevel(loadedSongScore, spec, true);
       const simplification = level.chordsSimplified ? ` · ${level.chordsSimplified} chord beat${level.chordsSimplified === 1 ? '' : 's'} simplified` : '';
       const backing = spec.backingEnabled ? ' · backing instruments on' : ' · backing off';
-      $('#songLevelPreview').textContent = `${level.notes.length} scored notes · ${Math.round(level.bpm)} BPM game speed${backing}${simplification}`;
+      const stage = spec.difficulty === 1 ? 'rhythm listen' : `difficulty ${spec.difficulty}/8`;
+      $('#songLevelPreview').textContent = `${level.notes.length} ${spec.difficulty === 1 ? 'guided' : 'scored'} notes · ${stage} · ${Math.round(level.bpm)} BPM${backing}${simplification}`;
     } catch (err) {
       $('#songLevelPreview').textContent = err.message || 'This section cannot be converted.';
     }
@@ -1410,8 +1580,11 @@
           const fallbackTick = Number(bar?.masterBar?.start || 0) + Number(beat?.playbackStart || 0);
           const tick = Number.isFinite(Number(beat?.absolutePlaybackStart)) ? Number(beat.absolutePlaybackStart) : fallbackTick;
           const key = String(Math.round(tick));
-          if (!groups.has(key)) groups.set(key, { tick, notes:[] });
-          groups.get(key).notes.push(...notes);
+          if (!groups.has(key)) groups.set(key, { tick, notes:[], durationTicks:0 });
+          const group = groups.get(key);
+          group.notes.push(...notes);
+          const beatDuration = Number(beat?.playbackDuration || beat?.duration || 0);
+          if (Number.isFinite(beatDuration)) group.durationTicks = Math.max(group.durationTicks, beatDuration);
         });
       });
     });
@@ -1433,16 +1606,17 @@
         const key = `${stringNumber}:${fret}:${midi}`;
         if (seen.has(key)) return;
         seen.add(key);
-        unique.push({ stringNumber, fret, midi, note });
+        unique.push({ stringNumber, string:stringNumber - 1, fret, midi, note, technique:readTechnique(note) });
       });
       if (!unique.length) return;
       if (unique.length > 1) chordGroups++;
       unique.sort((a,b) => a.midi - b.midi);
       const chosen = spec.lineMode === 'high' ? unique.at(-1) : unique[0];
       const quarterBeats = (group.tick - firstTick) / 960;
-      raw.push({ string:chosen.stringNumber - 1, fret:chosen.fret, midi:chosen.midi, tick:group.tick, beat:2 + quarterBeats });
+      raw.push({ string:chosen.stringNumber - 1, fret:chosen.fret, midi:chosen.midi, tick:group.tick, beat:2 + quarterBeats, durationTicks:group.durationTicks, technique:chosen.technique, chordNotes:unique.map(note => ({ string:note.string, fret:note.fret, midi:note.midi, technique:note.technique })) });
     });
-    const notes = raw.filter((n, i) => i === 0 || n.beat !== raw[i-1].beat || n.midi !== raw[i-1].midi);
+    const completeNotes = raw.filter((n, i) => i === 0 || n.beat !== raw[i-1].beat || n.midi !== raw[i-1].midi);
+    const notes = applySongDifficulty(completeNotes, spec.difficulty);
     if (!notes.length) throw new Error('No scored notes remained after simplifying this section.');
     const noteLimit = spec.fullSong ? 2000 : 420;
     if (notes.length > noteLimit) throw new Error(spec.fullSong ? 'This song has more than 2,000 scored notes. Choose an 8-bar section for smoother play.' : 'This 8-bar section is unusually dense. Choose a different guitar track for now.');
@@ -1454,10 +1628,10 @@
     const finalTick = ordered.at(-1)?.tick ?? firstTick;
     const sectionEndTick = Number(nextBar?.masterBar?.start ?? (finalTick + 960));
     return {
-      id:`song:${currentSong?.id || 'local'}:${spec.trackIndex}:${spec.startBar}:${spec.endBar}:${spec.lineMode}:${spec.speed}`,
+      id:`song:${currentSong?.id || 'local'}:${spec.trackIndex}:${spec.startBar}:${spec.endBar}:${spec.lineMode}:${spec.speed}:${spec.difficulty}`,
       mode:'song',
       songId:currentSong?.id || 'local',
-      songKey:`${currentSong?.id || 'local'}:${spec.trackIndex}:${spec.startBar}:${spec.endBar}:${spec.lineMode}`,
+      songKey:`${currentSong?.id || 'local'}:${spec.trackIndex}:${spec.startBar}:${spec.endBar}:${spec.lineMode}:d${spec.difficulty}`,
       trackIndex:spec.trackIndex,
       trackName,
       songSpec:{ ...spec },
@@ -1467,13 +1641,41 @@
       title:`${stripExtension(currentSong?.name || score?.title || 'Imported Song')} · ${sectionName}`,
       tag:'SONG GAME · BETA',
       headline:`${trackName} · ${sectionName}`,
-      lesson:spec.lineMode === 'high' ? 'Lead mode scores the highest note whenever the tab contains a chord. Follow the falling fret blocks and play clean single notes.' : 'Riff mode scores the lowest/root note whenever the tab contains a chord. Follow the falling fret blocks and play clean single notes.',
+      lesson:spec.difficulty === 1 ? 'Listen to the backing and watch how the notes line up with the pulse. Tap your foot and count before trying to play.' : spec.lineMode === 'high' ? 'The highway shows every note in a chord shape while the microphone uses its highest note as the scoring anchor.' : 'The highway shows every note in a chord shape while the microphone uses its lowest/root note as the scoring anchor.',
       hint:'The live tab below mirrors the simplified playable line generated from your imported file.',
       bpm:gameBpm,
       notes,
+      listenOnly:spec.difficulty === 1,
+      difficulty:spec.difficulty,
       chordsSimplified:chordGroups,
       previewOnly
     };
+  }
+
+  function applySongDifficulty(notes, difficulty = 7) {
+    const stage = Math.max(1, Math.min(8, Number(difficulty) || 7));
+    if (stage >= 7) return notes;
+    if (stage === 1) return notes.filter((_, i) => i % 2 === 0);
+    if (stage === 2) {
+      const counts = new Map();
+      notes.forEach(note => counts.set(note.string, (counts.get(note.string) || 0) + 1));
+      const mainString = [...counts.entries()].sort((a,b) => b[1] - a[1])[0]?.[0] ?? 0;
+      const result = notes.filter((note, i) => note.string === mainString && i % 2 === 0);
+      return result.length ? result : notes.slice(0, 1);
+    }
+    const ratios = { 3:.35, 4:.5, 5:.68, 6:.84 };
+    const keepEvery = 1 / ratios[stage];
+    const result = notes.filter((_, i) => Math.floor((i + 1) / keepEvery) > Math.floor(i / keepEvery) || i === 0);
+    return result.length ? result : notes.slice(0, 1);
+  }
+
+  function readTechnique(note) {
+    if (note?.isPalmMute || note?.palmMute) return 'PM';
+    if ((Number(note?.slideType) || 0) > 0) return 'SLIDE';
+    if (note?.isHammerPullOrigin || note?.hammerPullOrigin || note?.hammerPullDestination) return 'H/P';
+    if ((Number(note?.bendType) || 0) > 0 || Number(note?.bends?.length) > 0) return 'BEND';
+    if ((Number(note?.vibrato) || 0) > 0) return 'VIB';
+    return '';
   }
 
   function makeStringInfoFromStaff(staff) {
@@ -1482,7 +1684,7 @@
     return tuningLowToHigh.map((midi, i) => {
       const name = midiToName(Math.round(midi));
       const pitch = name.replace(/\d+$/, '');
-      return { label:i === 5 && pitch === 'E' ? 'e' : pitch, number:6 - i, name:`String ${6 - i} (${name})`, openMidi:Math.round(midi) };
+      return { label:i === 5 && pitch === 'E' ? 'e' : pitch, number:6 - i, name:`String ${6 - i} (${name})`, openMidi:Math.round(midi), color:STRING_INFO[i]?.color };
     });
   }
 
@@ -1547,7 +1749,7 @@
   async function registerServiceWorker() {
     if (!('serviceWorker' in navigator)) return;
     try {
-      const reg = await navigator.serviceWorker.register('./sw.js?v=0.5.0');
+      const reg = await navigator.serviceWorker.register('./sw.js?v=0.6.0');
       reg.update().catch(() => null);
     } catch (err) { console.error(err); }
   }
