@@ -2,6 +2,15 @@
 
 A free Chromebook-friendly PWA that teaches beginner electric guitar as a game.
 
+## v0.4.0 — Synchronized Backing Instruments
+
+- Imported song levels can play AlphaTab's synthesized backing instruments
+- The selected guitar track is muted so the player supplies that part
+- The note highway follows AlphaTab's MIDI-tick clock to stay aligned through tempo changes
+- Backing playback follows the selected 50–100% game speed
+- Pause, resume, stop, section range and backing volume are shared with the game
+- Backing can be disabled for silent note-highway practice
+
 ## v0.3.0 — Imported Song Levels
 
 - Guitar Pro / MusicXML files can now be turned into falling-note song levels

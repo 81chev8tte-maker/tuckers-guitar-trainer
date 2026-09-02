@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const APP_VERSION = '0.3.0';
+  const APP_VERSION = '0.4.0';
   const PROGRESS_KEY = 'tgq-progress-v2';
   const OLD_PROGRESS_KEY = 'tgt-progress-v1';
   const DB_NAME = 'tucker-guitar-trainer';
@@ -179,6 +179,8 @@
   let loadedSongScore = null;
   let loadedSongTracks = [];
   let songLevelSpec = null;
+  let alphaPlayerReady = false;
+  let mutedBackingTrack = null;
   let deferredInstallPrompt = null;
   let metronomeTimer = null;
   let metronomeBeat = 0;
@@ -359,10 +361,13 @@
       ...n,
       index:i,
       time:Number.isFinite(n.time) ? n.time : n.beat * secondsPerBeat,
+      clock:level.mode === 'song' && level.songSpec?.backingEnabled && Number.isFinite(n.tick)
+        ? n.tick - Number(level.sectionStartTick || 0)
+        : (Number.isFinite(n.time) ? n.time : n.beat * secondsPerBeat),
       midi:Number.isFinite(n.midi) ? n.midi : (stringInfo[n.string]?.openMidi ?? STRING_INFO[n.string]?.openMidi ?? 40) + n.fret,
       status:'pending',
       element:null
-    })).sort((a,b) => a.time - b.time).map((e, i) => ({ ...e, index:i }));
+    })).sort((a,b) => a.clock - b.clock).map((e, i) => ({ ...e, index:i }));
     if (!events.length) {
       toast('This section has no playable guitar notes.');
       return;
@@ -375,6 +380,8 @@
       running:false,
       paused:false,
       startPerf:0,
+      songClockTick:0,
+      songTempo:Number(level.bpm) || 80,
       pausedAt:0,
       raf:0,
       hits:0,
@@ -385,7 +392,10 @@
       lastAcceptedPitchClass:null,
       lastAcceptedEvent:-1,
       startedAtDate:Date.now(),
-      endTime:(events.at(-1)?.time || 0) + 1.2
+      endTime:(events.at(-1)?.time || 0) + 1.2,
+      endClock:Number(level.sectionEndTick) > Number(level.sectionStartTick)
+        ? Number(level.sectionEndTick) - Number(level.sectionStartTick)
+        : null
     };
     tabCurrentIndex = -1;
     $('#gameScreen').hidden = false;
@@ -424,6 +434,10 @@
     try {
       if (!audio.active) await startAudioInput(selectedDeviceId);
       await runCountdown();
+      if (usesSongBackingClock()) {
+        configureSongBacking(game.level);
+        if (!alphaApi.play()) throw new Error('Backing player is not ready yet.');
+      }
       game.running = true;
       game.startPerf = performance.now();
       game.paused = false;
@@ -466,14 +480,15 @@
       game.raf = requestAnimationFrame(gameLoop);
       return;
     }
-    const t = (now - game.startPerf) / 1000;
+    const t = currentGameClock(now);
     updateGameBoard(t);
     markExpiredNotes(t);
     updateCurrentTab(t);
     const total = game.events.length;
     const done = game.hits + game.misses;
     $('#gameProgressBar').style.width = `${Math.min(100, (done / total) * 100)}%`;
-    if (t >= game.endTime && done >= total) {
+    const endClock = usesSongBackingClock() ? (game.endClock ?? game.events.at(-1)?.clock) : game.endTime;
+    if (t >= endClock && done >= total) {
       finishMission();
       return;
     }
@@ -488,13 +503,14 @@
     const spawnY = -28;
     const laneWidth = rect.width / 6;
     game.events.forEach(ev => {
-      const dt = ev.time - t;
+      const dt = ev.clock - t;
       const el = ev.element;
       if (!el) return;
-      const inRange = dt <= NOTE_LOOKAHEAD && dt >= -0.75;
+      const clock = gameClockWindows();
+      const inRange = dt <= clock.lookahead && dt >= -clock.expired;
       el.hidden = !inRange;
       if (!inRange) return;
-      const progress = 1 - dt / NOTE_LOOKAHEAD;
+      const progress = 1 - dt / clock.lookahead;
       const y = spawnY + progress * (hitY - spawnY);
       const x = laneWidth * (ev.string + .5);
       el.style.left = `${x}px`;
@@ -506,7 +522,7 @@
 
   function markExpiredNotes(t) {
     game.events.forEach(ev => {
-      if (ev.status === 'pending' && t > ev.time + HIT_WINDOW) markMiss(ev);
+      if (ev.status === 'pending' && t > ev.clock + gameClockWindows().hit) markMiss(ev);
     });
   }
 
@@ -516,7 +532,7 @@
     let closestDelta = Infinity;
     game.events.forEach(ev => {
       if (ev.status !== 'pending') return;
-      const d = Math.abs(ev.time - t);
+      const d = Math.abs(ev.clock - t);
       if (d < closestDelta) { closestDelta = d; closest = ev.index; }
     });
     if (closest === tabCurrentIndex) return;
@@ -577,11 +593,11 @@
     if (tunerActive) updateTuner(result);
     if (!game?.running || game.paused || !result.freq) return;
     $('#gameHearing').textContent = result.note || '—';
-    const now = performance.now();
-    const t = (now - game.startPerf) / 1000;
+    const t = currentGameClock(performance.now());
+    const hitWindow = gameClockWindows().hit;
     const candidates = game.events
-      .filter(ev => ev.status === 'pending' && Math.abs(ev.time - t) <= HIT_WINDOW && pitchMatches(result.freq, midiToFreq(ev.midi)))
-      .sort((a,b) => Math.abs(a.time - t) - Math.abs(b.time - t));
+      .filter(ev => ev.status === 'pending' && Math.abs(ev.clock - t) <= hitWindow && pitchMatches(result.freq, midiToFreq(ev.midi)))
+      .sort((a,b) => Math.abs(a.clock - t) - Math.abs(b.clock - t));
     if (!candidates.length) return;
     const ev = candidates[0];
     const pitchClass = ev.midi % 12;
@@ -598,7 +614,7 @@
     game.hits++;
     game.combo++;
     game.bestCombo = Math.max(game.bestCombo, game.combo);
-    const timing = Math.abs(ev.time - t);
+    const timing = Math.abs(ev.clock - t) / gameClockWindows().unitsPerSecond;
     const timingBonus = timing < .12 ? 60 : timing < .24 ? 30 : 0;
     game.score += 100 + timingBonus + Math.min(100, game.combo * 4);
     ev.element?.classList.add('hit');
@@ -691,11 +707,13 @@
     if (!game.paused) {
       game.paused = true;
       game.pausedAt = performance.now();
+      if (usesSongBackingClock()) alphaApi?.pause();
       $('#gamePause').textContent = 'Resume';
       showGameFeedback('PAUSED', 'hit');
     } else {
       game.startPerf += performance.now() - game.pausedAt;
       game.paused = false;
+      if (usesSongBackingClock()) alphaApi?.play();
       $('#gamePause').textContent = 'Pause';
     }
   }
@@ -711,7 +729,60 @@
 
   function stopGameLoop() {
     if (game?.raf) cancelAnimationFrame(game.raf);
+    if (game?.mode === 'song') releaseSongBacking();
     if (game) { game.running = false; game.paused = false; game.raf = 0; }
+  }
+
+  function releaseSongBacking() {
+    alphaApi?.stop?.();
+    if (mutedBackingTrack && alphaApi) {
+      alphaApi.changeTrackMute([mutedBackingTrack], false);
+      mutedBackingTrack = null;
+    }
+    if (alphaApi) alphaApi.playbackRange = null;
+  }
+
+  function usesSongBackingClock() {
+    return Boolean(game?.mode === 'song' && game.level?.songSpec?.backingEnabled && alphaApi);
+  }
+
+  function currentGameClock(now = performance.now()) {
+    if (!game) return 0;
+    return usesSongBackingClock() ? game.songClockTick : (now - game.startPerf) / 1000;
+  }
+
+  function gameClockWindows() {
+    if (!usesSongBackingClock()) {
+      return { lookahead:NOTE_LOOKAHEAD, hit:HIT_WINDOW, expired:.75, unitsPerSecond:1 };
+    }
+    const unitsPerSecond = 960 * Math.max(20, Number(game.songTempo) || 80) / 60;
+    return {
+      lookahead:NOTE_LOOKAHEAD * unitsPerSecond,
+      hit:HIT_WINDOW * unitsPerSecond,
+      expired:.75 * unitsPerSecond,
+      unitsPerSecond
+    };
+  }
+
+  function configureSongBacking(level) {
+    if (!alphaApi || !alphaPlayerReady) throw new Error('Backing instruments are still loading.');
+    if (mutedBackingTrack) {
+      alphaApi.changeTrackMute([mutedBackingTrack], false);
+      mutedBackingTrack = null;
+    }
+    const selectedTrack = loadedSongScore?.tracks?.[level.trackIndex];
+    if (selectedTrack) {
+      alphaApi.changeTrackMute([selectedTrack], true);
+      mutedBackingTrack = selectedTrack;
+    }
+    alphaApi.playbackSpeed = Number(level.songSpec?.speed) || 1;
+    alphaApi.masterVolume = Number(level.songSpec?.backingVolume ?? .8);
+    alphaApi.playbackRange = {
+      startTick:Number(level.sectionStartTick) || 0,
+      endTick:Number(level.sectionEndTick) || Number(level.sectionStartTick) + 960
+    };
+    alphaApi.tickPosition = Number(level.sectionStartTick) || 0;
+    game.songClockTick = 0;
   }
 
   function formatExpected(ev) {
@@ -1016,6 +1087,11 @@
     $('#songSectionSelect').addEventListener('change', updateSongLevelPreview);
     $('#songLineMode').addEventListener('change', updateSongLevelPreview);
     $('#songGameSpeed').addEventListener('change', updateSongLevelPreview);
+    $('#songBackingEnabled').addEventListener('change', updateSongLevelPreview);
+    $('#songBackingVolume').addEventListener('input', e => {
+      $('#songBackingVolumeText').textContent = `${Math.round(Number(e.target.value) * 100)}%`;
+      if (alphaApi) alphaApi.masterVolume = Number(e.target.value);
+    });
     $('#playSongAsLevel').addEventListener('click', startImportedSongLevel);
   }
 
@@ -1071,6 +1147,7 @@
     loadedSongScore = null;
     loadedSongTracks = [];
     songLevelSpec = null;
+    alphaPlayerReady = false;
     $('#playerEmpty').hidden = true;
     $('#playerContent').hidden = false;
     $('#playerSongName').textContent = stripExtension(song.name);
@@ -1102,7 +1179,12 @@
       });
       alphaApi.renderStarted.on(() => { $('#alphaStatus').textContent = 'Rendering…'; });
       alphaApi.renderFinished.on(() => { $('#alphaStatus').textContent = 'Ready'; });
-      alphaApi.playerReady.on(() => { $('#alphaStatus').textContent = 'Ready to play'; });
+      alphaApi.playerReady.on(() => { alphaPlayerReady = true; $('#alphaStatus').textContent = 'Ready to play'; });
+      alphaApi.playerPositionChanged.on(args => {
+        if (!game || game.mode !== 'song') return;
+        game.songClockTick = Math.max(0, Number(args.currentTick) - Number(game.level.sectionStartTick || 0));
+        game.songTempo = Number(args.modifiedTempo) || Number(game.level.bpm) || 80;
+      });
       alphaApi.playerStateChanged.on(args => { $('#alphaPlay').textContent = args.state === 1 ? '❚❚ Pause' : '▶ Play'; });
       alphaApi.error.on(err => { console.error(err); $('#alphaStatus').textContent = 'Could not open this file'; $('#songGameSetup').hidden = true; });
       alphaApi.load(await song.blob.arrayBuffer());
@@ -1203,7 +1285,9 @@
       endBar,
       totalBars:meta.bars.length,
       lineMode:$('#songLineMode').value === 'high' ? 'high' : 'low',
-      speed:Math.max(.4, Math.min(1, Number($('#songGameSpeed').value) || .75))
+      speed:Math.max(.4, Math.min(1, Number($('#songGameSpeed').value) || .75)),
+      backingEnabled:$('#songBackingEnabled').value !== 'off',
+      backingVolume:Math.max(0, Math.min(1, Number($('#songBackingVolume').value) || 0))
     };
   }
 
@@ -1213,7 +1297,8 @@
     try {
       const level = buildImportedLevel(loadedSongScore, spec, true);
       const simplification = level.chordsSimplified ? ` · ${level.chordsSimplified} chord beat${level.chordsSimplified === 1 ? '' : 's'} simplified` : '';
-      $('#songLevelPreview').textContent = `${level.notes.length} scored notes · ${Math.round(level.bpm)} BPM game speed${simplification}`;
+      const backing = spec.backingEnabled ? ' · backing instruments on' : ' · backing off';
+      $('#songLevelPreview').textContent = `${level.notes.length} scored notes · ${Math.round(level.bpm)} BPM game speed${backing}${simplification}`;
     } catch (err) {
       $('#songLevelPreview').textContent = err.message || 'This section cannot be converted.';
     }
@@ -1298,7 +1383,7 @@
       unique.sort((a,b) => a.midi - b.midi);
       const chosen = spec.lineMode === 'high' ? unique.at(-1) : unique[0];
       const quarterBeats = (group.tick - firstTick) / 960;
-      raw.push({ string:chosen.stringNumber - 1, fret:chosen.fret, midi:chosen.midi, beat:2 + quarterBeats });
+      raw.push({ string:chosen.stringNumber - 1, fret:chosen.fret, midi:chosen.midi, tick:group.tick, beat:2 + quarterBeats });
     });
     const notes = raw.filter((n, i) => i === 0 || n.beat !== raw[i-1].beat || n.midi !== raw[i-1].midi);
     if (!notes.length) throw new Error('No scored notes remained after simplifying this section.');
@@ -1306,6 +1391,10 @@
     const stringInfo = makeStringInfoFromStaff(staff);
     const trackName = track?.name || track?.shortName || `Track ${spec.trackIndex + 1}`;
     const sectionName = `Bars ${spec.startBar + 1}–${spec.endBar}`;
+    const sectionStartTick = Number(bars[0]?.masterBar?.start ?? firstTick);
+    const nextBar = meta.bars[spec.endBar];
+    const finalTick = ordered.at(-1)?.tick ?? firstTick;
+    const sectionEndTick = Number(nextBar?.masterBar?.start ?? (finalTick + 960));
     return {
       id:`song:${currentSong?.id || 'local'}:${spec.trackIndex}:${spec.startBar}:${spec.endBar}:${spec.lineMode}:${spec.speed}`,
       mode:'song',
@@ -1314,6 +1403,8 @@
       trackIndex:spec.trackIndex,
       trackName,
       songSpec:{ ...spec },
+      sectionStartTick,
+      sectionEndTick,
       stringInfo,
       title:`${stripExtension(currentSong?.name || score?.title || 'Imported Song')} · ${sectionName}`,
       tag:'SONG GAME · BETA',
@@ -1339,6 +1430,8 @@
 
   function destroyAlphaTab() {
     if (alphaApi) { try { alphaApi.destroy(); } catch {} alphaApi=null; }
+    alphaPlayerReady = false;
+    mutedBackingTrack = null;
     loadedSongScore = null;
     loadedSongTracks = [];
     $('#alphaTab').innerHTML='';
@@ -1396,7 +1489,7 @@
   async function registerServiceWorker() {
     if (!('serviceWorker' in navigator)) return;
     try {
-      const reg = await navigator.serviceWorker.register('./sw.js?v=0.3.0');
+      const reg = await navigator.serviceWorker.register('./sw.js?v=0.4.0');
       reg.update().catch(() => null);
     } catch (err) { console.error(err); }
   }
