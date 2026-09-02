@@ -39,7 +39,7 @@ main{width:min(1180px,calc(100% - 28px));margin:0 auto;padding:26px 0 10px}.view
 /* v0.3 imported-song level builder */
 .song-level-builder{margin:12px 0 14px;padding:16px;border:1px solid rgba(168,242,61,.28);border-radius:15px;background:linear-gradient(135deg,rgba(168,242,61,.07),rgba(86,215,255,.035)),var(--surface-2)}
 .song-level-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:13px}.song-level-head h3{margin:0 0 5px;font-size:1.25rem}.song-level-head p:last-child{margin:0}.song-beta-badge{border:1px solid rgba(168,242,61,.45);background:rgba(168,242,61,.08);color:var(--accent);border-radius:999px;padding:5px 8px;font-size:.62rem;font-weight:1000;letter-spacing:.12em}
-.song-level-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px}.song-level-grid .field{min-width:0}.song-level-grid select{width:100%;min-width:0}
+.song-level-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}.song-level-grid .field{min-width:0}.song-level-grid select{width:100%;min-width:0}.song-level-grid input[type=range]{width:100%;accent-color:var(--accent)}
 .song-level-actions{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:13px}.song-level-actions span{flex:1;min-width:220px}
 @media(max-width:850px){.song-level-grid{grid-template-columns:1fr 1fr}}
 @media(max-width:560px){.song-level-grid{grid-template-columns:1fr}.song-level-actions .button{width:100%}.song-level-actions span{min-width:0}.song-level-head{align-items:flex-start}}

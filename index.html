@@ -6,11 +6,11 @@
   <meta name="theme-color" content="#0d1117" />
   <meta name="description" content="A free game-style guitar trainer that listens while you play." />
   <title>Tucker's Guitar Quest</title>
-  <link rel="manifest" href="./manifest.webmanifest?v=0.3.0" />
-  <link rel="icon" href="./icons/icon.svg" />
-  <link rel="stylesheet" href="./styles.css?v=0.3.0" />
+  <link rel="manifest" href="./manifest.webmanifest?v=0.4.0" />
+  <link rel="icon" href="./icon.svg" />
+  <link rel="stylesheet" href="./styles.css?v=0.4.0" />
   <script defer src="https://cdn.jsdelivr.net/npm/@coderline/alphatab@1.8.4/dist/alphaTab.min.js"></script>
-  <script defer src="./app.js?v=0.3.0"></script>
+  <script defer src="./app.js?v=0.4.0"></script>
 </head>
 <body>
   <header class="topbar">
@@ -139,6 +139,13 @@
                 </label>
                 <label class="field">Game speed
                   <select id="songGameSpeed"><option value="0.5">50%</option><option value="0.6">60%</option><option value="0.75" selected>75%</option><option value="0.85">85%</option><option value="1">100%</option></select>
+                </label>
+                <label class="field">Backing instruments
+                  <select id="songBackingEnabled"><option value="on" selected>On · mute my guitar track</option><option value="off">Off · note highway only</option></select>
+                </label>
+                <label class="field">Backing volume
+                  <input id="songBackingVolume" type="range" min="0" max="1" value="0.8" step="0.05" />
+                  <span id="songBackingVolumeText" class="muted small-text">80%</span>
                 </label>
               </div>
               <div class="song-level-actions"><button id="playSongAsLevel" class="button big">🎮 Play as Level</button><span id="songLevelPreview" class="muted small-text">Choose a track and section.</span></div>
