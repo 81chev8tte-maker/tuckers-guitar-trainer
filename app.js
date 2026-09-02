@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const APP_VERSION = '0.4.0';
+  const APP_VERSION = '0.5.0';
   const PROGRESS_KEY = 'tgq-progress-v2';
   const OLD_PROGRESS_KEY = 'tgt-progress-v1';
   const DB_NAME = 'tucker-guitar-trainer';
@@ -34,6 +34,10 @@
 
   function seq(pattern, startBeat = 1, step = 1) {
     return pattern.map((p, i) => ({ string:p[0], fret:p[1], beat:startBeat + i * step }));
+  }
+
+  function timed(pattern) {
+    return pattern.map(p => ({ string:p[0], fret:p[1], beat:p[2] }));
   }
 
   const worlds = [
@@ -156,6 +160,46 @@
           notes:seq([[0,0],[1,2],[2,2],[3,0],[4,1],[5,0],[5,3],[4,3],[3,2],[2,0],[1,3],[0,3],[2,2],[4,1],[5,0],[3,0]])
         }
       ]
+    },
+    {
+      id:'rhythm-foundations', number:4, title:'Rhythm Foundations', subtitle:'Count the beat and make every note land together',
+      levels:[
+        { id:'quarter-pulse', title:'Quarter-Note Pulse', short:'Count 1 2 3 4', bpm:64, tag:'RHYTHM FOUNDATIONS', headline:'The beat is the engine', lesson:'Count “1, 2, 3, 4” out loud and use one relaxed down-pick on every number. Keep counting even after a miss.', hint:'Count aloud: 1, 2, 3, 4.', notes:seq([[0,0],[0,0],[0,0],[0,0],[1,0],[1,0],[1,0],[1,0]]) },
+        { id:'alternate-eighths', title:'Down-Up Eighths', short:'Pick twice per beat', bpm:62, tag:'RHYTHM FOUNDATIONS', headline:'Down and up share the beat', lesson:'Say “1 and 2 and 3 and 4 and.” Pick down on each number and up on each “and.” Make the pick movement small.', hint:'Numbers = down. “And” = up.', notes:seq([[0,0],[0,0],[0,0],[0,0],[0,3],[0,3],[0,3],[0,3],[1,0],[1,0],[1,0],[1,0],[1,2],[1,2],[1,2],[1,2]],1,.5) },
+        { id:'rests-and-space', title:'Rests & Space', short:'Keep counting silently', bpm:66, tag:'RHYTHM FOUNDATIONS', headline:'Silence is part of the riff', lesson:'Some beats have no note. Keep your foot and your counting moving through the empty space so the next note lands on time.', hint:'A gap is not a stop — keep counting.', notes:timed([[0,0,1],[0,0,2],[0,3,4],[0,3,5],[1,0,7],[1,2,8],[0,0,10],[0,3,12]]) },
+        { id:'rhythm-gears', title:'Change Gears', short:'Quarters ↔ eighths', bpm:66, tag:'RHYTHM FOUNDATIONS', headline:'Switch speeds without rushing', lesson:'Start with one note per beat, move to two, then return to one. The main beat never speeds up—only your picking pattern changes.', hint:'The pulse stays steady while the notes change.', notes:timed([[0,0,1],[0,3,2],[1,0,3],[1,2,4],[0,0,5],[0,0,5.5],[0,3,6],[0,3,6.5],[1,0,7],[1,0,7.5],[1,2,8],[1,2,8.5],[0,3,9],[1,2,10],[1,0,11],[0,0,12]]) },
+        { id:'rhythm-boss', title:'Rhythm Boss', short:'Pulse, eighths & rests', bpm:70, tag:'WORLD 4 BOSS', headline:'Hold the groove together', lesson:'This combines steady beats, down-up picking and rests. Your job is not to panic after a miss—find the count and rejoin.', hint:'Lose a note? Find the next big beat.', notes:timed([[0,0,1],[0,3,2],[1,0,3],[1,2,4],[0,0,5],[0,0,5.5],[0,3,6],[0,3,6.5],[1,0,8],[1,2,9],[2,0,10],[2,2,10.5],[1,2,11],[1,0,11.5],[0,3,12],[0,0,13],[1,0,15],[0,0,16]]) }
+      ]
+    },
+    {
+      id:'fretting-hand', number:5, title:'Fretting Hand', subtitle:'Build clean, controlled fingers without squeezing',
+      levels:[
+        { id:'first-finger', title:'First-Finger Control', short:'Open ↔ first fret', bpm:58, tag:'FRETTING HAND', headline:'Fret close to the wire', lesson:'Use your index finger just behind the first fret—not on top of it. Press only hard enough for a clean note, then relax.', hint:'Fingertip close behind the fret wire.', notes:seq([[5,0],[5,1],[5,0],[5,1],[4,0],[4,1],[4,0],[4,1]]) },
+        { id:'chromatic-climb', title:'1-2-3-4 Crawl', short:'One finger per fret', bpm:54, tag:'FRETTING HAND', headline:'Give every finger a job', lesson:'On the low E string, use index, middle, ring and pinky for frets 1, 2, 3 and 4. Move slowly and keep the thumb relaxed.', hint:'Index 1 · middle 2 · ring 3 · pinky 4.', notes:seq([[0,1],[0,2],[0,3],[0,4],[0,1],[0,2],[0,3],[0,4]]) },
+        { id:'chromatic-return', title:'4-3-2-1 Return', short:'Control the way back', bpm:54, tag:'FRETTING HAND', headline:'Coming down counts too', lesson:'Start with all four fingers placed, then lift one at a time from fret 4 back to fret 1. Keep unused fingers near the strings.', hint:'Lift small; do not fling fingers away.', notes:seq([[0,4],[0,3],[0,2],[0,1],[1,4],[1,3],[1,2],[1,1]]) },
+        { id:'chromatic-crossing', title:'Crawl Across Strings', short:'E, A and D', bpm:58, tag:'FRETTING HAND', headline:'Carry the shape to a new string', lesson:'Play 1-2-3-4 on E, A and D. Let the whole hand move together when changing strings and keep alternate picking.', hint:'Same four fingers, one string higher.', notes:seq([[0,1],[0,2],[0,3],[0,4],[1,1],[1,2],[1,3],[1,4],[2,1],[2,2],[2,3],[2,4]],1,.75) },
+        { id:'fretting-boss', title:'Clean-Fret Boss', short:'Climb, cross & return', bpm:62, tag:'WORLD 5 BOSS', headline:'Clean notes before fast notes', lesson:'Combine climbs, string changes and the return trip. If a note buzzes, slow down and place the fingertip closer to the fret.', hint:'Relaxed thumb, curved fingers, small lifts.', notes:seq([[0,1],[0,2],[0,3],[0,4],[1,1],[1,2],[1,3],[1,4],[2,4],[2,3],[2,2],[2,1],[1,4],[1,3],[1,2],[1,1],[0,4],[0,3],[0,2],[0,1]],1,.75) }
+      ]
+    },
+    {
+      id:'riff-workshop', number:6, title:'Riff Workshop', subtitle:'Turn small patterns into music you can remember',
+      levels:[
+        { id:'two-note-phrase', title:'Two-Note Phrase', short:'Repeat 0–3', bpm:66, tag:'RIFF WORKSHOP', headline:'A riff is a pattern', lesson:'Play the two-note idea four times. Look for the repeating shape instead of reading every block as a brand-new problem.', hint:'See the pair: open, three.', notes:seq([[0,0],[0,3],[0,0],[0,3],[0,0],[0,3],[0,0],[0,3]]) },
+        { id:'three-note-phrase', title:'Three-Note Phrase', short:'Chunk three notes', bpm:68, tag:'RIFF WORKSHOP', headline:'Remember a small chunk', lesson:'The phrase is open E, third fret E, open A. Say the string and fret once, then try to feel the repeated shape.', hint:'E0 · E3 · A0, then repeat.', notes:seq([[0,0],[0,3],[1,0],[0,0],[0,3],[1,0],[0,0],[0,3],[1,0],[0,0],[0,3],[1,0]]) },
+        { id:'position-shift', title:'Position Shift', short:'Move 2 ↔ 5', bpm:62, tag:'RIFF WORKSHOP', headline:'Move the hand, not just the finger', lesson:'When the riff moves from fret 2 to fret 5, release pressure and slide the hand into the new area. Land first, then press.', hint:'Release, move, land, press.', notes:seq([[1,2],[1,2],[1,5],[1,5],[1,2],[1,5],[0,3],[0,5],[1,2],[1,5]]) },
+        { id:'cross-string-riff', title:'Cross-String Riff', short:'Follow a repeating shape', bpm:72, tag:'RIFF WORKSHOP', headline:'Let both hands travel together', lesson:'This phrase crosses E, A and D. Keep the pick close to the strings and read one note ahead before each change.', hint:'Eyes lead; both hands follow.', notes:seq([[0,0],[0,3],[1,0],[1,2],[2,0],[1,2],[0,3],[0,0],[0,0],[1,2],[2,2],[1,0]]) },
+        { id:'riff-boss', title:'Riff Builder Boss', short:'Learn a longer phrase', bpm:76, tag:'WORLD 6 BOSS', headline:'Build it from chunks', lesson:'Treat this as four small phrases, not one giant line. After a miss, jump back into the next phrase instead of restarting in your head.', hint:'Chunk it: four notes at a time.', notes:seq([[0,0],[0,3],[1,0],[1,2],[0,5],[0,3],[1,2],[1,0],[2,0],[2,2],[1,2],[0,3],[0,0],[1,0],[1,3],[2,2],[1,2],[0,5],[0,3],[0,0]]) }
+      ]
+    },
+    {
+      id:'song-ready', number:7, title:'Song Ready', subtitle:'Practice the habits that make full songs possible',
+      levels:[
+        { id:'steady-minute', title:'Steady Stamina', short:'A longer clean run', bpm:68, tag:'SONG READY', headline:'Relaxation creates endurance', lesson:'This run is longer on purpose. Check your shoulders, loosen your grip and use tiny pick strokes so you do not tense up halfway through.', hint:'Loose shoulders. Light grip. Keep breathing.', notes:seq([[0,0],[0,3],[1,0],[1,2],[0,0],[0,3],[1,0],[1,2],[0,0],[0,3],[1,0],[1,2],[2,0],[2,2],[1,0],[1,2],[2,0],[2,2],[1,0],[0,3],[0,0],[1,0],[1,2],[0,3]]) },
+        { id:'read-ahead', title:'Read Ahead', short:'Watch the next change', bpm:74, tag:'SONG READY', headline:'Your eyes should arrive first', lesson:'Keep your eyes one or two blocks ahead of what your hands are playing. This gives your hands time to prepare for string changes.', hint:'Play this note; look at the next one.', notes:seq([[0,0],[1,2],[2,0],[0,3],[1,0],[2,2],[3,0],[1,3],[0,5],[2,0],[1,2],[3,2],[2,2],[1,0],[0,3],[0,0]]) },
+        { id:'recover-the-beat', title:'Recover the Beat', short:'Rejoin after rests', bpm:72, tag:'SONG READY', headline:'Mistakes do not stop the song', lesson:'Songs keep going when you miss. Use each gap to find the count, look ahead and join on the next clear note.', hint:'Do not chase missed notes—catch the next one.', notes:timed([[0,0,1],[0,3,1.5],[1,0,2],[1,2,2.5],[0,0,4],[1,0,5],[2,0,6],[1,2,6.5],[0,3,8],[0,5,8.5],[1,3,9],[1,2,9.5],[2,0,11],[1,0,12],[0,3,13],[0,0,13.5]]) },
+        { id:'section-practice', title:'Song Section', short:'Repeat a 4-bar idea', bpm:78, tag:'SONG READY', headline:'Practice sections, not whole songs', lesson:'Real songs become manageable when you loop a short section. Notice the same phrase returning and try to improve each repeat.', hint:'One section, four better attempts.', notes:seq([[0,0],[0,3],[1,0],[1,2],[0,5],[0,3],[1,0],[0,0],[0,0],[0,3],[1,0],[1,2],[0,5],[0,3],[1,0],[0,0],[0,0],[0,3],[1,0],[1,2],[0,5],[0,3],[1,0],[0,0]]) },
+        { id:'first-set-boss', title:'First Set', short:'Everything together', bpm:80, tag:'WORLD 7 BOSS', headline:'You are ready to train on songs', lesson:'Use everything you have practiced: count, read ahead, stay loose, recognize chunks and recover after a miss. Finishing calmly is the win.', hint:'Keep going. The next note matters most.', notes:timed([[0,0,1],[0,3,1.5],[1,0,2],[1,2,2.5],[0,5,3],[0,3,3.5],[1,0,4],[0,0,5],[2,0,6],[2,2,6.5],[1,2,7],[0,3,7.5],[0,0,9],[1,0,10],[2,0,11],[3,0,12],[3,2,12.5],[2,2,13],[1,2,13.5],[0,3,14],[0,0,15],[0,3,15.5],[1,0,16],[1,2,16.5],[0,5,17],[1,3,17.5],[2,2,18],[1,2,18.5],[0,3,19],[0,0,20]]) }
+      ]
     }
   ];
 
@@ -169,6 +213,10 @@
     { icon:'🏁', title:'Tab Decoder', text:'Clear World 1', test:s => worldCleared(0, s) },
     { icon:'⚡', title:'Riff Runner', text:'Clear World 2', test:s => worldCleared(1, s) },
     { icon:'🗺️', title:'Fretboard Explorer', text:'Clear World 3', test:s => worldCleared(2, s) },
+    { icon:'🥁', title:'Rhythm Keeper', text:'Clear World 4', test:s => worldCleared(3, s) },
+    { icon:'🖐️', title:'Clean Fingers', text:'Clear World 5', test:s => worldCleared(4, s) },
+    { icon:'🧩', title:'Riff Builder', text:'Clear World 6', test:s => worldCleared(5, s) },
+    { icon:'🚀', title:'Song Ready', text:'Clear World 7', test:s => worldCleared(6, s) },
     { icon:'💯', title:'Century Club', text:'Hit 100 notes', test:s => s.totalHits >= 100 }
   ];
 
@@ -355,6 +403,7 @@
       return;
     }
     stopGameLoop();
+    $('#gameScreen').classList.remove('playing');
     const stringInfo = level.stringInfo || STRING_INFO;
     const secondsPerBeat = 60 / Math.max(20, Number(level.bpm) || 80);
     const events = level.notes.map((n, i) => ({
@@ -433,6 +482,7 @@
     $('#gameStart').textContent = 'Getting input…';
     try {
       if (!audio.active) await startAudioInput(selectedDeviceId);
+      $('#gameScreen').classList.add('playing');
       await runCountdown();
       if (usesSongBackingClock()) {
         configureSongBacking(game.level);
@@ -446,6 +496,7 @@
       game.raf = requestAnimationFrame(gameLoop);
     } catch (err) {
       console.error(err);
+      $('#gameScreen').classList.remove('playing');
       $('#gameStart').disabled = false;
       $('#gameStart').textContent = 'Try Guitar Input Again';
       toast('I could not access the guitar input. Check Chrome microphone permission.');
@@ -653,6 +704,7 @@
   function finishMission() {
     if (!game) return;
     stopGameLoop();
+    $('#gameScreen').classList.remove('playing');
     const total = game.events.length;
     const accuracy = total ? Math.round(game.hits / total * 100) : 0;
     const stars = accuracy >= 90 ? 3 : accuracy >= 75 ? 2 : accuracy >= 55 ? 1 : 0;
@@ -721,6 +773,7 @@
   function exitGame() {
     const returnToSongs = game?.mode === 'song';
     stopGameLoop();
+    $('#gameScreen').classList.remove('playing');
     $('#gameScreen').hidden = true;
     $('#resultScreen').hidden = true;
     $('#gameStart').hidden = false;
@@ -1489,7 +1542,7 @@
   async function registerServiceWorker() {
     if (!('serviceWorker' in navigator)) return;
     try {
-      const reg = await navigator.serviceWorker.register('./sw.js?v=0.4.0');
+      const reg = await navigator.serviceWorker.register('./sw.js?v=0.5.0');
       reg.update().catch(() => null);
     } catch (err) { console.error(err); }
   }
