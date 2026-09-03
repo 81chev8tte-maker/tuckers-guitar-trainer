@@ -1990,7 +1990,7 @@
   async function registerServiceWorker() {
     if (!('serviceWorker' in navigator)) return;
     try {
-      const reg = await navigator.serviceWorker.register('./sw.js?v=1.0.0');
+      const reg = await navigator.serviceWorker.register('./sw.js?v=2.0.1');
       reg.update().catch(() => null);
     } catch (err) { console.error(err); }
   }
