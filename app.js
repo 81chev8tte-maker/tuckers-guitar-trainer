@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const APP_VERSION = '0.8.0';
+  const APP_VERSION = '0.9.0';
   const PROGRESS_KEY = 'tgq-progress-v2';
   const OLD_PROGRESS_KEY = 'tgt-progress-v1';
   const DB_NAME = 'tucker-guitar-trainer';
@@ -677,9 +677,11 @@
     const rect = board.getBoundingClientRect();
     const hitY = rect.height - 58;
     const spawnY = 48;
+    const hitX = Math.max(118, rect.width * .16);
+    const spawnX = rect.width - 44;
     const clock = gameClockWindows();
     updateFretWindow(t, clock.lookahead);
-    renderBeatMarkers(t, clock, spawnY, hitY);
+    renderBeatMarkers(t, clock, spawnY, hitY, hitX, spawnX);
     game.events.forEach(ev => {
       const dt = ev.clock - t;
       if (!ev.elements?.length) return;
@@ -690,21 +692,17 @@
       const y = spawnY + progress * (hitY - spawnY);
       const flatView = $('#gameScreen').classList.contains('tab-mode');
       const scale = .58 + .42 * Math.min(1, progress);
-      const sustain = Math.min(110, Math.max(0, Number(ev.durationClock || 0) / clock.lookahead * (hitY - spawnY)));
+      const sustainTravel = flatView ? hitY - spawnY : spawnX - hitX;
+      const sustain = Math.min(flatView ? 110 : 190, Math.max(0, Number(ev.durationClock || 0) / clock.lookahead * sustainTravel));
       ev.elements.forEach(el => {
         const stringIndex = Number(el.dataset.stringIndex);
-        const fret = Number(el.dataset.fret);
-        const slot = fret === 0 ? 0 : fret - game.fretWindowStart + 1;
-        const nearWidth = rect.width * .88;
-        const farWidth = rect.width * .46;
-        const roadWidth = farWidth + (nearWidth - farWidth) * Math.min(1, progress);
-        const roadLeft = (rect.width - roadWidth) / 2;
         const x = flatView
           ? rect.width * ((stringIndex + .5) / 6)
-          : roadLeft + roadWidth * ((Math.max(0, Math.min(5, slot)) + .5) / 6);
-        const chordSize = Number(el.dataset.chordSize) || 1;
-        const nearStringSpread = chordSize > 1 ? 16 : 10;
-        const stringOffset = flatView ? 0 : (stringIndex - 2.5) * (3 + (nearStringSpread - 3) * Math.min(1, progress));
+          : spawnX - progress * (spawnX - hitX);
+        const laneTop = 58;
+        const laneBottom = rect.height - 35;
+        const laneY = laneTop + ((5 - stringIndex) + .5) / 6 * (laneBottom - laneTop);
+        const stringOffset = flatView ? 0 : laneY - y;
         el.style.left = `${x}px`;
         el.style.top = `${y + stringOffset}px`;
         el.style.transform = `translate(-50%,-50%) scale(${scale})`;
@@ -720,7 +718,7 @@
     if (!next) return;
     const shape = Array.isArray(next.chordNotes) && next.chordNotes.length ? next.chordNotes : [next];
     const activeStrings = new Set(shape.map(note => Number(note.string)));
-    $$('.string-labels span').forEach((label, i) => label.classList.toggle('active', activeStrings.has(i)));
+    $$('.string-labels span').forEach(label => label.classList.toggle('active', activeStrings.has(Number(label.dataset.string))));
     const frets = eventFrets(next);
     $$('.fret-lane').forEach(lane => lane.classList.toggle('active', frets.includes(Number(lane.dataset.fret)) || (!frets.length && Number(lane.dataset.fret) === 0)));
     const info = game.stringInfo || STRING_INFO;
@@ -760,7 +758,7 @@
     $('#handPositionText').textContent = `OPEN · ${start}–${start + 4}`;
   }
 
-  function renderBeatMarkers(t, clock, spawnY, hitY) {
+  function renderBeatMarkers(t, clock, spawnY, hitY, hitX, spawnX) {
     const layer = $('#beatLayer');
     if (!layer || !game) return;
     const unitsPerBeat = usesSongBackingClock() ? 960 : 60 / Math.max(20, Number(game.level?.bpm) || 80);
@@ -770,15 +768,19 @@
       const progress = Math.max(0, Math.min(1, 1 - (beat - t) / clock.lookahead));
       const y = spawnY + progress * (hitY - spawnY);
       const width = 46 + 42 * progress;
+      const sideways = !$('#gameScreen').classList.contains('tab-mode');
+      const x = spawnX - progress * (spawnX - hitX);
       const beatNumber = Math.round(beat / unitsPerBeat);
       let marker = layer.children[markerIndex];
       if (!marker) {
         marker = document.createElement('i');
         layer.appendChild(marker);
       }
-      marker.className = `beat-marker ${beatNumber % 4 === 0 ? 'measure' : ''}`;
-      marker.style.top = `${y}px`;
-      marker.style.width = `${width}%`;
+      marker.className = `beat-marker ${sideways ? 'sideways' : ''} ${beatNumber % 4 === 0 ? 'measure' : ''}`;
+      marker.style.top = sideways ? '58px' : `${y}px`;
+      marker.style.left = sideways ? `${x}px` : '50%';
+      marker.style.width = sideways ? (beatNumber % 4 === 0 ? '3px' : '1px') : `${width}%`;
+      marker.style.height = sideways ? `${Math.max(80, hitY - 38)}px` : (beatNumber % 4 === 0 ? '2px' : '1px');
       marker.hidden = false;
       markerIndex++;
     }
@@ -826,12 +828,16 @@
     const info = game?.stringInfo || STRING_INFO;
     const wrap = $('#stringLabels');
     if (!wrap) return;
-    wrap.innerHTML = info.map((s, i) => {
+    wrap.innerHTML = [...info].reverse().map((s, reverseIndex) => {
+      const i = info.length - 1 - reverseIndex;
       const number = info.length - i;
       const edge = i === 0 ? ' thick' : i === info.length - 1 ? ' thin' : '';
-      return `<span class="string-label-${i}" style="--string-color:${s.color || STRING_INFO[i]?.color}">${escapeHtml(s.label)}<small>${number}${edge}</small></span>`;
+      return `<span class="string-label-${i}" data-string="${i}" style="--string-color:${s.color || STRING_INFO[i]?.color}">${escapeHtml(s.label)}<small>${number}${edge}</small></span>`;
     }).join('');
-    $('#stringBed').innerHTML = info.map((s, i) => `<i style="--string-color:${s.color || STRING_INFO[i]?.color}"></i>`).join('');
+    $('#stringBed').innerHTML = [...info].reverse().map((s, reverseIndex) => {
+      const i = info.length - 1 - reverseIndex;
+      return `<i data-string="${i}" style="--string-color:${s.color || STRING_INFO[i]?.color}"></i>`;
+    }).join('');
     renderFretboard();
   }
 
@@ -1836,7 +1842,7 @@
   async function registerServiceWorker() {
     if (!('serviceWorker' in navigator)) return;
     try {
-      const reg = await navigator.serviceWorker.register('./sw.js?v=0.8.0');
+      const reg = await navigator.serviceWorker.register('./sw.js?v=0.9.0');
       reg.update().catch(() => null);
     } catch (err) { console.error(err); }
   }

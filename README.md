@@ -2,6 +2,13 @@
 
 A free Chromebook-friendly PWA that teaches beginner electric guitar as a game.
 
+## v0.9.0 — Six-String Play Lanes
+
+- Replaces the perspective fret grid in Note Highway with six large horizontal string lanes that match standard tab order
+- Moves notes right-to-left toward one vertical strike line with large string and fret/open labels
+- Shows chords as aligned stacks across their required string lanes and sustains as horizontal hold ribbons
+- Keeps the perspective-free Tab View, imports, timing, audio detection, progress and lesson content intact
+
 ## v0.8.0 — Readable Beginner Highway
 
 - Makes every incoming note a large two-line instruction showing both the string and either `OPEN` or the fret number
