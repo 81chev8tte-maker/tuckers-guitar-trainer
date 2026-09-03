@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const APP_VERSION = '0.7.0';
+  const APP_VERSION = '0.8.0';
   const PROGRESS_KEY = 'tgq-progress-v2';
   const OLD_PROGRESS_KEY = 'tgt-progress-v1';
   const DB_NAME = 'tucker-guitar-trainer';
@@ -702,7 +702,9 @@
         const x = flatView
           ? rect.width * ((stringIndex + .5) / 6)
           : roadLeft + roadWidth * ((Math.max(0, Math.min(5, slot)) + .5) / 6);
-        const stringOffset = flatView ? 0 : (stringIndex - 2.5) * (3 + 7 * Math.min(1, progress));
+        const chordSize = Number(el.dataset.chordSize) || 1;
+        const nearStringSpread = chordSize > 1 ? 16 : 10;
+        const stringOffset = flatView ? 0 : (stringIndex - 2.5) * (3 + (nearStringSpread - 3) * Math.min(1, progress));
         el.style.left = `${x}px`;
         el.style.top = `${y + stringOffset}px`;
         el.style.transform = `translate(-50%,-50%) scale(${scale})`;
@@ -711,6 +713,23 @@
     });
     const next = game.events.find(e => e.status === 'pending');
     $('#nextNoteText').textContent = next ? formatExpected(next) : 'Finish strong!';
+    updateHighwayFocus(next);
+  }
+
+  function updateHighwayFocus(next) {
+    if (!next) return;
+    const shape = Array.isArray(next.chordNotes) && next.chordNotes.length ? next.chordNotes : [next];
+    const activeStrings = new Set(shape.map(note => Number(note.string)));
+    $$('.string-labels span').forEach((label, i) => label.classList.toggle('active', activeStrings.has(i)));
+    const frets = eventFrets(next);
+    $$('.fret-lane').forEach(lane => lane.classList.toggle('active', frets.includes(Number(lane.dataset.fret)) || (!frets.length && Number(lane.dataset.fret) === 0)));
+    const info = game.stringInfo || STRING_INFO;
+    const cue = shape.map(note => {
+      const string = info[note.string] || STRING_INFO[note.string];
+      return `${string?.name || `String ${6 - note.string}`} · ${Number(note.fret) === 0 ? 'OPEN' : `FRET ${note.fret}`}`;
+    }).join('  +  ');
+    $('#handPosition').classList.toggle('open-focus', !frets.length);
+    $('#handPositionText').textContent = cue;
   }
 
   function eventFrets(ev) {
@@ -825,11 +844,14 @@
         const el = document.createElement('div');
         const technique = note.technique || ev.technique || '';
         el.className = `falling-note string-${note.string} ${game.listenOnly ? 'listen-note' : ''} ${Number(note.fret) === 0 ? 'open-note' : ''} ${technique ? 'has-technique' : ''}`;
-        el.innerHTML = `<b>${Number(note.fret)}</b>${technique ? `<small>${escapeHtml(technique)}</small>` : ''}`;
+        const string = (game.stringInfo || STRING_INFO)[note.string] || STRING_INFO[note.string];
+        const stringName = `${string?.label || '?'}${string?.number || 6 - Number(note.string)}`;
+        el.innerHTML = `<span class="note-string">${escapeHtml(stringName)}</span><b>${Number(note.fret) === 0 ? 'OPEN' : Number(note.fret)}</b>${technique ? `<small>${escapeHtml(technique)}</small>` : ''}`;
         el.hidden = true;
         el.dataset.eventIndex = ev.index;
         el.dataset.stringIndex = note.string;
         el.dataset.fret = Number(note.fret) || 0;
+        el.dataset.chordSize = shape.length;
         layer.appendChild(el);
         return el;
       });
@@ -1814,7 +1836,7 @@
   async function registerServiceWorker() {
     if (!('serviceWorker' in navigator)) return;
     try {
-      const reg = await navigator.serviceWorker.register('./sw.js?v=0.7.0');
+      const reg = await navigator.serviceWorker.register('./sw.js?v=0.8.0');
       reg.update().catch(() => null);
     } catch (err) { console.error(err); }
   }

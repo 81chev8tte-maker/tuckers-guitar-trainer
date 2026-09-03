@@ -93,3 +93,32 @@ main{width:min(1180px,calc(100% - 28px));margin:0 auto;padding:26px 0 10px}.view
 .game-screen.tab-mode .hand-position,.game-screen.tab-mode .fret-labels{display:none}.game-screen.tab-mode .string-labels{left:0;right:0;top:auto;bottom:2px;width:auto;height:50px;transform:none;display:grid;grid-template-columns:repeat(6,1fr);grid-template-rows:1fr;background:transparent;border:0}.game-screen.tab-mode .string-labels span{text-align:center;font-size:1.05rem}.game-screen.tab-mode .hit-line{left:0;right:0}
 @media(max-width:700px){.lane-background{left:7%;right:3%}.string-bed{left:7%;right:3%}.string-labels{width:42px}.falling-note{width:50px;height:36px}.fret-labels{left:7%;right:3%}.fret-labels span{font-size:.55rem}}
 @media(max-height:800px){.game-screen.playing:not(.tab-mode) .tab-teacher{max-height:58px}.game-screen.playing:not(.tab-mode) .tab-teacher-head span{display:none}.game-screen.playing:not(.tab-mode) .live-tab{max-height:34px}.game-screen.playing:not(.tab-mode) .tab-row{display:none}.game-screen.playing:not(.tab-mode) .tab-row:nth-child(1),.game-screen.playing:not(.tab-mode) .tab-row:nth-child(6){display:grid}.game-screen.playing .game-board{min-height:330px!important}}
+
+/* v0.8 beginner readability pass */
+.falling-note{width:92px;height:58px;padding:6px 8px;border-width:4px;border-radius:13px;display:flex;flex-direction:column;justify-content:center;gap:1px;line-height:1;overflow:visible}
+.falling-note .note-string{display:block;font-size:.7rem;font-weight:1000;letter-spacing:.08em;color:rgba(5,12,18,.72)}
+.falling-note b{display:block;font-size:1.65rem;line-height:.95;letter-spacing:.02em}
+.falling-note.open-note{width:102px;height:58px;border-radius:13px;background:var(--note-color);color:#071017;outline:4px solid color-mix(in srgb,var(--note-color) 35%,transparent)}
+.falling-note.open-note b:before{content:none}
+.falling-note small{bottom:-20px;font-size:.62rem;padding:2px 5px}
+.falling-note:after{height:6px;left:-7px;right:-7px}
+.lane-background .fret-lane.active{background:linear-gradient(90deg,rgba(168,242,61,.06),rgba(168,242,61,.2),rgba(168,242,61,.06));box-shadow:inset 0 0 26px rgba(168,242,61,.13)}
+.lane-background .fret-lane.active>span{color:#fff;font-size:.9rem;text-shadow:0 0 10px var(--accent)}
+.string-labels span{padding:3px 4px;border-radius:5px;transition:background .12s,transform .12s}
+.string-labels span.active{background:var(--string-color);color:#061019;transform:scale(1.15);text-shadow:none}
+.string-labels span.active small{color:#061019}
+.hand-position{left:50%;right:auto;top:9px;min-width:265px;transform:translateX(-50%);padding:8px 16px;text-align:center;border-width:2px;background:rgba(5,9,13,.94)}
+.hand-position span{font-size:.55rem}
+.hand-position strong{font-size:1.05rem;line-height:1.25;color:#fff}
+.hand-position.open-focus{border-color:rgba(168,242,61,.75);box-shadow:0 0 18px rgba(168,242,61,.2)}
+.fret-labels span{font-size:.72rem;color:#d4deea}
+.fret-labels .open-label{font-size:.78rem}
+.game-screen.playing:not(.tab-mode) .tab-teacher{display:none}
+.game-screen.playing:not(.tab-mode) .game-shell{grid-template-rows:auto auto minmax(0,1fr) auto}
+.game-screen.playing:not(.tab-mode) .game-board{min-height:390px!important}
+.game-screen.playing:not(.tab-mode) .game-hud{position:absolute;right:18px;top:52px;z-index:12;width:250px;grid-template-columns:repeat(3,1fr);opacity:.9}
+.game-screen.playing:not(.tab-mode) .game-hud>div{padding:5px 7px;background:rgba(8,12,18,.88)}
+.game-screen.playing:not(.tab-mode) .game-hud span{font-size:.46rem}
+.game-screen.playing:not(.tab-mode) .game-hud strong{font-size:.9rem}
+@media(max-width:700px){.falling-note{width:78px;height:52px}.falling-note.open-note{width:88px;height:52px}.falling-note b{font-size:1.4rem}.falling-note .note-string{font-size:.61rem}.hand-position{min-width:220px}.hand-position strong{font-size:.9rem}.game-screen.playing:not(.tab-mode) .game-hud{right:10px;width:210px}}
+@media(max-height:650px){.game-screen.playing:not(.tab-mode) .game-board{min-height:315px!important}.hand-position{top:5px;padding:5px 12px}.game-screen.playing:not(.tab-mode) .game-hud{top:43px}}

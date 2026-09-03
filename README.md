@@ -2,6 +2,12 @@
 
 A free Chromebook-friendly PWA that teaches beginner electric guitar as a game.
 
+## v0.8.0 — Readable Beginner Highway
+
+- Makes every incoming note a large two-line instruction showing both the string and either `OPEN` or the fret number
+- Highlights the required string and fret lane for the next note and presents that instruction prominently above the highway
+- Hides the supplemental live tab during Note Highway play to give the main game substantially more Chromebook screen space
+
 ## v0.7.0 — Fretboard Runway
 
 - Replaces the six Guitar Hero-style columns with spatial fret lanes and a dedicated open-string area
