@@ -6,11 +6,11 @@
   <meta name="theme-color" content="#0d1117" />
   <meta name="description" content="A free game-style guitar trainer that listens while you play." />
   <title>Tucker's Guitar Quest</title>
-  <link rel="manifest" href="./manifest.webmanifest?v=0.9.0" />
+  <link rel="manifest" href="./manifest.webmanifest?v=1.0.0" />
   <link rel="icon" href="./icon.svg" />
-  <link rel="stylesheet" href="./styles.css?v=0.9.0" />
+  <link rel="stylesheet" href="./styles.css?v=1.0.0" />
   <script defer src="https://cdn.jsdelivr.net/npm/@coderline/alphatab@1.8.4/dist/alphaTab.min.js"></script>
-  <script defer src="./app.js?v=0.9.0"></script>
+  <script defer src="./app.js?v=1.0.0"></script>
 </head>
 <body>
   <header class="topbar">
@@ -33,6 +33,7 @@
           <h1 id="playTitle">Learn guitar by actually playing guitar.</h1>
           <p class="muted">Notes fall toward the hit line. Play the fret on your real guitar and the Chromebook listens for the answer.</p>
           <div class="hero-actions">
+            <button id="startDailyPractice" class="button big">🎸 Today’s Practice</button>
             <button id="continueMission" class="button big">▶ Start Next Mission</button>
             <button id="startFoundations" class="button secondary">New Player Foundations</button>
             <button class="button secondary" data-view-target="input">🎙 Check Guitar Input</button>
@@ -92,6 +93,10 @@
             <input id="noiseGate" type="range" min="0.005" max="0.08" value="0.018" step="0.001" />
             <span id="noiseGateText" class="muted small-text">Normal</span>
           </label>
+        </div>
+        <div class="calibration-row">
+          <div><strong>Automatic input setup</strong><span id="calibrationStatus" class="muted small-text">Not calibrated yet</span></div>
+          <button id="calibrateInput" class="button secondary">Calibrate Input</button>
         </div>
         <div class="live-note-card">
           <div><span class="muted">HEARING</span><strong id="inputNote">—</strong><small id="inputFreq">Play one string</small></div>
@@ -243,7 +248,7 @@
 
       <article id="gameLessonCard" class="game-lesson-card">
         <div><p class="eyebrow" id="gameLessonTag">TAB DECODER</p><h2 id="gameLessonHeadline">0 means open</h2><p id="gameLessonText">When you see 0, don't hold any fret. Just pick that string.</p></div>
-        <div class="game-start-controls"><label class="field">Note amount<select id="gameNoteDensity"><option value="0.5">Starter · 50%</option><option value="0.75">Guided · 75%</option><option value="1" selected>Complete · 100%</option></select></label><button id="gameStart" class="button big">Enable Guitar & Start</button></div>
+        <div class="game-start-controls"><label class="field">Note amount<select id="gameNoteDensity"><option value="0.5">Starter · 50%</option><option value="0.75">Guided · 75%</option><option value="1" selected>Complete · 100%</option></select></label><label class="adaptive-toggle"><input id="gameAdaptive" type="checkbox" checked> Auto difficulty</label><button id="gameStart" class="button big">Enable Guitar & Start</button></div>
       </article>
 
       <div class="tab-teacher" id="gameTabTeacher">
@@ -279,6 +284,7 @@
       <div id="resultStars" class="result-stars">☆☆☆</div>
       <div class="result-stats"><div><span>Accuracy</span><strong id="resultAccuracy">0%</strong></div><div><span>Best combo</span><strong id="resultCombo">0</strong></div><div><span>XP earned</span><strong id="resultXp">+0</strong></div></div>
       <p id="resultMessage" class="muted">Keep going.</p>
+      <div id="resultCoach" class="result-coach" hidden></div>
       <div class="result-actions"><button id="retryLevel" class="button secondary">↻ Retry</button><button id="nextLevel" class="button">Next Mission ▶</button><button id="backToMap" class="button ghost">Mission Map</button></div>
     </div>
   </section>

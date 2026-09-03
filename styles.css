@@ -144,3 +144,13 @@ main{width:min(1180px,calc(100% - 28px));margin:0 auto;padding:26px 0 10px}.view
 .game-screen:not(.tab-mode) .hand-position{top:7px}
 .game-screen.tab-mode .string-label-0{grid-column:1}.game-screen.tab-mode .string-label-1{grid-column:2}.game-screen.tab-mode .string-label-2{grid-column:3}.game-screen.tab-mode .string-label-3{grid-column:4}.game-screen.tab-mode .string-label-4{grid-column:5}.game-screen.tab-mode .string-label-5{grid-column:6}
 @media(max-width:700px){.game-screen:not(.tab-mode) .string-labels{width:82px}.game-screen:not(.tab-mode) .string-labels span{font-size:.92rem}.game-screen:not(.tab-mode) .hit-line{left:max(100px,16%)}.game-screen:not(.tab-mode) .falling-note{width:72px}.game-screen:not(.tab-mode) .falling-note.open-note{width:80px}}
+
+/* v1.0 guided practice and input setup */
+.calibration-row{display:flex;align-items:center;justify-content:space-between;gap:14px;margin:14px 0;padding:12px 14px;border:1px solid var(--line);border-radius:13px;background:var(--surface-2)}
+.calibration-row strong,.calibration-row span{display:block}.calibration-row span{margin-top:3px}
+.adaptive-toggle{display:flex;align-items:center;gap:7px;white-space:nowrap;color:var(--text);font-size:.78rem;font-weight:850;padding-bottom:9px}.adaptive-toggle input{width:18px;height:18px;accent-color:var(--accent)}
+.result-coach{display:flex;flex-direction:column;gap:5px;margin:14px 0;padding:13px 15px;border:1px solid rgba(86,215,255,.32);border-radius:13px;background:rgba(86,215,255,.07);text-align:left}
+.result-coach strong{color:var(--accent-2)}.result-coach span{font-size:.88rem;line-height:1.4}.result-coach small{color:var(--accent);font-weight:800}
+.game-screen:not(.tab-mode) .game-feedback{transform:none;margin:0;font-size:1.15rem;padding:5px 9px;border-radius:7px;background:rgba(4,8,12,.86);pointer-events:none}
+.game-screen:not(.tab-mode) .game-feedback.show{transform:translateY(-50%)}
+@media(max-width:700px){.calibration-row{align-items:stretch;flex-direction:column}.game-start-controls{min-width:0;flex-wrap:wrap}.adaptive-toggle{padding-bottom:0}}

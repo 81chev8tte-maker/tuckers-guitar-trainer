@@ -2,6 +2,13 @@
 
 A free Chromebook-friendly PWA that teaches beginner electric guitar as a game.
 
+## v1.0.0 — Guided Practice
+
+- Adds a three-step Today’s Practice session with warm-up, review and recommended skill work
+- Adds automatic input calibration and remembers the chosen microphone or USB guitar interface
+- Adds optional adaptive note density, post-run weak-note coaching and feedback placed on the relevant string lane
+- Keeps manual difficulty controls and all existing song, lesson, audio, progress and offline features
+
 ## v0.9.0 — Six-String Play Lanes
 
 - Replaces the perspective fret grid in Note Highway with six large horizontal string lanes that match standard tab order

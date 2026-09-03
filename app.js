@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const APP_VERSION = '0.9.0';
+  const APP_VERSION = '1.0.0';
   const PROGRESS_KEY = 'tgq-progress-v2';
   const OLD_PROGRESS_KEY = 'tgt-progress-v1';
   const DB_NAME = 'tucker-guitar-trainer';
@@ -288,6 +288,8 @@
   let feedbackTimer = null;
   let tabCurrentIndex = -1;
   let inputChallengeHits = new Set();
+  let inputCalibration = null;
+  let dailyPractice = null;
 
   const $ = (sel, root = document) => root.querySelector(sel);
   const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
@@ -317,17 +319,18 @@
     updateNetworkBadge();
     registerServiceWorker();
     audio.subscribe(handleAudioFrame);
+    applySavedInputSettings();
   }
 
   function defaultState() {
-    return { xp:0, stars:{}, songBest:{}, totalHits:0, totalMisses:0, bestCombo:0, bestAccuracy:0, practiceSeconds:0, practiceDays:{}, missionsPlayed:0, songRuns:0, settings:{ gameView:'highway', noteDensity:1 } };
+    return { xp:0, stars:{}, songBest:{}, levelRuns:{}, levelDensity:{}, totalHits:0, totalMisses:0, bestCombo:0, bestAccuracy:0, practiceSeconds:0, practiceDays:{}, missionsPlayed:0, songRuns:0, settings:{ gameView:'highway', noteDensity:1, adaptiveDifficulty:true, noiseGate:.018, inputDeviceId:'', calibrated:false } };
   }
 
   function loadProgress() {
     const base = defaultState();
     try {
       const saved = JSON.parse(localStorage.getItem(PROGRESS_KEY));
-      if (saved && typeof saved === 'object') return { ...base, ...saved, stars:saved.stars || {}, songBest:saved.songBest || {}, practiceDays:saved.practiceDays || {}, settings:{ ...base.settings, ...(saved.settings || {}) } };
+      if (saved && typeof saved === 'object') return { ...base, ...saved, stars:saved.stars || {}, songBest:saved.songBest || {}, levelRuns:saved.levelRuns || {}, levelDensity:saved.levelDensity || {}, practiceDays:saved.practiceDays || {}, settings:{ ...base.settings, ...(saved.settings || {}) } };
     } catch {}
     try {
       const old = JSON.parse(localStorage.getItem(OLD_PROGRESS_KEY));
@@ -427,6 +430,7 @@
   }
 
   function bindGameControls() {
+    $('#startDailyPractice').addEventListener('click', startDailyPractice);
     $('#continueMission').addEventListener('click', () => launchLevel(state.missionsPlayed === 0 && !state.stars['hold-and-pick'] ? 'hold-and-pick' : flatLevels[nextLevelIndex()].id));
     $('#startFoundations').addEventListener('click', () => {
       const foundation = worlds.find(world => world.id === 'player-foundations');
@@ -445,9 +449,15 @@
     $('#showNoteHighway').addEventListener('click', () => setGameView('highway'));
     $('#showTabHighway').addEventListener('click', () => setGameView('tab'));
     $('#gameNoteDensity').addEventListener('change', e => {
-      state.settings = { ...(state.settings || {}), noteDensity:Number(e.target.value) || 1 };
+      const chosen = Number(e.target.value) || 1;
+      state.settings = { ...(state.settings || {}), noteDensity:chosen };
+      if (game?.practiceKey) state.levelDensity[game.practiceKey] = chosen;
       localStorage.setItem(PROGRESS_KEY, JSON.stringify(state));
       if (game?.level) launchLevel(game.level, true);
+    });
+    $('#gameAdaptive').addEventListener('change', e => {
+      state.settings = { ...(state.settings || {}), adaptiveDifficulty:Boolean(e.target.checked) };
+      saveProgress();
     });
     $('#retryLevel').addEventListener('click', () => {
       $('#resultScreen').hidden = true;
@@ -456,6 +466,12 @@
     });
     $('#nextLevel').addEventListener('click', () => {
       $('#resultScreen').hidden = true;
+      if (dailyPractice && dailyPractice.index < dailyPractice.levelIds.length - 1) {
+        dailyPractice.index++;
+        launchLevel(dailyPractice.levelIds[dailyPractice.index], true);
+        return;
+      }
+      if (dailyPractice) dailyPractice = null;
       if (game?.mode === 'song') {
         launchNextSongSection();
         return;
@@ -465,6 +481,7 @@
       launchLevel(flatLevels[next].id);
     });
     $('#backToMap').addEventListener('click', () => {
+      dailyPractice = null;
       $('#resultScreen').hidden = true;
       $('#gameScreen').hidden = true;
       if (game?.mode === 'song') {
@@ -474,6 +491,13 @@
         showView('play');
       }
     });
+  }
+
+  function startDailyPractice() {
+    const next = flatLevels[nextLevelIndex()]?.id || 'zero-open';
+    const review = flatLevels.find((level, index) => isLevelUnlocked(index) && Number(state.stars[level.id] || 0) < 2 && level.id !== next)?.id || 'clean-pressure';
+    dailyPractice = { index:0, levelIds:['hold-and-pick', review, next].filter((id, i, all) => id && all.indexOf(id) === i) };
+    launchLevel(dailyPractice.levelIds[0], true);
   }
 
   function setGameView(view) {
@@ -497,7 +521,8 @@
     $('#gameScreen').classList.remove('playing');
     const stringInfo = level.stringInfo || STRING_INFO;
     const secondsPerBeat = 60 / Math.max(20, Number(level.bpm) || 80);
-    const density = Math.max(.5, Math.min(1, Number(state.settings?.noteDensity) || 1));
+    const practiceKey = levelPracticeKey(level);
+    const density = Math.max(.5, Math.min(1, Number(state.levelDensity?.[practiceKey] ?? state.settings?.noteDensity) || 1));
     const sourceNotes = density >= 1 ? level.notes : level.notes.filter((_, i) => i === 0 || Math.floor((i + 1) * density) > Math.floor(i * density));
     const events = sourceNotes.map((n, i) => ({
       ...n,
@@ -521,6 +546,8 @@
     game = {
       mode:level.mode || 'mission',
       level,
+      practiceKey,
+      density,
       stringInfo,
       events,
       running:false,
@@ -554,6 +581,7 @@
     $('#resultScreen').hidden = true;
     $('#gameStart').hidden = false;
     $('#gameNoteDensity').value = String(density);
+    $('#gameAdaptive').checked = state.settings?.adaptiveDifficulty !== false;
     $('#resultEyebrow').textContent = game.mode === 'song' ? 'SONG SECTION COMPLETE' : 'MISSION COMPLETE';
     $('#backToMap').textContent = game.mode === 'song' ? 'Back to Song' : 'Mission Map';
     $('#gameWorldLabel').textContent = game.mode === 'song'
@@ -580,6 +608,10 @@
     renderLiveTab();
     renderGameNotes();
     updateGameBoard(0);
+  }
+
+  function levelPracticeKey(level) {
+    return level?.mode === 'song' ? level.songKey || level.id || level.title : level?.id || level?.title || 'practice';
   }
 
   async function startMission() {
@@ -891,6 +923,7 @@
   }
 
   function handleAudioFrame(result) {
+    if (inputCalibration && result.freq && result.rms > .001) inputCalibration.samples.push(result.rms);
     updateInputMonitor(result);
     if (tunerActive) updateTuner(result);
     if (!game?.running || game.paused || !result.freq) return;
@@ -904,7 +937,7 @@
       const expected = game.events.find(ev => ev.status === 'pending' && Math.abs(ev.clock - t) <= hitWindow);
       if (expected && result.onset && performance.now() - game.lastWrongFeedback > 500) {
         game.lastWrongFeedback = performance.now();
-        showGameFeedback('WRONG NOTE', 'miss');
+        showGameFeedback('WRONG NOTE', 'miss', expected);
       }
       return;
     }
@@ -930,7 +963,7 @@
     updateTabEvent(ev);
     const signedTiming = (t - ev.clock) / gameClockWindows().unitsPerSecond;
     const feedback = timing < .1 ? 'PERFECT!' : signedTiming < 0 ? 'EARLY' : 'LATE';
-    showGameFeedback(feedback, 'hit');
+    showGameFeedback(feedback, 'hit', ev);
     updateGameHud();
   }
 
@@ -941,7 +974,7 @@
     game.combo = 0;
     ev.elements.forEach(el => el.classList.add('miss'));
     updateTabEvent(ev);
-    showGameFeedback('MISS', 'miss');
+    showGameFeedback('MISS', 'miss', ev);
     updateGameHud();
   }
 
@@ -953,11 +986,21 @@
     $('#gameAccuracy').textContent = `${accuracy}%`;
   }
 
-  function showGameFeedback(text, type) {
+  function showGameFeedback(text, type, ev = null) {
     const el = $('#gameFeedback');
     clearTimeout(feedbackTimer);
     el.textContent = text;
     el.className = `game-feedback show ${type}`;
+    if (ev && !$('#gameScreen').classList.contains('tab-mode')) {
+      const board = $('#gameBoard').getBoundingClientRect();
+      el.style.top = `${58 + ((5 - Number(ev.string)) + .5) / 6 * (board.height - 93)}px`;
+      el.style.left = `${Math.max(118, board.width * .16) + 72}px`;
+      el.style.bottom = 'auto';
+    } else {
+      el.style.top = '';
+      el.style.left = '50%';
+      el.style.bottom = '';
+    }
     feedbackTimer = setTimeout(() => { el.className = 'game-feedback'; }, 350);
   }
 
@@ -969,6 +1012,8 @@
     const accuracy = total ? Math.round(game.hits / total * 100) : 0;
     const stars = accuracy >= 90 ? 3 : accuracy >= 75 ? 2 : accuracy >= 55 ? 1 : 0;
     const isSong = game.mode === 'song';
+    const coach = buildPracticeCoach(game, accuracy);
+    const adaptiveMessage = updateAdaptiveDifficulty(game, accuracy);
     if (isSong) {
       const key = game.level.songKey || `${game.level.songId || 'song'}:${game.level.trackIndex || 0}:${game.level.songSpec?.startBar || 0}`;
       const previous = state.songBest[key] || { stars:0, accuracy:0 };
@@ -997,6 +1042,8 @@
     $('#resultAccuracy').textContent = `${accuracy}%`;
     $('#resultCombo').textContent = game.bestCombo;
     $('#resultXp').textContent = `+${xpEarned}`;
+    $('#resultCoach').hidden = false;
+    $('#resultCoach').innerHTML = `<strong>${escapeHtml(coach.title)}</strong><span>${escapeHtml(coach.message)}</span>${adaptiveMessage ? `<small>${escapeHtml(adaptiveMessage)}</small>` : ''}`;
     if (isSong) {
       const spec = game.level.songSpec;
       const rangeName = spec?.fullSong ? 'song' : 'section';
@@ -1013,6 +1060,44 @@
       $('#nextLevel').hidden = atEnd || stars < 1;
       $('#nextLevel').textContent = 'Next Mission ▶';
     }
+    if (dailyPractice) {
+      const remaining = dailyPractice.levelIds.length - dailyPractice.index - 1;
+      $('#resultEyebrow').textContent = `TODAY’S PRACTICE · STEP ${dailyPractice.index + 1} OF ${dailyPractice.levelIds.length}`;
+      $('#nextLevel').hidden = remaining <= 0;
+      $('#nextLevel').textContent = remaining > 0 ? 'Next Practice Step ▶' : 'Practice Complete';
+      $('#backToMap').textContent = 'Finish for Today';
+    }
+  }
+
+  function buildPracticeCoach(currentGame, accuracy) {
+    const misses = currentGame.events.filter(event => event.status === 'miss');
+    if (!misses.length) return { title:'Clean run!', message:'No missed notes. Try the next difficulty or a little more speed.' };
+    const counts = new Map();
+    misses.forEach(event => {
+      const key = `${event.string}:${event.fret}`;
+      counts.set(key, (counts.get(key) || 0) + 1);
+    });
+    const [key, count] = [...counts.entries()].sort((a,b) => b[1] - a[1])[0];
+    const [stringIndex, fret] = key.split(':').map(Number);
+    const string = currentGame.stringInfo[stringIndex] || STRING_INFO[stringIndex];
+    return { title:'Best thing to practise next', message:`${string?.name || 'That string'} · ${fret === 0 ? 'open' : `fret ${fret}`} caused ${count} ${count === 1 ? 'miss' : 'misses'}. Loop this lesson and watch that lane.` };
+  }
+
+  function updateAdaptiveDifficulty(currentGame, accuracy) {
+    if (state.settings?.adaptiveDifficulty === false || currentGame.listenOnly) return '';
+    const key = currentGame.practiceKey || levelPracticeKey(currentGame.level);
+    const run = state.levelRuns[key] || { good:0 };
+    run.good = accuracy >= 85 ? run.good + 1 : 0;
+    const levels = [.5,.75,1];
+    const current = Number(currentGame.density) || 1;
+    const currentIndex = Math.max(0, levels.findIndex(level => Math.abs(level - current) < .01));
+    let next = current;
+    if (run.good >= 2 && currentIndex < levels.length - 1) { next = levels[currentIndex + 1]; run.good = 0; }
+    else if (accuracy < 55) next = levels[Math.max(0, currentIndex - 1)];
+    state.levelRuns[key] = run;
+    if (next === current) return accuracy >= 85 && current < 1 ? 'One more strong run will unlock more notes.' : current >= 1 && accuracy >= 85 ? 'You are playing the complete note pattern.' : '';
+    state.levelDensity[key] = next;
+    return next > current ? `Auto difficulty increased the next run to ${Math.round(next * 100)}% of the notes.` : `Auto difficulty reduced the next run to ${Math.round(next * 100)}% so the skill is easier to practise.`;
   }
 
   function togglePause() {
@@ -1038,6 +1123,7 @@
     $('#gameScreen').hidden = true;
     $('#resultScreen').hidden = true;
     $('#gameStart').hidden = false;
+    dailyPractice = null;
     showView(returnToSongs ? 'songs' : 'play');
   }
 
@@ -1107,6 +1193,7 @@
   }
 
   function bindInput() {
+    $('#calibrateInput').addEventListener('click', runInputCalibration);
     $('#inputToggle').addEventListener('click', async () => {
       if (audio.active) {
         audio.stop();
@@ -1117,20 +1204,72 @@
     });
     $('#audioDeviceSelect').addEventListener('change', async e => {
       selectedDeviceId = e.target.value;
+      state.settings = { ...(state.settings || {}), inputDeviceId:selectedDeviceId };
+      saveProgress();
       if (audio.active) {
         try { await startAudioInput(selectedDeviceId); } catch (err) { console.error(err); toast('Could not switch input device.'); }
       }
     });
     $('#noiseGate').addEventListener('input', e => {
       audio.noiseGate = Number(e.target.value);
+      state.settings = { ...(state.settings || {}), noiseGate:audio.noiseGate, calibrated:false };
+      localStorage.setItem(PROGRESS_KEY, JSON.stringify(state));
       const v = audio.noiseGate;
       $('#noiseGateText').textContent = v < .012 ? 'Very sensitive' : v < .025 ? 'Normal' : v < .045 ? 'Less sensitive' : 'High noise room';
     });
   }
 
+  function applySavedInputSettings() {
+    selectedDeviceId = state.settings?.inputDeviceId || '';
+    audio.noiseGate = Math.max(.005, Math.min(.08, Number(state.settings?.noiseGate) || .018));
+    $('#noiseGate').value = String(audio.noiseGate);
+    const v = audio.noiseGate;
+    $('#noiseGateText').textContent = v < .012 ? 'Very sensitive' : v < .025 ? 'Normal' : v < .045 ? 'Less sensitive' : 'High noise room';
+    $('#calibrationStatus').textContent = state.settings?.calibrated ? `Ready · gate ${audio.noiseGate.toFixed(3)}` : 'Not calibrated yet';
+  }
+
+  async function runInputCalibration() {
+    const button = $('#calibrateInput');
+    if (inputCalibration) return;
+    try {
+      if (!audio.active) await startAudioInput(selectedDeviceId);
+      inputCalibration = { samples:[] };
+      button.disabled = true;
+      button.textContent = 'Play all six strings…';
+      $('#calibrationStatus').textContent = 'For 6 seconds, pick each open string cleanly.';
+      setTimeout(() => {
+        const samples = inputCalibration?.samples || [];
+        inputCalibration = null;
+        button.disabled = false;
+        button.textContent = 'Calibrate Again';
+        if (samples.length < 8) {
+          $('#calibrationStatus').textContent = 'Not enough signal—turn up the guitar or move closer and retry.';
+          return;
+        }
+        samples.sort((a,b) => a - b);
+        const quietPlaying = samples[Math.floor(samples.length * .2)];
+        const gate = Math.max(.005, Math.min(.05, quietPlaying * .42));
+        audio.noiseGate = gate;
+        $('#noiseGate').value = String(gate);
+        state.settings = { ...(state.settings || {}), noiseGate:gate, inputDeviceId:selectedDeviceId, calibrated:true };
+        saveProgress();
+        applySavedInputSettings();
+        toast('Input calibrated for this guitar setup.');
+      }, 6000);
+    } catch (err) {
+      console.error(err);
+      inputCalibration = null;
+      button.disabled = false;
+      button.textContent = 'Calibrate Input';
+      $('#calibrationStatus').textContent = 'Chrome could not access that input device.';
+    }
+  }
+
   async function startAudioInput(deviceId = '') {
     await audio.start(deviceId);
     selectedDeviceId = audio.deviceId || deviceId || '';
+    state.settings = { ...(state.settings || {}), inputDeviceId:selectedDeviceId };
+    localStorage.setItem(PROGRESS_KEY, JSON.stringify(state));
     await refreshAudioDevices();
     updateInputButtons();
   }
@@ -1842,7 +1981,7 @@
   async function registerServiceWorker() {
     if (!('serviceWorker' in navigator)) return;
     try {
-      const reg = await navigator.serviceWorker.register('./sw.js?v=0.9.0');
+      const reg = await navigator.serviceWorker.register('./sw.js?v=1.0.0');
       reg.update().catch(() => null);
     } catch (err) { console.error(err); }
   }
