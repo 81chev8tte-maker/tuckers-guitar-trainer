@@ -1,7 +1,7 @@
 {
-  "name": "Tucker's Guitar Quest",
-  "short_name": "Guitar Quest",
-  "description": "A free game-style guitar trainer that listens while you play.",
+  "name": "Family Music Quest",
+  "short_name": "Music Quest",
+  "description": "A free, child-friendly Guitar and Piano trainer that listens while you play.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

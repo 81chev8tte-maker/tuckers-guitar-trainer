@@ -1,6 +1,24 @@
-# Tucker's Guitar Quest
+# Family Music Quest
 
-A free Chromebook-friendly PWA that teaches beginner electric guitar as a game.
+A free Chromebook-friendly PWA that teaches children Guitar and Piano as a game. Tucker's complete Guitar v1.0 experience remains intact, with Nova's Piano Quest added alongside it.
+
+## v2.0.0 — Nova's Piano Quest
+
+- Adds a top-level Guitar/Piano chooser while preserving Guitar v1.0
+- Adds a responsive C3–B5 piano keyboard and falling-note play screen
+- Adds forgiving Wait for Me lessons and timed Rhythm Mode
+- Uses one input-event contract for microphone, screen keys and future Web MIDI hardware
+- Adds stabilized single-note microphone pitch detection and a child-friendly Mic Test
+- Adds separate Piano lessons, song library and saved progress
+- Imports standard `.mid` and `.midi` files with track preview, tempo, timing and note duration
+- Keeps Piano imports in a separate IndexedDB database from Guitar Pro songs
+- Supports Full Song and 30-second section practice for longer Piano songs
+
+### Piano v2.0 limitations
+
+- Microphone scoring intentionally recognizes one piano note at a time; chords are retained in imported data but accurate chord scoring is reserved for future USB/MIDI input
+- Imported notes outside the current beginner C3–B5 keyboard range are skipped
+- The built-in Piano player shows and scores the selected part; full multi-track accompaniment is a future pass
 
 ## v1.0.0 — Guided Practice
 

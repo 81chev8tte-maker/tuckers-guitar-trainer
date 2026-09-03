@@ -296,6 +296,15 @@
 
   const audio = createAudioEngine();
 
+  // Piano has its own detector. Stop Guitar listening before entering Piano so
+  // two microphone pipelines never compete; Guitar behavior otherwise stays unchanged.
+  window.addEventListener('music-app:leave-guitar', () => {
+    if (audio.active) audio.stop();
+    tunerActive = false;
+    $('#inputToggle').textContent = 'Enable Guitar Input';
+    $('#tunerToggle').textContent = 'Start Tuner';
+  });
+
   document.addEventListener('DOMContentLoaded', init);
 
   function init() {
