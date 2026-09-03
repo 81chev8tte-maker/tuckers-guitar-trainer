@@ -1,11 +1,11 @@
-const CACHE = 'family-music-quest-v2.0';
+const CACHE = 'family-music-quest-v2.0.1';
 const CORE = [
   './',
   './index.html',
   './styles.css?v=1.0.0',
-  './piano.css?v=2.0.0',
+  './piano.css?v=2.0.1',
   './app.js?v=1.0.0',
-  './piano.js?v=2.0.0',
+  './piano.js?v=2.0.1',
   './manifest.webmanifest?v=2.0.0',
   './icon.svg',
   'https://cdn.jsdelivr.net/npm/@coderline/alphatab@1.8.4/dist/alphaTab.min.js'
