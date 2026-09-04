@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const APP_VERSION = '2.2.0';
+  const APP_VERSION = '2.3.0';
   const DB_NAME = 'tucker-guitar-trainer';
   const DB_VERSION = 1;
   const STORE_SONGS = 'songs';
@@ -462,11 +462,18 @@
     $('#exitGame').addEventListener('click', exitGame);
     $('#gameStart').addEventListener('click', startMission);
     $('#gamePause').addEventListener('click', togglePause);
+    $('#gameLoopStart').addEventListener('click', () => setGuitarLoopPoint('start'));
+    $('#gameLoopEnd').addEventListener('click', () => setGuitarLoopPoint('end'));
+    $('#gameCountIn').addEventListener('change', e => {
+      state.settings = { ...(state.settings || {}), countIn:Boolean(e.target.checked) };
+      saveProgress();
+    });
     $('#gameLoop').addEventListener('click', () => {
       if (!game) return;
       game.loop = !game.loop;
       $('#gameLoop').textContent = game.loop ? '↻ Loop On' : '↻ Loop Off';
       $('#gameLoop').setAttribute('aria-pressed', String(game.loop));
+      if (game.loop && game.running) restartPracticeLoop();
     });
     $('#showNoteHighway').addEventListener('click', () => setGameView('highway'));
     $('#showTabHighway').addEventListener('click', () => setGameView('tab'));
@@ -585,6 +592,10 @@
       bestCombo:0,
       score:0,
       loop:false,
+      loopStart:0,
+      loopEnd:null,
+      restartingLoop:false,
+      startToken:0,
       listenOnly:Boolean(level.listenOnly),
       lastWrongFeedback:0,
       lastAcceptedPitchClass:null,
@@ -620,6 +631,10 @@
     $('#gamePause').textContent = 'Pause';
     $('#gameLoop').textContent = '↻ Loop Off';
     $('#gameLoop').setAttribute('aria-pressed', 'false');
+    $('#gameCountIn').checked = state.settings?.countIn !== false;
+    $('#gameLoopStart').hidden = $('#gameLoopEnd').hidden = game.mode !== 'song';
+    $('#gameLoopStart').textContent = 'A · Start';
+    $('#gameLoopEnd').textContent = 'B · End';
     $('#gameScore').textContent = '0';
     $('#gameAccuracy').textContent = '100%';
     $('#gameCombo').textContent = '0';
@@ -638,12 +653,15 @@
 
   async function startMission() {
     if (!game || game.running) return;
+    const startingGame = game;
+    const startToken = ++game.startToken;
     $('#gameStart').disabled = true;
     $('#gameStart').textContent = 'Getting input…';
     try {
       if (!game.listenOnly && !audio.active) await startAudioInput(selectedDeviceId);
       $('#gameScreen').classList.add('playing');
-      await runCountdown();
+      if (state.settings?.countIn !== false) await runCountdown(game.songTempo, game.level?.songSpec?.speed || 1);
+      if (game !== startingGame || startToken !== game.startToken || !$('#gameScreen').classList.contains('playing')) return;
       if (usesSongBackingClock()) {
         configureSongBacking(game.level);
         if (!alphaApi.play()) throw new Error('Backing player is not ready yet.');
@@ -663,7 +681,7 @@
     }
   }
 
-  function runCountdown() {
+  function runCountdown(bpm = 80, speed = 1) {
     return new Promise(resolve => {
       const el = $('#countdown');
       el.hidden = false;
@@ -681,7 +699,7 @@
         }
         el.textContent = steps[i];
         clickSound(i === steps.length - 1);
-      }, 650);
+      }, window.FMQPracticeTools?.beatMilliseconds(bpm, speed) || 750);
     });
   }
 
@@ -695,10 +713,13 @@
     updateGameBoard(t);
     markExpiredNotes(t);
     updateCurrentTab(t);
-    const total = game.events.length;
-    const done = game.hits + game.misses;
+    const activeEvents = game.events.filter(ev => ev.status !== 'skipped');
+    const total = activeEvents.length;
+    const done = activeEvents.filter(ev => ev.status === 'hit' || ev.status === 'miss').length;
     $('#gameProgressBar').style.width = `${Math.min(100, (done / total) * 100)}%`;
-    const endClock = usesSongBackingClock() ? (game.endClock ?? game.events.at(-1)?.clock) : game.endTime;
+    const endClock = game.loop && Number.isFinite(game.loopEnd)
+      ? game.loopEnd
+      : usesSongBackingClock() ? (game.endClock ?? game.events.at(-1)?.clock) : game.endTime;
     if (t >= endClock && done >= total) {
       if (game.loop) {
         restartPracticeLoop();
@@ -710,19 +731,61 @@
     game.raf = requestAnimationFrame(gameLoop);
   }
 
-  function restartPracticeLoop() {
+  async function restartPracticeLoop() {
+    if (!game || game.restartingLoop) return;
+    game.restartingLoop = true;
+    const loopGame = game;
+    game.running = false;
+    cancelAnimationFrame(game.raf);
+    if (usesSongBackingClock()) alphaApi?.pause?.();
+    const start = Number.isFinite(game.loopStart) ? game.loopStart : 0;
+    const end = Number.isFinite(game.loopEnd) ? game.loopEnd : (usesSongBackingClock() ? game.endClock : game.endTime);
     game.events.forEach(ev => {
-      ev.status = 'pending';
+      ev.status = ev.clock >= start && ev.clock <= end ? 'pending' : 'skipped';
       ev.elements.forEach(el => { el.classList.remove('hit','miss','demo'); el.hidden = true; });
     });
-    game.hits = 0; game.misses = 0; game.combo = 0; game.score = 0; game.startPerf = performance.now(); game.songClockTick = 0;
+    game.hits = 0; game.misses = 0; game.combo = 0; game.score = 0; game.songClockTick = start;
     $$('.tab-cell.hit,.tab-cell.miss,.tab-cell.demo', $('#liveTab')).forEach(cell => cell.classList.remove('hit','miss','demo'));
     updateGameHud();
+    if (state.settings?.countIn !== false) await runCountdown(game.songTempo, game.level?.songSpec?.speed || 1);
+    if (game !== loopGame || !$('#gameScreen').classList.contains('playing')) { loopGame.restartingLoop = false; return; }
     if (usesSongBackingClock()) {
       configureSongBacking(game.level);
+      const absoluteStart = Number(game.level.sectionStartTick || 0) + start;
+      alphaApi.tickPosition = absoluteStart;
+      game.songClockTick = start;
       alphaApi.play();
     }
+    game.startPerf = performance.now() - start * 1000;
+    game.running = true;
+    game.restartingLoop = false;
     game.raf = requestAnimationFrame(gameLoop);
+  }
+
+  function guitarLoopLimit() {
+    return usesSongBackingClock() ? Number(game.endClock || game.events.at(-1)?.clock || 1) : Number(game.endTime || 1);
+  }
+
+  function guitarClockSeconds(value) {
+    return usesSongBackingClock() ? value / gameClockWindows().unitsPerSecond : value;
+  }
+
+  function setGuitarLoopPoint(which) {
+    if (!game || game.mode !== 'song') return;
+    const current = Math.max(0, Math.min(guitarLoopLimit(), currentGameClock()));
+    if (which === 'start') game.loopStart = current;
+    else game.loopEnd = current;
+    if (!Number.isFinite(game.loopEnd)) game.loopEnd = guitarLoopLimit();
+    const minimum = gameClockWindows().unitsPerSecond;
+    const valid = window.FMQPracticeTools?.validateLoop(game.loopStart, game.loopEnd, guitarLoopLimit(), minimum) || {start:game.loopStart,end:game.loopEnd};
+    game.loopStart = valid.start; game.loopEnd = valid.end;
+    const format = window.FMQPracticeTools?.formatPracticeTime || (n => `${Math.round(n)}s`);
+    $('#gameLoopStart').textContent = `A · ${format(guitarClockSeconds(game.loopStart))}`;
+    $('#gameLoopEnd').textContent = `B · ${format(guitarClockSeconds(game.loopEnd))}`;
+    game.loop = true;
+    $('#gameLoop').textContent = '↻ Loop On';
+    $('#gameLoop').setAttribute('aria-pressed', 'true');
+    if (game.running) restartPracticeLoop();
   }
 
   function updateGameBoard(t) {
@@ -1152,7 +1215,7 @@
   function stopGameLoop() {
     if (game?.raf) cancelAnimationFrame(game.raf);
     if (game?.mode === 'song') releaseSongBacking();
-    if (game) { game.running = false; game.paused = false; game.raf = 0; }
+    if (game) { game.startToken++; game.running = false; game.paused = false; game.restartingLoop = false; game.raf = 0; }
   }
 
   function releaseSongBacking() {
@@ -2003,7 +2066,7 @@
   async function registerServiceWorker() {
     if (!('serviceWorker' in navigator)) return;
     try {
-      const reg = await navigator.serviceWorker.register('./sw.js?v=2.2.0');
+      const reg = await navigator.serviceWorker.register('./sw.js?v=2.3.0');
       reg.update().catch(() => null);
     } catch (err) { console.error(err); }
   }

@@ -1,5 +1,14 @@
 # Family Music Quest
 
+## v2.3 practice tools
+
+- A/B practice looping in imported Guitar and Piano gameplay
+- Tempo-based four-beat count-in with a saved per-player preference
+- Clean per-repeat note, scoring, animation and timing resets
+- Count-in tempo follows imported MIDI tempo changes at the loop start
+- Realistic deterministic MIDI validation covering melody, bass, drums, unnamed tracks, chords and dense accompaniment
+- No microphone, onset-gating or polyphonic-ML changes
+
 ## v2.2 open-source review and MIDI learning analysis
 
 - Analyzes every imported MIDI track using note density, range, jumps, chords, polyphony and tempo

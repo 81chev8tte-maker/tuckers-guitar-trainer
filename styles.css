@@ -154,3 +154,4 @@ main{width:min(1180px,calc(100% - 28px));margin:0 auto;padding:26px 0 10px}.view
 .game-screen:not(.tab-mode) .game-feedback{transform:none;margin:0;font-size:1.15rem;padding:5px 9px;border-radius:7px;background:rgba(4,8,12,.86);pointer-events:none}
 .game-screen:not(.tab-mode) .game-feedback.show{transform:translateY(-50%)}
 @media(max-width:700px){.calibration-row{align-items:stretch;flex-direction:column}.game-start-controls{min-width:0;flex-wrap:wrap}.adaptive-toggle{padding-bottom:0}}
+.game-practice-controls{display:flex;align-items:center;justify-content:flex-end;flex-wrap:wrap;gap:6px}.count-in-toggle{display:flex;align-items:center;gap:5px;white-space:nowrap;font-size:.72rem;font-weight:800;color:var(--muted)}
