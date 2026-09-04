@@ -2,6 +2,17 @@
 
 A free Chromebook-friendly PWA that teaches children Guitar and Piano as a game. Tucker's complete Guitar v1.0 experience remains intact, with Nova's Piano Quest added alongside it.
 
+## v2.0.2 — Piano Refinement & Learning Path
+
+- Replaces repeated browser completion dialogs with one guarded in-app result panel
+- Cancels stale Piano animation frames, timers and input subscriptions on restart or exit
+- Scopes gameplay and Mic Test key highlights to their own visible keyboards
+- Retains imported Piano notes across the full A0–C8 MIDI range
+- Adds Beginner Range and adaptive Song Range, including section-specific fitting and auto-follow for very wide songs
+- Expands Nova's path to 33 short lessons across seven organized levels
+- Adds short lesson introductions with a highlighted starting key
+- Expands microphone analysis toward the practical Piano range while retaining conservative stability filtering
+
 ## v2.0.0 — Nova's Piano Quest
 
 - Adds a top-level Guitar/Piano chooser while preserving Guitar v1.0
