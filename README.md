@@ -1,5 +1,15 @@
 # Family Music Quest
 
+## v2.2 open-source review and MIDI learning analysis
+
+- Analyzes every imported MIDI track using note density, range, jumps, chords, polyphony and tempo
+- Labels likely melody, Piano, accompaniment, bass/left-hand and drum parts in kid-friendly language
+- Recommends the most microphone-friendly practice track while preserving manual selection
+- Saves difficulty and practice traits with imported Piano songs
+- Adds 50%, 60%, 70%, 80%, 90% and 100% Piano practice speeds
+- Adds no ML models, runtime CDN dependencies or copied external code
+- See [OPEN_SOURCE_REVIEW.md](OPEN_SOURCE_REVIEW.md) for the feature-gap and licensing analysis
+
 A free Chromebook-friendly PWA that teaches children Guitar and Piano as one family game. Each local player can use both instruments while keeping independent progress.
 
 ## v2.1.0 — Player Profiles
