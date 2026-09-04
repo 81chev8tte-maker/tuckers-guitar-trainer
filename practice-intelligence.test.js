@@ -1,0 +1,12 @@
+const assert=require('assert');
+global.window={};require('./practice-intelligence.js');
+const api=window.FMQPracticeIntelligence;
+let model=api.emptySkillModel();
+for(let i=0;i<5;i++)model=api.updateSkill(model,'note:60',i<2,20);
+for(let i=0;i<5;i++)model=api.updateSkill(model,'note:62',true,-10);
+assert.equal(api.weakestSkill(model)[0],'note:60');
+const run=api.analyzeRun([{midi:60,start:2,status:'miss'},{midi:60,start:3,status:'miss'},{midi:62,start:4,status:'hit'}]);
+assert.equal(run.weakKey,'note:60');assert(run.range.start>=0&&run.range.end>run.range.start);
+let smart={speed:.6,successes:2,mastery:85};smart=api.smartPracticeStep(smart,90);assert.equal(smart.speed,.7);assert.equal(smart.successes,0);
+smart=api.smartPracticeStep({...smart,speed:.9},50);assert.equal(smart.speed,.8);
+console.log('practice intelligence tests passed');
