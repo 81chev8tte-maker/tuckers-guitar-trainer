@@ -6,25 +6,29 @@
   <meta name="theme-color" content="#0d1117" />
   <meta name="description" content="A free family music trainer that listens while children learn guitar and piano." />
   <title>Family Music Quest</title>
-  <link rel="manifest" href="./manifest.webmanifest?v=2.1.0" />
+  <link rel="manifest" href="./manifest.webmanifest?v=2.4.0" />
   <link rel="icon" href="./icon.svg" />
   <link rel="stylesheet" href="./styles.css?v=1.0.0" />
   <link rel="stylesheet" href="./piano.css?v=2.3.0" />
   <link rel="stylesheet" href="./profiles.css?v=2.1.0" />
+  <link rel="stylesheet" href="./diagnostics.css?v=2.4.0" />
   <script defer src="https://cdn.jsdelivr.net/npm/@coderline/alphatab@1.8.4/dist/alphaTab.min.js"></script>
   <script defer src="./profiles.js?v=2.1.0"></script>
   <script defer src="./practice-tools.js?v=2.3.0"></script>
-  <script defer src="./app.js?v=2.3.0"></script>
+  <script defer src="./practice-intelligence.js?v=2.4.0"></script>
+  <script defer src="./hardware-services.js?v=2.4.0"></script>
+  <script defer src="./app.js?v=2.4.0"></script>
   <script defer src="./piano-lessons.js?v=2.1.0"></script>
   <script defer src="./midi-analysis.js?v=2.2.0"></script>
-  <script defer src="./piano.js?v=2.3.0"></script>
+  <script defer src="./piano.js?v=2.4.0"></script>
+  <script defer src="./diagnostics.js?v=2.4.0"></script>
 </head>
 <body>
   <section id="profileSetup" class="profile-overlay" hidden aria-label="Player setup"></section>
   <section id="profileManager" class="profile-overlay" hidden aria-label="Player profiles"></section>
   <section id="instrumentChooser" class="instrument-chooser" hidden aria-labelledby="instrumentTitle">
     <div class="instrument-card">
-      <div class="chooser-profile-row"><button id="profileMenuButton" class="active-profile-button" type="button" aria-label="Switch or edit player"><span data-player-avatar>⭐</span><strong data-player-name>Player</strong><small>▼</small></button></div>
+      <div class="chooser-profile-row"><button id="profileMenuButton" class="active-profile-button" type="button" aria-label="Switch or edit player"><span data-player-avatar>⭐</span><strong data-player-name>Player</strong><small>▼</small></button><button id="openDiagnostics" class="button small secondary" type="button">⚙ Hardware & Backup</button></div>
       <p class="eyebrow">FAMILY MUSIC QUEST</p>
       <p id="profileGreeting" class="profile-greeting">Welcome back!</p>
       <h1 id="instrumentTitle">What are we playing today?</h1>
@@ -33,6 +37,16 @@
         <button id="chooseGuitar" class="instrument-option guitar-option"><span>🎸</span><strong>Guitar Quest</strong><small>Learn guitar, play songs and complete missions.</small></button>
         <button id="choosePiano" class="instrument-option piano-option"><span>🎹</span><strong>Piano Quest</strong><small>Learn piano, play songs and complete lessons.</small></button>
       </div>
+    </div>
+  </section>
+  <section id="hardwareDiagnostics" class="diagnostics-overlay" hidden aria-label="Hardware diagnostics">
+    <div class="diagnostics-panel">
+      <header><div><p class="eyebrow">SETTINGS · HARDWARE TEST</p><h1>Hardware & Backup</h1><p class="muted">Test the same input path used by the game. Results stay on this device.</p></div><button id="closeDiagnostics" class="icon-button" aria-label="Close">✕</button></header>
+      <nav class="diagnostic-tabs"><button data-diag-tab="microphone" class="active">🎸 Microphone</button><button data-diag-tab="midi">🎹 MIDI</button><button data-diag-tab="report">📋 Report</button><button data-diag-tab="backup">💾 Backup</button></nav>
+      <section class="diagnostic-view" data-diag-view="microphone"><h2>Production Guitar Input</h2><p id="diagMicDevice">Microphone not started</p><p id="diagMicSettings" class="muted">Permission has not been requested.</p><div class="signal-meter"><i id="diagMicLevel"></i></div><div class="diagnostic-reading"><strong id="diagMicNote">—</strong><span id="diagMicDetails">Start listening, then play one clean note.</span></div><div class="diagnostic-actions"><button id="diagStartMic" class="button">Start Test</button><button id="diagStopMic" class="button secondary">Stop</button><button id="diagCalibrate" class="button secondary">Save Quiet-Room Setup</button></div><p id="diagCalibration" class="muted"></p><details><summary>Guided physical checklist</summary><p>Test six open strings, fretted notes, repeated notes, alternate picking, quiet/loud notes, then silence, talking, body taps, muted strums, pick scrape, a wrong note and a correct note. The live readout shows onset and whether production input would consider the sound scoreable.</p></details></section>
+      <section class="diagnostic-view" data-diag-view="midi" hidden><h2>USB / Web MIDI</h2><p id="diagMidiStatus">Connect a keyboard, then choose Connect MIDI Keyboard.</p><strong id="diagMidiDevice">No device selected</strong><div class="diagnostic-reading"><strong id="diagMidiEvent">No MIDI event yet</strong><span id="diagMidiHeld">No keys held</span></div><button id="diagConnectMidi" class="button">Connect MIDI Keyboard</button><p class="muted">Try single notes, note-off, repeated notes, soft/hard velocity, a scale, intervals, chords, rapid notes, sustain, and unplug/reconnect. The report records only events actually received.</p></section>
+      <section class="diagnostic-view" data-diag-view="report" hidden><h2>Hardware Validation Report</h2><pre id="diagReport"></pre><div class="diagnostic-actions"><button id="diagCopyReport" class="button">Copy Report</button><button id="diagExportReport" class="button secondary">Export JSON</button><button id="diagReset" class="button danger">Reset Results</button></div></section>
+      <section class="diagnostic-view" data-diag-view="backup" hidden><h2>Family Music Quest Backup</h2><p>Exports player profiles, Guitar and Piano progress, skill history, calibration and preferences. Imported song files are not included.</p><div class="diagnostic-actions"><button id="exportBackup" class="button">Export Backup</button><label class="button secondary" for="restoreBackup">Restore Backup</label><input id="restoreBackup" type="file" accept="application/json,.json" hidden></div><p class="muted">A backup is validated before it replaces local player data.</p></section>
     </div>
   </section>
   <header class="topbar">
