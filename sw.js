@@ -1,16 +1,20 @@
-const CACHE = 'family-music-quest-v2.3.0';
+const CACHE = 'family-music-quest-v2.4.0';
 const CORE = [
   './',
   './index.html',
   './styles.css?v=1.0.0',
   './piano.css?v=2.3.0',
   './profiles.css?v=2.1.0',
+  './diagnostics.css?v=2.4.0',
   './profiles.js?v=2.1.0',
   './practice-tools.js?v=2.3.0',
-  './app.js?v=2.3.0',
+  './practice-intelligence.js?v=2.4.0',
+  './hardware-services.js?v=2.4.0',
+  './app.js?v=2.4.0',
   './piano-lessons.js?v=2.1.0',
   './midi-analysis.js?v=2.2.0',
-  './piano.js?v=2.3.0',
+  './piano.js?v=2.4.0',
+  './diagnostics.js?v=2.4.0',
   './manifest.webmanifest?v=2.1.0',
   './icon.svg',
   'https://cdn.jsdelivr.net/npm/@coderline/alphatab@1.8.4/dist/alphaTab.min.js'

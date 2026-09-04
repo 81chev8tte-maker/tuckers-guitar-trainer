@@ -1,5 +1,18 @@
 # Family Music Quest
 
+## v2.4 hardware and practice-intelligence foundation
+
+- Production Guitar microphone diagnostics plus actual granted device/audio settings
+- Shared Web MIDI service and live Note On/Off, velocity, polyphony and sustain diagnostics
+- Per-player calibration records and exportable local hardware reports
+- Versioned profile/progress backup and validated restore (imported song files excluded)
+- Compact rolling skill-history and deterministic Smart Practice controller logic
+- Inferred left/right-hand selection for imported Piano parts
+- GitHub Actions regression CI and physical Chromebook validation checklist
+- AudioWorklet investigation retained the current production detector as the safe fallback
+
+Generated MIDI accompaniment and the fully wired multi-speed Smart Practice session UI remain staged follow-up work; see `AUDIO_PIPELINE_REVIEW.md`.
+
 ## v2.3 practice tools
 
 - A/B practice looping in imported Guitar and Piano gameplay

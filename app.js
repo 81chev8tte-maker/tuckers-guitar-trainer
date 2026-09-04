@@ -293,6 +293,7 @@
   const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
 
   const audio = createAudioEngine();
+  window.FMQGuitarAudio = audio;
 
   // Piano has its own detector. Stop Guitar listening before entering Piano so
   // two microphone pipelines never compete; Guitar behavior otherwise stays unchanged.
@@ -332,7 +333,7 @@
   }
 
   function defaultState() {
-    return { xp:0, stars:{}, songBest:{}, levelRuns:{}, levelDensity:{}, totalHits:0, totalMisses:0, bestCombo:0, bestAccuracy:0, practiceSeconds:0, practiceDays:{}, missionsPlayed:0, songRuns:0, settings:{ gameView:'highway', noteDensity:1, adaptiveDifficulty:true, noiseGate:.018, inputDeviceId:'', calibrated:false } };
+    return { xp:0, stars:{}, songBest:{}, levelRuns:{}, levelDensity:{}, totalHits:0, totalMisses:0, bestCombo:0, bestAccuracy:0, practiceSeconds:0, practiceDays:{}, missionsPlayed:0, songRuns:0, skillModel:window.FMQPracticeIntelligence?.emptySkillModel?.()||null, settings:{ gameView:'highway', noteDensity:1, adaptiveDifficulty:true, noiseGate:.018, inputDeviceId:'', calibrated:false } };
   }
 
   function loadProgress() {
@@ -1038,6 +1039,7 @@
   function markHit(ev, t) {
     if (ev.status !== 'pending') return;
     ev.status = 'hit';
+    ev.timingMs = (t - ev.clock) / gameClockWindows().unitsPerSecond * 1000;
     game.hits++;
     game.combo++;
     game.bestCombo = Math.max(game.bestCombo, game.combo);
@@ -1098,6 +1100,9 @@
     const stars = accuracy >= 90 ? 3 : accuracy >= 75 ? 2 : accuracy >= 55 ? 1 : 0;
     const isSong = game.mode === 'song';
     const coach = buildPracticeCoach(game, accuracy);
+    if (window.FMQPracticeIntelligence) {
+      game.events.forEach(event => { state.skillModel = window.FMQPracticeIntelligence.updateSkill(state.skillModel, `string:${event.string}:fret:${event.fret}`, event.status === 'hit', event.timingMs || 0); });
+    }
     const adaptiveMessage = updateAdaptiveDifficulty(game, accuracy);
     if (isSong) {
       const key = game.level.songKey || `${game.level.songId || 'song'}:${game.level.trackIndex || 0}:${game.level.songSpec?.startBar || 0}`;

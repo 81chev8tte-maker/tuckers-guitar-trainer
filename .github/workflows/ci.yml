@@ -1,0 +1,20 @@
+name: Family Music Quest CI
+on:
+  push:
+    branches: [main]
+  pull_request:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm test
+      - run: npm run check
+      - name: Verify offline app shell
+        run: |
+          grep -q "diagnostics.js?v=2.4.0" sw.js
+          grep -q "practice-intelligence.js?v=2.4.0" sw.js
+          grep -q "hardware-services.js?v=2.4.0" sw.js

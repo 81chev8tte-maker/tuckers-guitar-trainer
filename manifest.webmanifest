@@ -1,7 +1,7 @@
 {
   "name": "Family Music Quest",
   "short_name": "Music Quest",
-  "description": "A free, child-friendly Guitar and Piano trainer that listens while you play.",
+  "description": "A free, local-first Guitar and Piano trainer that listens while you play.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

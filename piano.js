@@ -45,7 +45,7 @@
   const lessonGroups=curriculum?.groups||[{id:'start',title:'Piano Lessons',description:'Learn one note at a time.',lessons}];
 
   function loadProgress(){
-    const empty={version:2,completedLessons:[],songs:{},bestCombo:0,totalHits:0,minutes:0,lastSong:null,settings:{rangeMode:'beginner'}};
+    const empty={version:3,completedLessons:[],songs:{},bestCombo:0,totalHits:0,minutes:0,lastSong:null,skillModel:window.FMQPracticeIntelligence?.emptySkillModel?.()||null,settings:{rangeMode:'beginner',accompaniment:true,accompanimentVolume:.22}};
     try{const saved=window.FMQProfiles?.getInstrumentProgress('piano')||{};return{...empty,...saved,settings:{...empty.settings,...(saved.settings||{})}};}catch{return empty;}
   }
   let progress=loadProgress();
@@ -117,8 +117,10 @@
   // This provider contract is intentionally ready for Web MIDI note-on/note-off,
   // velocity and simultaneous notes without changing PianoGame.
   class MidiPianoInput {
-    constructor(hub){this.hub=hub;}
+    constructor(hub){this.hub=hub;this.unsubscribe=null;}
     receive(data){const command=data[0]&0xf0,midi=data[1],velocity=data[2];if(command===0x90&&velocity)this.hub.emit({midi,velocity,source:'midi'});else if(command===0x80||(command===0x90&&!velocity))this.hub.emit({midi,velocity:0,source:'midi',type:'noteoff'});}
+    async connect(){const service=window.FMQHardware?.midi;if(!service)throw new Error('Web MIDI is unavailable.');await service.connect();this.unsubscribe?.();this.unsubscribe=service.subscribe(event=>{if(event.type==='noteon'||event.type==='noteoff')this.hub.emit({midi:event.midi,velocity:event.velocity,type:event.type,source:'midi'});});}
+    stop(){this.unsubscribe?.();this.unsubscribe=null;}
   }
   window.NovaPianoInputs={PianoInputHub,MicrophonePianoInput,OnScreenPianoInput,MidiPianoInput};
 
@@ -157,7 +159,7 @@
     document.querySelectorAll('.piano-nav-button').forEach(b=>b.classList.toggle('active',b.dataset.pianoView===name));
     if(name!=='mic')microphoneInput.stop();if(name==='progress')renderProgress();if(name==='songs')renderSongs();
   }
-  pianoApp.addEventListener('click',e=>{const target=e.target.closest('[data-piano-view]');if(target)showPianoView(target.dataset.pianoView);const play=e.target.closest('[data-song]');if(play){if(play.dataset.lesson){showLessonIntro(lessons.find(lesson=>lesson.id===play.dataset.lesson));return;}const range=play.closest('.piano-list-card')?.querySelector('.piano-section-select')?.value||'full';startSong(play.dataset.song,play.dataset.mode||'wait',range);}});
+  pianoApp.addEventListener('click',e=>{const target=e.target.closest('[data-piano-view]');if(target)showPianoView(target.dataset.pianoView);const play=e.target.closest('[data-song]');if(play){if(play.dataset.lesson){showLessonIntro(lessons.find(lesson=>lesson.id===play.dataset.lesson));return;}const card=play.closest('.piano-list-card'),range=card?.querySelector('.piano-section-select')?.value||'full',hand=card?.querySelector('.piano-hand-select')?.value||'full';startSong(play.dataset.song,play.dataset.mode||'wait',range,null,hand);}});
 
   function renderLessons(){
     const nextId=lessons.find(lesson=>!progress.completedLessons.includes(lesson.id))?.id;
@@ -172,6 +174,7 @@
   async function renderSongs(){
     const imported=await getAllSongs();const all=[...builtInSongs.filter(song=>!song.lessonExercise),...imported];
     $('pianoSongList').innerHTML=all.map(song=>{const duration=Math.max(...song.notes.map(n=>n.start+n.duration)),range=noteRange(song.notes),octaves=Math.max(1,Math.ceil((range.max-range.min+1)/12)),difficulty=song.difficulty&&song.difficulty!=='Unrated'?` · ${'⭐'.repeat(song.difficultyStars||1)} ${song.difficulty}`:'';const sections=duration>18?Array.from({length:Math.ceil(duration/30)},(_,i)=>`<option value="${i}">Section ${i+1} · ${formatTime(i*30)}–${formatTime(Math.min(duration,(i+1)*30))}</option>`).join(''):'';return `<article class="piano-list-card"><div><p class="eyebrow">${song.imported?'IMPORTED MIDI':'PRACTICE SONG'}${song.imported?` · ${song.trackName||'Selected track'}`:''}${difficulty}</p><h2>${escapeHtml(song.title)}</h2><p>${escapeHtml(song.description||`${song.notes.length} notes · ${Math.round(song.tempo||120)} BPM`)}</p>${song.practiceRole?`<p><strong>${escapeHtml(song.practiceRole)}</strong>${song.practiceTraits?.length?` · ${song.practiceTraits.map(escapeHtml).join(' · ')}`:''}</p>`:''}<p class="piano-range-summary">Range: <strong>${noteName(range.min)}–${noteName(range.max)}</strong>${octaves>=5?' · Wide song: the keyboard will follow the notes.':''}${song.imported?' · Chords use their highest melody note for microphone practice.':''}</p></div><div class="piano-toolbar">${sections?`<select class="piano-section-select" aria-label="Practice range"><option value="full">Full Song</option>${sections}</select>`:''}<button class="button" data-song="${song.id}" data-mode="wait">Wait Mode</button><button class="button secondary" data-song="${song.id}" data-mode="normal">Rhythm Mode</button>${song.imported?`<button class="button ghost" data-delete-piano-song="${song.id}">Delete</button>`:''}</div></article>`;}).join('');
+    $('pianoSongList').querySelectorAll('[data-delete-piano-song]').forEach(button=>{const toolbar=button.closest('.piano-toolbar');if(!toolbar||toolbar.querySelector('.piano-hand-select'))return;const select=document.createElement('select');select.className='piano-hand-select';select.setAttribute('aria-label','Hand to practise');select.innerHTML='<option value="full">Full Part</option><option value="right">Right Hand (inferred)</option><option value="left">Left Hand (inferred)</option>';toolbar.prepend(select);});
   }
   function renderProgress(){
     const best=Math.max(0,...Object.values(progress.songs||{}).map(s=>s.bestScore||0));
@@ -249,9 +252,9 @@
     destroy(){if(this.destroyed)return;this.destroyed=true;this.runToken++;this.finished=true;this.running=false;cancelAnimationFrame(this.raf);this.clearTimers();this.unsubscribe?.();this.unsubscribe=null;microphoneInput.stop();this.clearRequired();this.song.notes.forEach(n=>delete n.done);document.body.classList.remove('piano-game-open');$('pianoGame').hidden=true;$('pianoGame').innerHTML='';if(currentGame===this)currentGame=null;renderLessons();renderProgress();}
   }
 
-  async function startSong(id,mode='wait',sectionChoice='full',lessonId=null){
+  async function startSong(id,mode='wait',sectionChoice='full',lessonId=null,handMode='full'){
     if(startSongBusy)return;startSongBusy=true;
-    try{if(currentGame)currentGame.destroy();let song=builtInSongs.find(s=>s.id===id)||await getSong(id);if(!song)return;const sourceNotes=song.imported?melodyPracticeNotes(song.notes):song.notes.map(n=>({...n}));const clone={...song,notes:sourceNotes.sort((a,b)=>a.start-b.start||a.midi-b.midi)};const rangePreference=lessonId?'beginner':song.imported?'song':(progress.settings?.rangeMode||'beginner');currentGame=new PianoGame(clone,mode,lessonId,{rangePreference});if(sectionChoice!=='full'){const start=+sectionChoice*30;currentGame.section={start,end:Math.min(start+30,Math.max(...clone.notes.map(n=>n.start+n.duration))+1)};}currentGame.mount();}finally{startSongBusy=false;}
+    try{if(currentGame)currentGame.destroy();let song=builtInSongs.find(s=>s.id===id)||await getSong(id);if(!song)return;let selected=song.notes;if(song.imported&&handMode!=='full')selected=selected.filter(note=>(note.hand||(note.midi<60?'left':'right'))===handMode);if(!selected.length)selected=song.notes;const sourceNotes=song.imported?melodyPracticeNotes(selected):selected.map(n=>({...n}));const clone={...song,handMode,notes:sourceNotes.sort((a,b)=>a.start-b.start||a.midi-b.midi)};const rangePreference=lessonId?'beginner':song.imported?'song':(progress.settings?.rangeMode||'beginner');currentGame=new PianoGame(clone,mode,lessonId,{rangePreference});if(sectionChoice!=='full'){const start=+sectionChoice*30;currentGame.section={start,end:Math.min(start+30,Math.max(...clone.notes.map(n=>n.start+n.duration))+1)};}currentGame.mount();}finally{startSongBusy=false;}
   }
   $('pianoQuickStart').addEventListener('click',()=>showLessonIntro(lessons[0]));
   pianoApp.addEventListener('click',async e=>{const del=e.target.closest('[data-delete-piano-song]');if(del&&confirm('Delete this imported Piano song?')){await deleteSong(del.dataset.deletePianoSong);renderSongs();}});

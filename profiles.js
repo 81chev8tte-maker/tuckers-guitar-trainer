@@ -125,6 +125,21 @@
     persist();
   }
 
+  function exportStore() { return clone(store); }
+
+  function replaceStore(candidate) {
+    if (!candidate || !Array.isArray(candidate.profiles) || candidate.profiles.some(profile => !profile?.id || !cleanName(profile.name))) return false;
+    const next = { ...emptyStore(), ...clone(candidate), version:1 };
+    next.profiles = next.profiles.map(profile => ({
+      id:String(profile.id), name:cleanName(profile.name), avatar:AVATARS.includes(profile.avatar) ? profile.avatar : AVATARS[0],
+      theme:THEMES.some(theme => theme.id === profile.theme) ? profile.theme : THEMES[0].id,
+      guitarProgress:profile.guitarProgress || null, pianoProgress:profile.pianoProgress || null,
+      createdAt:Number(profile.createdAt) || Date.now(), updatedAt:Number(profile.updatedAt) || Date.now()
+    }));
+    if (!next.profiles.some(profile => profile.id === next.activeProfileId)) next.activeProfileId = next.profiles[0]?.id || null;
+    store = next; persist(); announceChange('restored'); return true;
+  }
+
   function avatarChoices(selected) {
     return AVATARS.map(avatar => `<button type="button" class="profile-choice avatar-choice ${avatar === selected ? 'selected' : ''}" data-avatar="${avatar}" aria-label="Choose ${avatar}" aria-pressed="${avatar === selected}">${avatar}</button>`).join('');
   }
@@ -253,6 +268,8 @@
     switchProfile,
     updateProfile,
     deleteProfile,
+    exportStore,
+    replaceStore,
     _test:{ reload:() => { store=loadStore(); updateIdentity(); }, legacyKeys:[...LEGACY_KEYS] }
   };
 
