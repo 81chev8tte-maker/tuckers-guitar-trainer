@@ -46,7 +46,7 @@
       {id:'morning-bells',title:'Morning Bells',instruction:'Use a steady right hand and listen for the repeated notes.',hintMidi:60,pattern:[60,64,64,62,64,65,67,67,65,64,62,60],mode:'normal',options:{step:.7}},
       {id:'stepping-stones',title:'Stepping Stones',instruction:'Follow each neighboring step up and down.',hintMidi:60,pattern:[60,62,64,65,64,62,60,62,64,65,67,65,64,62,60],mode:'normal',options:{step:.62}},
       {id:'little-lantern',title:'Little Lantern',instruction:'Play gently and keep the melody moving at the same speed.',hintMidi:64,pattern:[64,65,67,64,62,60,62,64,67,65,64,62,60],mode:'normal',options:{step:.72}},
-      {id:'nova-celebration',title:"Nova's Celebration",instruction:'A final two-hand song. Follow the L and R markers one note at a time.',hintMidi:48,pattern:[48,60,50,62,52,64,53,65,55,67,53,65,52,64,50,62,48,60],mode:'normal',options:{step:.62,tempo:82}}
+      {id:'nova-celebration',title:'Celebration Song',instruction:'A final two-hand song. Follow the L and R markers one note at a time.',hintMidi:48,pattern:[48,60,50,62,52,64,53,65,55,67,53,65,52,64,50,62,48,60],mode:'normal',options:{step:.62,tempo:82}}
     ]}
   ];
   const songs=[];

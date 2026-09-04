@@ -1,9 +1,7 @@
 (() => {
   'use strict';
 
-  const APP_VERSION = '1.0.0';
-  const PROGRESS_KEY = 'tgq-progress-v2';
-  const OLD_PROGRESS_KEY = 'tgt-progress-v1';
+  const APP_VERSION = '2.1.0';
   const DB_NAME = 'tucker-guitar-trainer';
   const DB_VERSION = 1;
   const STORE_SONGS = 'songs';
@@ -304,6 +302,8 @@
     $('#inputToggle').textContent = 'Enable Guitar Input';
     $('#tunerToggle').textContent = 'Start Tuner';
   });
+  window.addEventListener('family-music:profile-changing', stopForProfileChange);
+  window.addEventListener('family-music:profile-changed', reloadActiveProfile);
 
   document.addEventListener('DOMContentLoaded', init);
 
@@ -338,22 +338,35 @@
   function loadProgress() {
     const base = defaultState();
     try {
-      const saved = JSON.parse(localStorage.getItem(PROGRESS_KEY));
+      const saved = window.FMQProfiles?.getInstrumentProgress('guitar');
       if (saved && typeof saved === 'object') return { ...base, ...saved, stars:saved.stars || {}, songBest:saved.songBest || {}, levelRuns:saved.levelRuns || {}, levelDensity:saved.levelDensity || {}, practiceDays:saved.practiceDays || {}, settings:{ ...base.settings, ...(saved.settings || {}) } };
-    } catch {}
-    try {
-      const old = JSON.parse(localStorage.getItem(OLD_PROGRESS_KEY));
-      if (old) {
-        base.practiceSeconds = Number(old.practiceMinutes || 0) * 60;
-        base.practiceDays = old.practiceDays || {};
-      }
     } catch {}
     return base;
   }
 
   function saveProgress() {
-    localStorage.setItem(PROGRESS_KEY, JSON.stringify(state));
+    window.FMQProfiles?.saveInstrumentProgress('guitar', state);
     updateStats();
+  }
+
+  function stopForProfileChange() {
+    stopGameLoop();
+    if (audio.active) audio.stop();
+    if (metronomeTimer) stopMetronome();
+    tunerActive = false;
+    dailyPractice = null;
+    closePlayer();
+    $('#gameScreen').hidden = true;
+    $('#resultScreen').hidden = true;
+  }
+
+  function reloadActiveProfile() {
+    state = loadProgress();
+    applySavedInputSettings();
+    renderWorldMap();
+    renderAchievements();
+    updateStats();
+    showView('play');
   }
 
   function bindNavigation() {
@@ -461,7 +474,7 @@
       const chosen = Number(e.target.value) || 1;
       state.settings = { ...(state.settings || {}), noteDensity:chosen };
       if (game?.practiceKey) state.levelDensity[game.practiceKey] = chosen;
-      localStorage.setItem(PROGRESS_KEY, JSON.stringify(state));
+      saveProgress();
       if (game?.level) launchLevel(game.level, true);
     });
     $('#gameAdaptive').addEventListener('change', e => {
@@ -512,7 +525,7 @@
   function setGameView(view) {
     const next = view === 'tab' ? 'tab' : 'highway';
     state.settings = { ...(state.settings || {}), gameView:next };
-    localStorage.setItem(PROGRESS_KEY, JSON.stringify(state));
+    saveProgress();
     $('#gameScreen').classList.toggle('tab-mode', next === 'tab');
     $('#showNoteHighway').classList.toggle('active', next === 'highway');
     $('#showTabHighway').classList.toggle('active', next === 'tab');
@@ -1222,7 +1235,7 @@
     $('#noiseGate').addEventListener('input', e => {
       audio.noiseGate = Number(e.target.value);
       state.settings = { ...(state.settings || {}), noiseGate:audio.noiseGate, calibrated:false };
-      localStorage.setItem(PROGRESS_KEY, JSON.stringify(state));
+      saveProgress();
       const v = audio.noiseGate;
       $('#noiseGateText').textContent = v < .012 ? 'Very sensitive' : v < .025 ? 'Normal' : v < .045 ? 'Less sensitive' : 'High noise room';
     });
@@ -1278,7 +1291,7 @@
     await audio.start(deviceId);
     selectedDeviceId = audio.deviceId || deviceId || '';
     state.settings = { ...(state.settings || {}), inputDeviceId:selectedDeviceId };
-    localStorage.setItem(PROGRESS_KEY, JSON.stringify(state));
+    saveProgress();
     await refreshAudioDevices();
     updateInputButtons();
   }
@@ -1990,7 +2003,7 @@
   async function registerServiceWorker() {
     if (!('serviceWorker' in navigator)) return;
     try {
-      const reg = await navigator.serviceWorker.register('./sw.js?v=2.0.2');
+      const reg = await navigator.serviceWorker.register('./sw.js?v=2.1.0');
       reg.update().catch(() => null);
     } catch (err) { console.error(err); }
   }
@@ -2004,5 +2017,6 @@
   function formatBytes(n) { if (n < 1024) return `${n} B`; if (n < 1024*1024) return `${(n/1024).toFixed(1)} KB`; return `${(n/1024/1024).toFixed(1)} MB`; }
   function escapeHtml(s) { return String(s).replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c])); }
 
-  console.info(`Tucker's Guitar Quest ${APP_VERSION}`);
+  window.FMQGuitarTest = { getState:() => JSON.parse(JSON.stringify(state)), reloadActiveProfile, defaultState };
+  console.info(`Guitar Quest ${APP_VERSION}`);
 })();

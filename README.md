@@ -1,6 +1,16 @@
 # Family Music Quest
 
-A free Chromebook-friendly PWA that teaches children Guitar and Piano as a game. Tucker's complete Guitar v1.0 experience remains intact, with Nova's Piano Quest added alongside it.
+A free Chromebook-friendly PWA that teaches children Guitar and Piano as one family game. Each local player can use both instruments while keeping independent progress.
+
+## v2.1.0 — Player Profiles
+
+- Renames the instrument experiences to neutral Guitar Quest and Piano Quest
+- Adds a quick two-step first-run player setup with name, avatar and accent colour
+- Supports multiple local players, profile switching, editing and confirmed deletion
+- Stores independent Guitar and Piano progress inside each active player profile
+- Keeps imported Guitar and Piano song libraries shared on the device
+- Retires the old development progress keys only once when the first profile is created
+- Preserves both gameplay engines, microphone tools, imports and offline PWA behaviour
 
 ## v2.0.2 — Piano Refinement & Learning Path
 
@@ -9,11 +19,11 @@ A free Chromebook-friendly PWA that teaches children Guitar and Piano as a game.
 - Scopes gameplay and Mic Test key highlights to their own visible keyboards
 - Retains imported Piano notes across the full A0–C8 MIDI range
 - Adds Beginner Range and adaptive Song Range, including section-specific fitting and auto-follow for very wide songs
-- Expands Nova's path to 33 short lessons across seven organized levels
+- Expands the Piano path to 33 short lessons across seven organized levels
 - Adds short lesson introductions with a highlighted starting key
 - Expands microphone analysis toward the practical Piano range while retaining conservative stability filtering
 
-## v2.0.0 — Nova's Piano Quest
+## v2.0.0 — Piano Quest
 
 - Adds a top-level Guitar/Piano chooser while preserving Guitar v1.0
 - Adds a responsive C3–B5 piano keyboard and falling-note play screen
@@ -28,7 +38,7 @@ A free Chromebook-friendly PWA that teaches children Guitar and Piano as a game.
 ### Piano v2.0 limitations
 
 - Microphone scoring intentionally recognizes one piano note at a time; chords are retained in imported data but accurate chord scoring is reserved for future USB/MIDI input
-- Imported notes outside the current beginner C3–B5 keyboard range are skipped
+- Imported notes across A0–C8 are retained; wide songs use adaptive Song Range
 - The built-in Piano player shows and scores the selected part; full multi-track accompaniment is a future pass
 
 ## v1.0.0 — Guided Practice

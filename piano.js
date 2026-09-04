@@ -2,7 +2,6 @@
   'use strict';
 
   const $ = id => document.getElementById(id);
-  const PIANO_PROGRESS_KEY = 'nova-piano-progress-v1';
   const INSTRUMENT_KEY = 'family-music-instrument-v1';
   const DB_NAME = 'nova-piano-trainer';
   const DB_STORE = 'songs';
@@ -31,7 +30,7 @@
   function melodyPracticeNotes(notes){const sorted=notes.map(n=>({...n})).sort((a,b)=>a.start-b.start||a.midi-b.midi),groups=[];for(const note of sorted){const group=groups.at(-1);if(group&&Math.abs(group[0].start-note.start)<.02)group.push(note);else groups.push([note]);}return groups.map(group=>({...group.at(-1),chordSize:group.length}));}
 
   const builtInSongs = [
-    {id:'nova-first-tune',title:"Nova's First Tune",description:'An original five-note melody for the right hand.',tempo:76,notes:[60,62,64,62,60,60,62,64,67,64,62,60].map((m,i)=>({midi:m,start:i*.7,duration:.52,hand:'right'}))},
+    {id:'nova-first-tune',title:'First Five-Note Tune',description:'An original five-note melody for the right hand.',tempo:76,notes:[60,62,64,62,60,60,62,64,67,64,62,60].map((m,i)=>({midi:m,start:i*.7,duration:.52,hand:'right'}))},
     {id:'middle-c-march',title:'Middle C March',description:'Steady quarter notes around Middle C.',tempo:72,notes:[60,60,62,62,64,64,62,60].map((m,i)=>({midi:m,start:i*.82,duration:.58,hand:'right'}))},
     {id:'two-hand-steps',title:'Two-Hand Steps',description:'Take turns with left and right hands.',tempo:68,notes:[48,50,52,53,60,62,64,65].map((m,i)=>({midi:m,start:i*.86,duration:.62,hand:m<60?'left':'right'}))}
   ];
@@ -47,11 +46,11 @@
 
   function loadProgress(){
     const empty={version:2,completedLessons:[],songs:{},bestCombo:0,totalHits:0,minutes:0,lastSong:null,settings:{rangeMode:'beginner'}};
-    try{const saved=JSON.parse(localStorage.getItem(PIANO_PROGRESS_KEY)||'{}');return{...empty,...saved,settings:{...empty.settings,...(saved.settings||{})}};}catch{return empty;}
+    try{const saved=window.FMQProfiles?.getInstrumentProgress('piano')||{};return{...empty,...saved,settings:{...empty.settings,...(saved.settings||{})}};}catch{return empty;}
   }
   let progress=loadProgress();
   let currentGame=null,startSongBusy=false;
-  const saveProgress=()=>localStorage.setItem(PIANO_PROGRESS_KEY,JSON.stringify(progress));
+  const saveProgress=()=>window.FMQProfiles?.saveInstrumentProgress('piano',progress);
 
   class PianoInputHub {
     constructor(){this.listeners=new Set();}
@@ -125,19 +124,19 @@
 
   const pianoApp=$('pianoApp');
   pianoApp.innerHTML=`
-    <header class="piano-topbar"><div class="piano-brand"><span>🎹</span><div><strong>Nova's Piano Quest</strong><small>Family Music Quest</small></div></div><button id="pianoSwitchInstrument" class="button small secondary">🎵 Instruments</button></header>
+    <header class="piano-topbar"><div class="piano-brand"><span>🎹</span><div><strong>Piano Quest</strong><small>Family Music Quest</small></div></div><button id="pianoSwitchInstrument" class="button small secondary">🎵 Instruments</button></header>
     <div class="piano-content">
-      <section id="piano-view-home" class="piano-view active"><article class="piano-hero"><div><p class="eyebrow">LISTEN • PLAY • GROW</p><h1>Learn piano one note at a time.</h1><p class="muted">Watch a note fall, find the matching key, and play it on a real piano—or tap the screen.</p><div class="piano-actions"><button id="pianoQuickStart" class="button big">▶ Start First Lesson</button><button class="button secondary" data-piano-view="mic">🎙 Test Microphone</button></div></div><div class="nova-card"><div><span>🎹</span><h2>Hi, Nova!</h2><p class="muted">Let's make some music.</p></div></div></article><div class="piano-grid"><article class="piano-card"><span>🌱 BEGINNER</span><h3>Wait for Me Mode</h3><p class="muted">The game waits until the right key is played.</p><button class="button" data-song="nova-first-tune" data-mode="wait">Start</button></article><article class="piano-card"><span>🎵 PLAY</span><h3>Rhythm Mode</h3><p class="muted">Keep up with the notes and build a combo.</p><button class="button" data-song="nova-first-tune" data-mode="normal">Play</button></article><article class="piano-card"><span>🎙 INPUT</span><h3>Can it hear the piano?</h3><p class="muted">Check the microphone before a lesson.</p><button class="button secondary" data-piano-view="mic">Mic Test</button></article></div></section>
-      <section id="piano-view-lessons" class="piano-view"><div class="page-heading"><p class="eyebrow">NOVA'S PATH</p><h1>Piano Lessons</h1><p class="muted">One short idea, then play it as a game.</p></div><div id="pianoLessonList" class="piano-lesson-list"></div></section>
-      <section id="piano-view-songs" class="piano-view"><div class="page-heading"><p class="eyebrow">PIANO LIBRARY</p><h1>Songs</h1><p class="muted">Piano songs stay separate from Tucker's Guitar library.</p></div><div id="pianoSongList" class="piano-library-list"></div></section>
+      <section id="piano-view-home" class="piano-view active"><article class="piano-hero"><div><p class="eyebrow">LISTEN • PLAY • GROW</p><h1>Learn piano one note at a time.</h1><p class="muted">Watch a note fall, find the matching key, and play it on a real piano—or tap the screen.</p><div class="piano-actions"><button id="pianoQuickStart" class="button big">▶ Start First Lesson</button><button class="button secondary" data-piano-view="mic">🎙 Test Microphone</button></div></div><div class="nova-card"><div><span data-player-avatar>⭐</span><h2>Ready, <b data-player-name>Player</b>?</h2><p class="muted">Let's make some music.</p></div></div></article><div class="piano-grid"><article class="piano-card"><span>🌱 BEGINNER</span><h3>Wait for Me Mode</h3><p class="muted">The game waits until the right key is played.</p><button class="button" data-song="nova-first-tune" data-mode="wait">Start</button></article><article class="piano-card"><span>🎵 PLAY</span><h3>Rhythm Mode</h3><p class="muted">Keep up with the notes and build a combo.</p><button class="button" data-song="nova-first-tune" data-mode="normal">Play</button></article><article class="piano-card"><span>🎙 INPUT</span><h3>Can it hear the piano?</h3><p class="muted">Check the microphone before a lesson.</p><button class="button secondary" data-piano-view="mic">Mic Test</button></article></div></section>
+      <section id="piano-view-lessons" class="piano-view"><div class="page-heading"><p class="eyebrow">LEARNING PATH</p><h1>Piano Lessons</h1><p class="muted">One short idea, then play it as a game.</p></div><div id="pianoLessonList" class="piano-lesson-list"></div></section>
+      <section id="piano-view-songs" class="piano-view"><div class="page-heading"><p class="eyebrow">PIANO LIBRARY</p><h1>Songs</h1><p class="muted">Piano songs are kept separate from the Guitar library.</p></div><div id="pianoSongList" class="piano-library-list"></div></section>
       <section id="piano-view-import" class="piano-view"><div class="page-heading"><p class="eyebrow">ADD A PIANO SONG</p><h1>Import MIDI</h1><p class="muted">Choose a .mid or .midi file, then pick the track that contains the piano part.</p></div><div class="piano-import-drop"><label class="button big" for="pianoMidiFile">Choose MIDI File</label><input id="pianoMidiFile" type="file" accept=".mid,.midi,audio/midi" hidden><p id="midiImportStatus" class="muted">Files stay in this browser.</p></div><div id="midiPreview" class="piano-status-card" hidden></div></section>
       <section id="piano-view-mic" class="piano-view"><div class="page-heading"><p class="eyebrow">INPUT TEST</p><h1>Can the Chromebook hear the piano?</h1><p class="muted">Play one piano key at a time. A quiet room works best.</p></div><article class="piano-status-card"><div class="piano-toolbar"><button id="pianoMicToggle" class="button">Enable Microphone</button><span id="pianoMicStatus" class="muted">Microphone is off. You can still tap the keyboard.</span></div><div class="mic-readout"><small>DETECTED · NEAREST NOTE</small><div id="micDetectedNote" class="heard">—</div><strong id="micSignalText">Play a piano key…</strong><p id="micRangeText" class="muted">Beginner Range: C3–B5</p><div class="signal-meter"><i id="pianoSignalBar"></i></div><details class="technical-details"><summary>Technical details</summary><div id="micTechnical">Frequency — · MIDI — · Stability —</div></details></div><div id="micTestKeyboard"></div></article></section>
-      <section id="piano-view-progress" class="piano-view"><div class="page-heading"><p class="eyebrow">NOVA'S PROGRESS</p><h1>Progress</h1><p class="muted">Piano progress is saved separately on this Chromebook.</p></div><div id="pianoProgressCards" class="piano-grid"></div></section>
+      <section id="piano-view-progress" class="piano-view"><div class="page-heading"><p class="eyebrow">PLAYER PROGRESS</p><h1>Piano Progress</h1><p class="muted">This Piano progress belongs to <span data-player-name>this player</span>.</p></div><div id="pianoProgressCards" class="piano-grid"></div></section>
     </div>
     <nav class="piano-bottom-nav" aria-label="Piano navigation"><button class="piano-nav-button active" data-piano-view="home"><span>🎹</span>Play</button><button class="piano-nav-button" data-piano-view="lessons"><span>🌱</span>Lessons</button><button class="piano-nav-button" data-piano-view="songs"><span>♫</span>Songs</button><button class="piano-nav-button" data-piano-view="import"><span>⬇</span>Import</button><button class="piano-nav-button" data-piano-view="mic"><span>🎙</span>Mic Test</button><button class="piano-nav-button" data-piano-view="progress"><span>★</span>Progress</button></nav>
     <section id="pianoGame" class="piano-game" hidden></section>`;
 
-  function showChooser(){microphoneInput.stop();$('instrumentChooser').hidden=false;}
+  function showChooser(){microphoneInput.stop();if(currentGame)currentGame.destroy();window.FMQProfiles?.showHome();}
   function chooseInstrument(name){
     localStorage.setItem(INSTRUMENT_KEY,name);$('instrumentChooser').hidden=true;const piano=name==='piano';document.body.classList.toggle('piano-active',piano);pianoApp.hidden=!piano;
     if(!piano){if(currentGame)currentGame.destroy();microphoneInput.stop();window.dispatchEvent(new CustomEvent('music-app:enter-guitar'));}
@@ -147,8 +146,11 @@
   $('choosePiano').addEventListener('click',()=>chooseInstrument('piano'));
   $('openInstrumentChooser').addEventListener('click',showChooser);
   $('pianoSwitchInstrument').addEventListener('click',showChooser);
+  window.addEventListener('family-music:profile-changing',()=>{if(currentGame)currentGame.destroy();microphoneInput.stop();});
+  window.addEventListener('family-music:profile-changed',()=>{progress=loadProgress();renderLessons();renderSongs();renderProgress();showPianoView('home');});
+  window.addEventListener('family-music:show-home',()=>{if(currentGame)currentGame.destroy();microphoneInput.stop();});
   const remembered=localStorage.getItem(INSTRUMENT_KEY);
-  if(remembered)chooseInstrument(remembered);else if(localStorage.getItem('tgq-progress-v2'))chooseInstrument('guitar');else showChooser();
+  if(window.FMQProfiles?.hasActiveProfile()){if(remembered)chooseInstrument(remembered);else showChooser();}
 
   function showPianoView(name){
     document.querySelectorAll('.piano-view').forEach(v=>v.classList.toggle('active',v.id===`piano-view-${name}`));
