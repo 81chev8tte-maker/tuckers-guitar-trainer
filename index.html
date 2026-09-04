@@ -6,31 +6,37 @@
   <meta name="theme-color" content="#0d1117" />
   <meta name="description" content="A free family music trainer that listens while children learn guitar and piano." />
   <title>Family Music Quest</title>
-  <link rel="manifest" href="./manifest.webmanifest?v=2.0.0" />
+  <link rel="manifest" href="./manifest.webmanifest?v=2.1.0" />
   <link rel="icon" href="./icon.svg" />
   <link rel="stylesheet" href="./styles.css?v=1.0.0" />
-  <link rel="stylesheet" href="./piano.css?v=2.0.2" />
+  <link rel="stylesheet" href="./piano.css?v=2.1.0" />
+  <link rel="stylesheet" href="./profiles.css?v=2.1.0" />
   <script defer src="https://cdn.jsdelivr.net/npm/@coderline/alphatab@1.8.4/dist/alphaTab.min.js"></script>
-  <script defer src="./app.js?v=1.0.0"></script>
-  <script defer src="./piano-lessons.js?v=2.0.2"></script>
-  <script defer src="./piano.js?v=2.0.2"></script>
+  <script defer src="./profiles.js?v=2.1.0"></script>
+  <script defer src="./app.js?v=2.1.0"></script>
+  <script defer src="./piano-lessons.js?v=2.1.0"></script>
+  <script defer src="./piano.js?v=2.1.0"></script>
 </head>
 <body>
+  <section id="profileSetup" class="profile-overlay" hidden aria-label="Player setup"></section>
+  <section id="profileManager" class="profile-overlay" hidden aria-label="Player profiles"></section>
   <section id="instrumentChooser" class="instrument-chooser" hidden aria-labelledby="instrumentTitle">
     <div class="instrument-card">
+      <div class="chooser-profile-row"><button id="profileMenuButton" class="active-profile-button" type="button" aria-label="Switch or edit player"><span data-player-avatar>⭐</span><strong data-player-name>Player</strong><small>▼</small></button></div>
       <p class="eyebrow">FAMILY MUSIC QUEST</p>
+      <p id="profileGreeting" class="profile-greeting">Welcome back!</p>
       <h1 id="instrumentTitle">What are we playing today?</h1>
-      <p class="muted">Choose an instrument. Your Guitar and Piano progress stay separate.</p>
+      <p class="muted">Choose an instrument. Your progress stays with your player.</p>
       <div class="instrument-options">
-        <button id="chooseGuitar" class="instrument-option guitar-option"><span>🎸</span><strong>Guitar</strong><small>Tucker's Guitar Quest</small></button>
-        <button id="choosePiano" class="instrument-option piano-option"><span>🎹</span><strong>Piano</strong><small>Nova's Piano Quest</small></button>
+        <button id="chooseGuitar" class="instrument-option guitar-option"><span>🎸</span><strong>Guitar Quest</strong><small>Learn guitar, play songs and complete missions.</small></button>
+        <button id="choosePiano" class="instrument-option piano-option"><span>🎹</span><strong>Piano Quest</strong><small>Learn piano, play songs and complete lessons.</small></button>
       </div>
     </div>
   </section>
   <header class="topbar">
     <button class="brand" data-view-target="play" aria-label="Home">
       <span class="brand-mark">🎸</span>
-      <span><strong>Tucker's</strong><small>Guitar Quest</small></span>
+      <span><strong>Guitar</strong><small>Quest</small></span>
     </button>
     <div class="topbar-stats">
       <button id="openInstrumentChooser" class="button small secondary" type="button">🎵 Instruments</button>
@@ -242,7 +248,7 @@
     </section>
   </main>
 
-  <section id="pianoApp" class="piano-app" hidden aria-label="Nova's Piano Quest"></section>
+  <section id="pianoApp" class="piano-app" hidden aria-label="Piano Quest"></section>
 
   <section id="gameScreen" class="game-screen" hidden aria-label="Guitar mission">
     <div class="game-shell">
