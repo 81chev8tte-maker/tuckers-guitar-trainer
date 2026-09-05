@@ -1,5 +1,14 @@
 # Family Music Quest
 
+## v2.6.2 Songbook Quality & Complete Music
+
+- Completes Twinkle, Frère Jacques, and Row, Row, Row Your Boat
+- Labels Jingle Bells as the complete refrain and Ode to Joy as the complete principal theme
+- Rewrites all six Level 7 originals with explicit Intro/A/B/Bridge/Return/Ending forms
+- Adds a machine-readable song manifest and structural musical regression tests
+- Keeps microphone Melody Practice monophonic while MIDI/on-screen Hands Together retains full accompaniment
+- Documents the required subjective Listen First review in [MUSICAL_REVIEW_CHECKLIST.md](MUSICAL_REVIEW_CHECKLIST.md)
+
 ## v2.6.1 Gameplay Correctness & Stability
 
 - Piano chords and intervals are scored as simultaneous target groups in any Note On order

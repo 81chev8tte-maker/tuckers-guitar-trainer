@@ -19,6 +19,7 @@ jobs:
       - run: npm run test:browser
       - name: Verify offline app shell
         run: |
-          grep -q "family-music-quest-v2.6.1" sw.js
-          grep -q "gameplay-rules.js?v=2.6.1" sw.js
-          grep -q "app.js?v=2.6.1" sw.js
+          VERSION=$(node -p "require('./package.json').version")
+          grep -q "family-music-quest-v${VERSION}" sw.js
+          grep -q "gameplay-rules.js?v=${VERSION}" sw.js
+          grep -q "app.js?v=${VERSION}" sw.js
