@@ -1,5 +1,19 @@
 # Family Music Quest
 
+## v2.5 Piano Curriculum v2
+
+- Keeps all existing Piano lesson IDs and completed-progress references intact
+- Separates quick exercises, 20–40 second mini-songs, 45–70 second full songs, and concert checkpoints
+- Adds seven musical checkpoints: First Melody, Five-Finger Concert, Rhythm Challenge, Left-Hand Challenge, Two-Hand Concert, C Major Concert, and Final Celebration Concert
+- Expands Level 7 to six original pieces using repeated phrase forms rather than tiny note drills
+- Uses explicit beat timing for quarter notes, half notes, rests, and introductory eighth notes
+- Adds measure numbers, phrase labels/boundaries, skill tags, hand markers, and finger guidance metadata
+- Adds optional Listen First playback through the normal falling-note stage with animated keys and no scoring
+- Adds Learn, Practice, Perform, and Master assistance levels without duplicating song definitions
+- Adds deterministic curriculum validation for IDs, references, timing, durations, hands, fingers, measures, phrases, and assistance modes
+
+The course introduces C/F/G harmonic roots conservatively. Microphone lessons remain single-note compatible; reliable simultaneous chord scoring still requires Web MIDI. The app does not attempt to detect which physical finger was used.
+
 ## v2.4 hardware and practice-intelligence foundation
 
 - Production Guitar microphone diagnostics plus actual granted device/audio settings
