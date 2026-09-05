@@ -1,5 +1,5 @@
 const assert=require('assert');
-global.window={};
+global.window={};require('./piano-songbook.js');
 const curriculum=require('./piano-lessons.js');
 const lessonIds=curriculum.lessons.map(x=>x.id),songIds=curriculum.songs.map(x=>x.id);
 assert.equal(new Set(lessonIds).size,lessonIds.length,'lesson IDs must be unique');

@@ -1,0 +1,10 @@
+const assert=require('assert'),fs=require('fs');
+const chooser=fs.readFileSync('piano.css','utf8').match(/\.instrument-chooser\{[^}]*z-index:(\d+)/);
+const diagnostics=fs.readFileSync('diagnostics-layer.css','utf8').match(/z-index:\s*(\d+)/);
+assert(chooser&&diagnostics,'both overlay layers must declare z-index');
+assert(+diagnostics[1]>+chooser[1],'Hardware & Backup must appear above the instrument chooser');
+const html=fs.readFileSync('index.html','utf8');
+assert(html.includes('id="openDiagnostics"')&&html.includes('id="hardwareDiagnostics"')&&html.includes('id="closeDiagnostics"'));
+const js=fs.readFileSync('diagnostics.js','utf8');
+assert(js.includes("$('openDiagnostics').onclick=open")&&js.includes("$('closeDiagnostics').onclick=close"));
+console.log('UI overlay layering tests passed');

@@ -1,0 +1,20 @@
+const assert=require('assert');global.window={};
+const book=require('./piano-songbook.js');
+assert.equal(book.publicDomain.length,5);
+assert.equal(book.originals.length,6);
+assert.equal(new Set(book.songs.map(s=>s.id)).size,book.songs.length);
+book.songs.forEach(song=>{
+  assert(song.notes.length>20&&song.measureCount>=16);
+  assert(song.targetDuration>=45,`${song.id} should feel like a full song`);
+  assert(song.phraseBoundaries.length>=4);
+  song.notes.forEach(note=>{assert(Number.isFinite(note.beat)&&note.beat>=0);assert(note.durationBeats>0);assert(Number.isFinite(note.start)&&Number.isFinite(note.duration));});
+  assert(Math.max(...song.notes.map(n=>n.beat+n.durationBeats))<=song.measureCount*4,'events must remain inside declared measures');
+  assert(song.notes.some((n,i)=>song.notes.some((m,j)=>i!==j&&m.beat===n.beat)),`${song.id} needs simultaneous arrangement events`);
+  const listen=book.arrangement(song,'listen','screen');assert.equal(listen.player.length,song.notes.length);
+  const mic=book.arrangement(song,'melody','microphone');assert(mic.accompaniment.length>0);for(let i=1;i<mic.player.length;i++)assert(Math.abs(mic.player[i].start-mic.player[i-1].start)>=.02,'microphone arrangement must be monophonic');
+  const together=book.arrangement(song,'full','midi');assert.equal(together.player.length,song.notes.length);assert(together.player.some((n,i)=>together.player.some((m,j)=>i!==j&&m.start===n.start)));
+  assert(book.arrangement(song,'left','midi').player.every(n=>n.hand==='left'));
+  assert(book.arrangement(song,'right','midi').player.every(n=>n.hand==='right'));
+});
+book.publicDomain.forEach(song=>{assert.equal(song.rights.status,'Public Domain');assert(song.rights.source.startsWith('https://'));assert(song.rights.arrangement.includes('Family Music Quest'));assert.equal(song.rights.lyrics,false);});
+console.log('Piano songbook and arrangement tests passed');

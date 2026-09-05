@@ -78,8 +78,18 @@
     'homeward-march':piece('homeward-march','Homeward March',{tempo:76,type:'fullSong',skills:['left-hand','right-hand','hand-coordination'],description:'An original march with bass support.',phrases:{A:[[48,2,0,'left'],[60,1],[62,1],[64,1],[65,1],[67,2]],B:[[55,2,0,'left'],[67,1],[65,1],[64,1],[62,1],[60,2]],C:[[53,2,0,'left'],[65,1],[67,1],[69,2],[67,2]]},form:['A','A','B','A','C','B','A','B']}),
     'nova-celebration':piece('nova-celebration','Final Celebration Concert',{tempo:80,type:'checkpoint',checkpoint:true,skills:['note-recognition','rhythm','C-major-scale','hand-coordination'],assistance:'perform',description:'An original final concert piece.',phrases:{A:[[48,2,0,'left'],[60,1],[62,1],[64,1],[65,1],[67,2]],B:[[50,2,0,'left'],[62,1],[64,1],[65,1],[67,1],[69,2]],C:[[52,2,0,'left'],[64,.5],[65,.5],[67,1],[69,1],[67,1],[65,2]],D:[[55,2,0,'left'],[72,1],[71,1],[69,1],[67,1],[65,1],[64,1],[62,1],[60,3]]},form:['A','A','B','A','C','B','A','D','A','B']})
   };
+  const songbook=window.FMQPianoSongbook;
+  songbook?.originals.forEach(song=>{P[song.id.replace(/^lesson-/,'')]=song;});
+  const rewards={
+    meet:{id:'twinkle-reward',title:'I Know This Song!',instruction:'Play the melody from Twinkle, Twinkle, Little Star.',hintMidi:60,song:'songbook-twinkle'},
+    'five-fingers':{id:'row-row-reward',title:'Row Your Boat',instruction:'Use neighboring notes in a tune you may already know.',hintMidi:60,song:'songbook-row-row'},
+    rhythm:{id:'jingle-bells-reward',title:'Jingle Bells Rhythm Song',instruction:'Keep a steady beat through repeated notes and longer endings.',hintMidi:64,song:'songbook-jingle-bells',mode:'normal'},
+    'two-hands':{id:'frere-jacques-reward',title:'Frère Jacques',instruction:'Play the melody while the app supplies a gentle bass part.',hintMidi:60,song:'songbook-frere-jacques'},
+    'c-major':{id:'ode-to-joy-reward',title:'Ode to Joy',instruction:'Use C-position notes to play Beethoven’s famous theme.',hintMidi:64,song:'songbook-ode-to-joy',mode:'normal'}
+  };
+  groups.forEach(group=>{const reward=rewards[group.id],song=reward&&songbook?.songs.find(item=>item.id===reward.song);if(reward&&song){reward.contentType='fullSong';reward.skills=song.skills;reward.assistance='practice';reward.duration=durationOf(song);group.lessons.push(reward);}});
   const songs=[];
-  groups.forEach(group=>group.lessons.forEach(lesson=>{const song=lesson.piece?P[lesson.piece]:exercise(lesson.id,lesson.title,lesson.pattern,{...(lesson.options||{}),description:lesson.instruction,skills:lesson.skills||[],assistance:['meet','five-fingers'].includes(group.id)?'learn':'practice'});lesson.song=song.id;lesson.contentType=song.contentType;lesson.skills=song.skills;lesson.assistance=song.assistance;lesson.duration=durationOf(song);songs.push(song);}));
+  groups.forEach(group=>group.lessons.forEach(lesson=>{const song=lesson.song?songbook?.songs.find(item=>item.id===lesson.song):lesson.piece?P[lesson.piece]:exercise(lesson.id,lesson.title,lesson.pattern,{...(lesson.options||{}),description:lesson.instruction,skills:lesson.skills||[],assistance:['meet','five-fingers'].includes(group.id)?'learn':'practice'});if(!song)return;lesson.song=song.id;lesson.contentType=song.contentType;lesson.skills=song.skills;lesson.assistance=song.assistance;lesson.duration=durationOf(song);if(!songs.some(item=>item.id===song.id))songs.push(song);}));
   window.NovaPianoCurriculum={version:2,groups,lessons:groups.flatMap(group=>group.lessons.map(lesson=>({...lesson,groupId:group.id,groupTitle:group.title}))),songs,durationOf,contentLabels:{exercise:'Exercise',miniSong:'Mini Song',fullSong:'Full Song',checkpoint:'Concert'}};
   if(typeof module!=='undefined')module.exports=window.NovaPianoCurriculum;
 })();
