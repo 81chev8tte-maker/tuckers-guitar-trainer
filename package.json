@@ -1,6 +1,6 @@
 {
   "name":"family-music-quest",
   "private":true,
-  "version":"2.4.0",
-  "scripts":{"test":"node practice-tools.test.js && node midi-analysis.test.js && node midi-validation.test.js && node practice-intelligence.test.js","check":"node --check app.js && node --check piano.js && node --check profiles.js && node --check diagnostics.js && node --check hardware-services.js && node --check practice-intelligence.js"}
+  "version":"2.5.0",
+  "scripts":{"test":"node practice-tools.test.js && node midi-analysis.test.js && node midi-validation.test.js && node practice-intelligence.test.js && node piano-curriculum.test.js","check":"node --check app.js && node --check piano.js && node --check piano-lessons.js && node --check profiles.js && node --check diagnostics.js && node --check hardware-services.js && node --check practice-intelligence.js"}
 }
