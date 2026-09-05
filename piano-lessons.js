@@ -1,55 +1,85 @@
 (() => {
-  const exercise=(id,title,pattern,{step=.72,duration=.5,tempo=76,description='A short original piano exercise.',hands=null}={})=>({id:`lesson-${id}`,title,description,tempo,lessonExercise:true,notes:pattern.map((m,i)=>({midi:m,start:i*step,duration:Array.isArray(duration)?duration[i%duration.length]:duration,hand:hands?.[i]||(m<60?'left':'right')}))});
+  'use strict';
+  const RH={60:1,62:2,64:3,65:4,67:5,69:4,71:5,72:5},LH={48:5,50:4,52:3,53:2,55:1};
+  const handFor=midi=>midi<60?'left':'right',fingerFor=(midi,hand=handFor(midi))=>(hand==='left'?LH:RH)[midi]||null;
+  const durationOf=song=>Math.max(0,...song.notes.map(note=>note.start+note.duration));
+  function exercise(id,title,pattern,{step=.72,duration=.5,tempo=76,description='A short original piano exercise.',hands=null,skills=[],assistance='learn'}={}){
+    return{id:`lesson-${id}`,contentType:'exercise',title,description,tempo,targetDuration:pattern.length*step,skills,assistance,lessonExercise:true,notes:pattern.map((midi,index)=>{const hand=hands?.[index]||handFor(midi);return{midi,start:index*step,duration:Array.isArray(duration)?duration[index%duration.length]:duration,hand,finger:fingerFor(midi,hand),measure:Math.floor(index/4)+1,phrase:'Exercise'};})};
+  }
+  function piece(id,title,{tempo=76,type='miniSong',skills=[],assistance='practice',phrases,form,description,checkpoint=false,microphoneSafe=true}){
+    const sec=60/tempo,notes=[];let beat=0;
+    form.forEach((label,phraseIndex)=>phrases[label].forEach(([midi,held=1,rest=0,hand=handFor(midi)])=>{notes.push({midi,start:beat*sec,duration:Math.max(.12,held*sec*.88),beat,durationBeats:held,hand,finger:fingerFor(midi,hand),measure:Math.floor(beat/4)+1,phrase:label,phraseIndex});beat+=held+rest;}));
+    const phraseBoundaries=[];let cursor=0;form.forEach((label,index)=>{const beats=phrases[label].reduce((sum,e)=>sum+(e[1]||1)+(e[2]||0),0);phraseBoundaries.push({label,index,startBeat:cursor,endBeat:cursor+beats,start:cursor*sec,end:(cursor+beats)*sec,startMeasure:Math.floor(cursor/4)+1,endMeasure:Math.ceil((cursor+beats)/4)});cursor+=beats;});
+    return{id:`lesson-${id}`,contentType:type,title,description,tempo,targetDuration:cursor*sec,skills,assistance,checkpoint,microphoneSafe,measureCount:Math.ceil(cursor/4),beatsPerMeasure:4,phraseBoundaries,form:[...form],lessonExercise:true,notes};
+  }
   const groups=[
-    {id:'meet',title:'Level 1 — Meet the Piano',description:'Find the first notes and move one key at a time.',lessons:[
-      {id:'middle-c',title:'Find Middle C',instruction:'Find the group of two black keys near the middle. C is the white key just to their left.',hintMidi:60,pattern:[60,60,60,60]},
-      {id:'find-d',title:'Find D',instruction:'D is the white key between the two black keys.',hintMidi:62,pattern:[62,62,62,62]},
-      {id:'find-e',title:'Find E',instruction:'E is the white key just to the right of the group of two black keys.',hintMidi:64,pattern:[64,64,64,64]},
-      {id:'white-keys',title:'C, D and E',instruction:'Start on Middle C, then step right to D and E.',hintMidi:60,pattern:[60,62,64,62,60]},
-      {id:'moving-up',title:'Moving Up',instruction:'Moving right makes the notes sound higher. Play C, D, then E.',hintMidi:60,pattern:[60,62,64,60,62,64]},
-      {id:'moving-down',title:'Moving Down',instruction:'Moving left makes the notes sound lower. Play E, D, then C.',hintMidi:64,pattern:[64,62,60,64,62,60]},
-      {id:'c-to-g',title:'C–D–E–F–G',instruction:'Walk across five neighboring white keys, one step at a time.',hintMidi:60,pattern:[60,62,64,65,67,65,64,62,60]}
-    ]},
+    {id:'meet',title:'Level 1 — Meet the Piano',description:'Find the first notes, then use them in your first melody.',lessons:[
+      {id:'middle-c',title:'Find Middle C',instruction:'Find the group of two black keys near the middle. C is the white key just to their left.',hintMidi:60,pattern:[60,60,60,60],skills:['note-recognition','right-hand']},
+      {id:'find-d',title:'Find D',instruction:'D is the white key between the two black keys.',hintMidi:62,pattern:[62,62,62,62],skills:['note-recognition','right-hand']},
+      {id:'find-e',title:'Find E',instruction:'E is the white key just to the right of the group of two black keys.',hintMidi:64,pattern:[64,64,64,64],skills:['note-recognition','right-hand']},
+      {id:'white-keys',title:'C, D and E',instruction:'Start on Middle C, then step right to D and E.',hintMidi:60,pattern:[60,62,64,62,60],skills:['note-recognition','stepwise-motion']},
+      {id:'moving-up',title:'Moving Up',instruction:'Moving right makes the notes sound higher. Play C, D, then E.',hintMidi:60,pattern:[60,62,64,60,62,64],skills:['stepwise-motion']},
+      {id:'moving-down',title:'Moving Down',instruction:'Moving left makes the notes sound lower. Play E, D, then C.',hintMidi:64,pattern:[64,62,60,64,62,60],skills:['stepwise-motion']},
+      {id:'c-to-g',title:'C–D–E–F–G',instruction:'Walk across five neighboring white keys, one step at a time.',hintMidi:60,pattern:[60,62,64,65,67,65,64,62,60],skills:['C-position','five-finger-control']},
+      {id:'first-melody-checkpoint',title:'First Melody',instruction:'You know enough notes to make music. Listen once, then play the answering phrases.',hintMidi:60,piece:'first-melody-checkpoint'}]},
     {id:'five-fingers',title:'Level 2 — Five Fingers',description:'Keep one right-hand finger ready for each key.',lessons:[
-      {id:'thumb-on-c',title:'Thumb on C',instruction:'Put your right thumb on Middle C. Let each finger rest on the next white key.',hintMidi:60,pattern:[60,62,64,65,67]},
-      {id:'one-finger-each',title:'One Finger per Key',instruction:'Keep your hand relaxed and use the finger already resting above each key.',hintMidi:60,pattern:[60,64,62,65,64,67]},
-      {id:'feel-the-steps',title:'Feel the Steps',instruction:'Look at the screen, then try to feel the neighboring keys without staring at your hand.',hintMidi:60,pattern:[60,62,64,62,60,62,64]},
-      {id:'five-note-climb',title:'Five-Note Climb',instruction:'Climb from C to G, then walk back down.',hintMidi:60,pattern:[60,62,64,65,67,65,64,62,60]},
-      {id:'five-finger-tune',title:'Five-Finger Tune',instruction:'Keep your hand in one place and let each finger play its own note.',hintMidi:60,pattern:[60,62,64,60,65,64,62,67,65,64,62,60],options:{step:.66}}
-    ]},
-    {id:'rhythm',title:'Level 3 — Rhythm',description:'Make the notes land on a steady beat.',lessons:[
-      {id:'rhythm',title:'Steady Beat',instruction:'Count 1, 2, 3, 4. Play one C on every count.',hintMidi:60,pattern:[60,60,60,60,60,60,60,60],mode:'normal',options:{step:.82,tempo:72}},
-      {id:'quarter-notes',title:'Quarter Notes',instruction:'Each falling note gets one steady beat.',hintMidi:60,pattern:[60,62,64,65,67,65,64,62],mode:'normal',options:{step:.75}},
-      {id:'half-notes',title:'Hold for Two',instruction:'Hold each key while you count two slow beats.',hintMidi:60,pattern:[60,62,64,62],mode:'normal',options:{step:1.35,duration:1.05,tempo:68}},
-      {id:'repeated-notes',title:'Repeated Notes',instruction:'Lift and press the same key again for each new block.',hintMidi:64,pattern:[64,64,64,62,62,60,60,60],mode:'normal',options:{step:.62}},
-      {id:'rests',title:'Notes and Spaces',instruction:'A bigger space means wait. Do not play until the next block reaches the line.',hintMidi:60,pattern:[60,62,64,65,67],mode:'normal',options:{step:1.1,tempo:65}}
-    ]},
-    {id:'left-hand',title:'Level 4 — Left Hand',description:'Find lower C and build a comfortable left-hand position.',lessons:[
-      {id:'lower-c',title:'Find Lower C',instruction:'Find the C one octave below Middle C. Use your left pinky.',hintMidi:48,pattern:[48,48,48,48]},
-      {id:'left-position',title:'Left-Hand Five Fingers',instruction:'Place your left pinky on C3 and one finger on each white key through G3.',hintMidi:48,pattern:[48,50,52,53,55]},
-      {id:'left-up',title:'Left Hand Moving Up',instruction:'Walk your left hand from C up to G.',hintMidi:48,pattern:[48,50,52,53,55,53,52,50,48]},
-      {id:'left-down',title:'Left Hand Moving Down',instruction:'Start on G and walk back toward lower C.',hintMidi:55,pattern:[55,53,52,50,48,50,52,53,55]},
-      {id:'left-pattern',title:'Left-Hand Pattern',instruction:'Keep the left hand relaxed while the notes change direction.',hintMidi:48,pattern:[48,52,50,53,52,55,53,50,48]}
-    ]},
-    {id:'two-hands',title:'Level 5 — Two Hands',description:'Take turns between hands—no simultaneous notes yet.',lessons:[
-      {id:'hands',title:'Left Hand, Right Hand',instruction:'Blue L notes use the left hand. Purple R notes use the right hand.',hintMidi:48,pattern:[48,60,50,62,52,64,53,65]},
-      {id:'hand-trade',title:'Take Turns',instruction:'Play one lower note with the left hand, then answer with the right.',hintMidi:48,pattern:[48,60,48,62,50,64,50,62]},
-      {id:'bass-then-melody',title:'Bass then Melody',instruction:'The left hand starts each little phrase. The right hand finishes it.',hintMidi:48,pattern:[48,60,62,64,50,62,64,65]},
-      {id:'two-hand-walk',title:'Two-Hand Walk',instruction:'Follow the L and R markers. The hands always alternate.',hintMidi:48,pattern:[48,60,50,62,52,64,53,65,55,67]}
-    ]},
-    {id:'c-major',title:'Level 6 — C Major',description:'Play all the white-key names from C to the next C.',lessons:[
-      {id:'c-scale-up',title:'C Major Going Up',instruction:'Say the letters as you climb: C D E F G A B C.',hintMidi:60,pattern:[60,62,64,65,67,69,71,72],options:{step:.68}},
-      {id:'c-scale-down',title:'C Major Going Down',instruction:'Start on high C and walk down the white keys to Middle C.',hintMidi:72,pattern:[72,71,69,67,65,64,62,60],options:{step:.68}},
-      {id:'c-scale-roundtrip',title:'Scale Round Trip',instruction:'Climb to the next C, turn around, and come home.',hintMidi:60,pattern:[60,62,64,65,67,69,71,72,71,69,67,65,64,62,60],options:{step:.58}}
-    ]},
-    {id:'first-songs',title:'Level 7 — First Songs',description:'Finish short original melodies using everything you learned.',lessons:[
-      {id:'morning-bells',title:'Morning Bells',instruction:'Use a steady right hand and listen for the repeated notes.',hintMidi:60,pattern:[60,64,64,62,64,65,67,67,65,64,62,60],mode:'normal',options:{step:.7}},
-      {id:'stepping-stones',title:'Stepping Stones',instruction:'Follow each neighboring step up and down.',hintMidi:60,pattern:[60,62,64,65,64,62,60,62,64,65,67,65,64,62,60],mode:'normal',options:{step:.62}},
-      {id:'little-lantern',title:'Little Lantern',instruction:'Play gently and keep the melody moving at the same speed.',hintMidi:64,pattern:[64,65,67,64,62,60,62,64,67,65,64,62,60],mode:'normal',options:{step:.72}},
-      {id:'nova-celebration',title:'Celebration Song',instruction:'A final two-hand song. Follow the L and R markers one note at a time.',hintMidi:48,pattern:[48,60,50,62,52,64,53,65,55,67,53,65,52,64,50,62,48,60],mode:'normal',options:{step:.62,tempo:82}}
-    ]}
+      {id:'thumb-on-c',title:'Thumb on C',instruction:'Put your right thumb on Middle C. Let each finger rest on the next white key.',hintMidi:60,pattern:[60,62,64,65,67],skills:['C-position','five-finger-control']},
+      {id:'one-finger-each',title:'One Finger per Key',instruction:'Keep your hand relaxed and use the finger already resting above each key.',hintMidi:60,pattern:[60,64,62,65,64,67],skills:['five-finger-control','skips']},
+      {id:'feel-the-steps',title:'Feel the Steps',instruction:'Try to feel the neighboring keys without staring at your hand.',hintMidi:60,pattern:[60,62,64,62,60,62,64],skills:['five-finger-control','stepwise-motion']},
+      {id:'five-note-climb',title:'Five-Note Climb',instruction:'Climb from C to G, then walk back down.',hintMidi:60,pattern:[60,62,64,65,67,65,64,62,60],skills:['five-finger-control']},
+      {id:'five-finger-tune',title:'Five-Finger Tune',instruction:'Keep your hand in one place and let each finger play its own note.',hintMidi:60,pattern:[60,62,64,60,65,64,62,67,65,64,62,60],options:{step:.66},skills:['C-position','five-finger-control']},
+      {id:'five-finger-concert',title:'Five-Finger Concert',instruction:'Use all five fingers in a mini-song with steps and skips.',hintMidi:60,piece:'five-finger-concert'}]},
+    {id:'rhythm',title:'Level 3 — Rhythm',description:'Make quarter notes, long notes and spaces feel steady.',lessons:[
+      {id:'rhythm',title:'Steady Beat',instruction:'Count 1, 2, 3, 4. Play one C on every count.',hintMidi:60,pattern:[60,60,60,60,60,60,60,60],mode:'normal',options:{step:.82,tempo:72},skills:['quarter-notes','rhythm']},
+      {id:'quarter-notes',title:'Quarter Notes',instruction:'Each falling note gets one steady beat.',hintMidi:60,pattern:[60,62,64,65,67,65,64,62],mode:'normal',options:{step:.75},skills:['quarter-notes','rhythm']},
+      {id:'half-notes',title:'Hold for Two',instruction:'Hold each key while you count two slow beats.',hintMidi:60,pattern:[60,62,64,62],mode:'normal',options:{step:1.35,duration:1.05,tempo:68},skills:['half-notes','sustain']},
+      {id:'repeated-notes',title:'Repeated Notes',instruction:'Lift and press the same key again for each new block.',hintMidi:64,pattern:[64,64,64,62,62,60,60,60],mode:'normal',options:{step:.62},skills:['repeated-notes','rhythm']},
+      {id:'rests',title:'Notes and Spaces',instruction:'A bigger space means wait until the next block reaches the line.',hintMidi:60,pattern:[60,62,64,65,67],mode:'normal',options:{step:1.1,tempo:65},skills:['rests','rhythm']},
+      {id:'rhythm-concert',title:'Rhythm Challenge',instruction:'Quarter notes, long notes and rests now become one piece.',hintMidi:60,piece:'rhythm-concert',mode:'normal'}]},
+    {id:'left-hand',title:'Level 4 — Left Hand',description:'Find lower C and give the left hand its own musical moment.',lessons:[
+      {id:'lower-c',title:'Find Lower C',instruction:'Find the C one octave below Middle C. Use your left pinky.',hintMidi:48,pattern:[48,48,48,48],skills:['note-recognition','left-hand']},
+      {id:'left-position',title:'Left-Hand Five Fingers',instruction:'Place your left pinky on C3 and one finger on each white key through G3.',hintMidi:48,pattern:[48,50,52,53,55],skills:['left-hand','five-finger-control']},
+      {id:'left-up',title:'Left Hand Moving Up',instruction:'Walk your left hand from C up to G.',hintMidi:48,pattern:[48,50,52,53,55,53,52,50,48],skills:['left-hand','stepwise-motion']},
+      {id:'left-down',title:'Left Hand Moving Down',instruction:'Start on G and walk back toward lower C.',hintMidi:55,pattern:[55,53,52,50,48,50,52,53,55],skills:['left-hand','stepwise-motion']},
+      {id:'left-pattern',title:'Left-Hand Pattern',instruction:'Keep the left hand relaxed while the notes change direction.',hintMidi:48,pattern:[48,52,50,53,52,55,53,50,48],skills:['left-hand','skips']},
+      {id:'left-hand-concert',title:'Left-Hand Challenge',instruction:'Let the lower notes carry their own calm melody.',hintMidi:48,piece:'left-hand-concert'}]},
+    {id:'two-hands',title:'Level 5 — Two Hands',description:'Start by taking turns, then connect bass notes with right-hand phrases.',lessons:[
+      {id:'hands',title:'Left Hand, Right Hand',instruction:'Blue L notes use the left hand. Purple R notes use the right.',hintMidi:48,pattern:[48,60,50,62,52,64,53,65],skills:['alternating-hands']},
+      {id:'hand-trade',title:'Take Turns',instruction:'Play one lower note with the left hand, then answer with the right.',hintMidi:48,pattern:[48,60,48,62,50,64,50,62],skills:['alternating-hands']},
+      {id:'bass-then-melody',title:'Bass then Melody',instruction:'The left hand starts each little phrase. The right hand finishes it.',hintMidi:48,pattern:[48,60,62,64,50,62,64,65],skills:['hand-coordination']},
+      {id:'two-hand-walk',title:'Two-Hand Walk',instruction:'Follow the L and R markers. The hands alternate.',hintMidi:48,pattern:[48,60,50,62,52,64,53,65,55,67],skills:['alternating-hands','hand-coordination']},
+      {id:'bass-and-answer',title:'Bass and Answer',instruction:'Play one left-hand bass note, then a short right-hand answer.',hintMidi:48,pattern:[48,60,62,64,50,62,64,65,52,64,65,67],skills:['hand-coordination','left-hand','right-hand']},
+      {id:'two-hand-concert',title:'Two-Hand Concert',instruction:'A bass note begins each phrase and the right hand answers.',hintMidi:48,piece:'two-hand-concert'}]},
+    {id:'c-major',title:'Level 6 — C Major',description:'Use the white-key scale as melody instead of only a drill.',lessons:[
+      {id:'c-scale-up',title:'C Major Going Up',instruction:'Say the letters as you climb: C D E F G A B C.',hintMidi:60,pattern:[60,62,64,65,67,69,71,72],options:{step:.68},skills:['C-major-scale']},
+      {id:'c-scale-down',title:'C Major Going Down',instruction:'Start on high C and walk down to Middle C.',hintMidi:72,pattern:[72,71,69,67,65,64,62,60],options:{step:.68},skills:['C-major-scale']},
+      {id:'c-scale-roundtrip',title:'Scale Round Trip',instruction:'Climb to the next C, turn around, and come home.',hintMidi:60,pattern:[60,62,64,65,67,69,71,72,71,69,67,65,64,62,60],options:{step:.58},skills:['C-major-scale']},
+      {id:'chord-roots',title:'C, F and G Homes',instruction:'Hear C, F and G as musical home signs, one note at a time for microphone practice.',hintMidi:60,pattern:[60,65,67,65,60,67,65,60],skills:['C-major-chord','F-major-chord','G-major-chord']},
+      {id:'c-major-concert',title:'C Major Concert',instruction:'Use the whole C scale in a longer melody.',hintMidi:60,piece:'c-major-concert',mode:'normal'}]},
+    {id:'first-songs',title:'Level 7 — First Songs',description:'Play complete original pieces with different musical personalities.',lessons:[
+      {id:'morning-bells',title:'Morning Bells',instruction:'Repeated notes ring through an A–A–B–A form.',hintMidi:60,piece:'morning-bells',mode:'normal'},
+      {id:'stepping-stones',title:'Stepping Stones',instruction:'A flowing melody built mostly from neighboring steps.',hintMidi:60,piece:'stepping-stones',mode:'normal'},
+      {id:'little-lantern',title:'Little Lantern',instruction:'Play gently through long notes, short notes and rests.',hintMidi:64,piece:'little-lantern',mode:'normal'},
+      {id:'river-skips',title:'River Skips',instruction:'Use small skips without losing the steady beat.',hintMidi:60,piece:'river-skips',mode:'normal'},
+      {id:'homeward-march',title:'Homeward March',instruction:'Left-hand bass notes support a right-hand melody.',hintMidi:48,piece:'homeward-march',mode:'normal'},
+      {id:'nova-celebration',title:'Final Celebration Concert',instruction:'Bring note reading, rhythm, both hands and C major together.',hintMidi:48,piece:'nova-celebration',mode:'normal'}]}
   ];
+  const P={
+    'first-melody-checkpoint':piece('first-melody-checkpoint','First Melody',{tempo:72,type:'miniSong',checkpoint:true,skills:['note-recognition','stepwise-motion'],assistance:'learn',description:'A first original melody using C, D and E.',phrases:{A:[[60,1],[62,1],[64,2],[62,1],[60,3]],B:[[64,1],[64,1],[62,2],[62,1],[60,3]]},form:['A','B','A']}),
+    'five-finger-concert':piece('five-finger-concert','Five-Finger Concert',{tempo:76,type:'miniSong',checkpoint:true,skills:['C-position','five-finger-control','skips'],description:'An original five-finger mini-song.',phrases:{A:[[60,1],[62,1],[64,1],[65,1],[67,2],[64,2]],B:[[60,1],[64,1],[62,1],[65,1],[64,1],[67,1],[65,1],[62,1]],C:[[67,1],[65,1],[64,1],[62,1],[60,4]]},form:['A','A','B','A','C']}),
+    'rhythm-concert':piece('rhythm-concert','Rhythm Challenge',{tempo:72,type:'miniSong',checkpoint:true,skills:['quarter-notes','half-notes','rests','repeated-notes'],description:'An original rhythm piece.',phrases:{A:[[60,1],[60,1],[62,2],[64,1,1],[64,1],[62,1],[60,2]],B:[[64,1],[65,1],[67,2],[67,1],[65,1],[64,2,1],[62,1],[60,3]]},form:['A','A','B','A']}),
+    'left-hand-concert':piece('left-hand-concert','Left-Hand Challenge',{tempo:70,type:'miniSong',checkpoint:true,skills:['left-hand','five-finger-control'],description:'A calm original left-hand melody.',phrases:{A:[[48,1,0,'left'],[50,1,0,'left'],[52,2,0,'left'],[53,1,0,'left'],[52,1,0,'left'],[50,2,0,'left']],B:[[48,1,0,'left'],[52,1,0,'left'],[55,2,0,'left'],[53,1,0,'left'],[50,1,0,'left'],[48,2,0,'left']]},form:['A','A','B','A','B']}),
+    'two-hand-concert':piece('two-hand-concert','Two-Hand Concert',{tempo:72,type:'miniSong',checkpoint:true,skills:['alternating-hands','hand-coordination'],description:'An original call-and-answer song.',phrases:{A:[[48,2,0,'left'],[60,1],[62,1],[64,2],[50,2,0,'left'],[62,1],[64,1],[65,2]],B:[[52,2,0,'left'],[64,1],[65,1],[67,2],[50,2,0,'left'],[64,1],[62,1],[60,2]]},form:['A','A','B','A']}),
+    'c-major-concert':piece('c-major-concert','C Major Concert',{tempo:78,type:'fullSong',checkpoint:true,skills:['C-major-scale','stepwise-motion','skips'],description:'An original C-major melody.',phrases:{A:[[60,1],[62,1],[64,1],[65,1],[67,2],[64,2]],B:[[67,1],[69,1],[71,1],[72,1],[71,1],[69,1],[67,2]],C:[[60,1],[64,1],[67,1],[72,1],[71,1],[67,1],[64,1],[60,1]],D:[[72,1],[71,1],[69,1],[67,1],[65,1],[64,1],[62,1],[60,4]]},form:['A','A','B','A','C','B','D']}),
+    'morning-bells':piece('morning-bells','Morning Bells',{tempo:76,type:'fullSong',skills:['repeated-notes','quarter-notes','half-notes'],description:'An original bell-like melody.',phrases:{A:[[60,1],[64,1],[64,1],[62,1],[64,1],[65,1],[67,2]],B:[[67,1],[67,1],[65,1],[64,1],[62,2],[60,2]],C:[[64,1],[65,1],[67,1],[69,1],[67,1],[65,1],[64,2]]},form:['A','A','B','A','C','B','A','B']}),
+    'stepping-stones':piece('stepping-stones','Stepping Stones',{tempo:80,type:'fullSong',skills:['stepwise-motion','rhythm'],description:'An original traveling melody.',phrases:{A:[[60,1],[62,1],[64,1],[65,1],[64,1],[62,1],[60,2]],B:[[62,1],[64,1],[65,1],[67,1],[65,1],[64,1],[62,2]],C:[[64,1],[65,1],[67,1],[69,1],[67,1],[65,1],[64,2]],D:[[67,1],[65,1],[64,1],[62,1],[60,4]]},form:['A','B','A','C','B','C','A','D']}),
+    'little-lantern':piece('little-lantern','Little Lantern',{tempo:68,type:'fullSong',skills:['half-notes','rests','rhythm'],description:'An original gentle melody.',phrases:{A:[[64,2],[65,1],[67,2,1],[64,1],[62,1],[60,3]],B:[[62,1],[64,2],[67,1],[65,2,1],[64,1],[62,1],[60,3]],C:[[67,2],[69,1],[67,1],[65,2],[64,2],[62,1],[60,3]]},form:['A','A','B','A','C','B','A']}),
+    'river-skips':piece('river-skips','River Skips',{tempo:82,type:'fullSong',skills:['skips','five-finger-control','eighth-notes'],description:'An original melody mixing steps and skips.',phrases:{A:[[60,.5],[64,.5],[62,1],[65,1],[64,1],[67,2],[64,2]],B:[[62,.5],[65,.5],[64,1],[67,1],[65,1],[64,2],[62,2]],C:[[60,1],[64,1],[67,1],[64,1],[65,1],[62,1],[60,2]]},form:['A','A','B','A','C','B','A','C','A']}),
+    'homeward-march':piece('homeward-march','Homeward March',{tempo:76,type:'fullSong',skills:['left-hand','right-hand','hand-coordination'],description:'An original march with bass support.',phrases:{A:[[48,2,0,'left'],[60,1],[62,1],[64,1],[65,1],[67,2]],B:[[55,2,0,'left'],[67,1],[65,1],[64,1],[62,1],[60,2]],C:[[53,2,0,'left'],[65,1],[67,1],[69,2],[67,2]]},form:['A','A','B','A','C','B','A','B']}),
+    'nova-celebration':piece('nova-celebration','Final Celebration Concert',{tempo:80,type:'checkpoint',checkpoint:true,skills:['note-recognition','rhythm','C-major-scale','hand-coordination'],assistance:'perform',description:'An original final concert piece.',phrases:{A:[[48,2,0,'left'],[60,1],[62,1],[64,1],[65,1],[67,2]],B:[[50,2,0,'left'],[62,1],[64,1],[65,1],[67,1],[69,2]],C:[[52,2,0,'left'],[64,.5],[65,.5],[67,1],[69,1],[67,1],[65,2]],D:[[55,2,0,'left'],[72,1],[71,1],[69,1],[67,1],[65,1],[64,1],[62,1],[60,3]]},form:['A','A','B','A','C','B','A','D','A','B']})
+  };
   const songs=[];
-  groups.forEach(group=>group.lessons.forEach(lesson=>{const song=exercise(lesson.id,lesson.title,lesson.pattern,{...(lesson.options||{}),description:lesson.instruction});lesson.song=song.id;songs.push(song);}));
-  window.NovaPianoCurriculum={groups,lessons:groups.flatMap(group=>group.lessons.map(lesson=>({...lesson,groupId:group.id,groupTitle:group.title}))),songs};
+  groups.forEach(group=>group.lessons.forEach(lesson=>{const song=lesson.piece?P[lesson.piece]:exercise(lesson.id,lesson.title,lesson.pattern,{...(lesson.options||{}),description:lesson.instruction,skills:lesson.skills||[],assistance:['meet','five-fingers'].includes(group.id)?'learn':'practice'});lesson.song=song.id;lesson.contentType=song.contentType;lesson.skills=song.skills;lesson.assistance=song.assistance;lesson.duration=durationOf(song);songs.push(song);}));
+  window.NovaPianoCurriculum={version:2,groups,lessons:groups.flatMap(group=>group.lessons.map(lesson=>({...lesson,groupId:group.id,groupTitle:group.title}))),songs,durationOf,contentLabels:{exercise:'Exercise',miniSong:'Mini Song',fullSong:'Full Song',checkpoint:'Concert'}};
+  if(typeof module!=='undefined')module.exports=window.NovaPianoCurriculum;
 })();
