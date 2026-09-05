@@ -2071,7 +2071,7 @@
   async function registerServiceWorker() {
     if (!('serviceWorker' in navigator)) return;
     try {
-      const reg = await navigator.serviceWorker.register('./sw.js?v=2.3.0');
+      const reg = await navigator.serviceWorker.register('./sw.js?v=2.5.0');
       reg.update().catch(() => null);
     } catch (err) { console.error(err); }
   }
