@@ -1,0 +1,3 @@
+.piano-key.accompaniment { background:#ffd166!important; color:#17120a; box-shadow:inset 0 0 0 3px #fff0b3,0 0 14px #ffd166; }
+.piano-list-card .piano-toolbar { max-width:520px; justify-content:flex-end; }
+@media(max-width:760px){.piano-list-card .piano-toolbar{max-width:none;justify-content:flex-start}.piano-list-card .piano-toolbar .button{font-size:12px;padding:9px 11px}}

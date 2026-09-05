@@ -1,5 +1,18 @@
 # Family Music Quest
 
+## v2.6 Piano Songbook & Real Music
+
+- Fixes Hardware & Backup so it opens above the instrument chooser before either instrument is initialized
+- Adds a built-in offline Piano songbook with five newly authored FMQ arrangements of public-domain melodies
+- Rewrites all six Level 7 originals as 20–24 measure arrangements with intros, contrasting phrases, bass/harmony and cadential endings
+- Adds exact beat positions and simultaneous notes to built-in arrangements without changing imported MIDI parsing
+- Adds Listen First, Learn Melody, Left Hand, Right Hand and Hands Together choices where arrangements support them
+- Keeps microphone play monophonic by assigning the melody to the learner while the app supplies accompaniment
+- Allows on-screen/Web MIDI play to receive simultaneous notes; USB MIDI can be connected from gameplay
+- Documents source and rights research in [PUBLIC_DOMAIN_MUSIC.md](PUBLIC_DOMAIN_MUSIC.md)
+
+No third-party MIDI files, recordings, or modern arrangements are bundled. Physical Chromebook, acoustic-piano microphone, and USB-MIDI validation remain manual acceptance tests.
+
 ## v2.5 Piano Curriculum v2
 
 - Keeps all existing Piano lesson IDs and completed-progress references intact
