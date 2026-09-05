@@ -11,10 +11,14 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+          cache: npm
+      - run: npm ci
       - run: npm test
       - run: npm run check
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:browser
       - name: Verify offline app shell
         run: |
-          grep -q "diagnostics.js?v=2.4.0" sw.js
-          grep -q "practice-intelligence.js?v=2.4.0" sw.js
-          grep -q "hardware-services.js?v=2.4.0" sw.js
+          grep -q "family-music-quest-v2.6.1" sw.js
+          grep -q "gameplay-rules.js?v=2.6.1" sw.js
+          grep -q "app.js?v=2.6.1" sw.js

@@ -1,5 +1,15 @@
 # Family Music Quest
 
+## v2.6.1 Gameplay Correctness & Stability
+
+- Piano chords and intervals are scored as simultaneous target groups in any Note On order
+- Imported MIDI keeps full polyphony for Rhythm/Full Part while Wait Mode stays microphone-safe
+- Guitar skipped notes no longer affect final accuracy, coaching, stars, or skill history
+- Piano accompaniment respects mute and zero volume, and active voices stop on pause/cleanup
+- Guitar count-ins are cancellable across exit, restart, profile, and instrument changes
+- Built-in Piano sections use phrase/measure boundaries; imported MIDI retains time sections
+- Core PWA assets share the v2.6.1 cache-busting version
+
 ## v2.6 Piano Songbook & Real Music
 
 - Fixes Hardware & Backup so it opens above the instrument chooser before either instrument is initialized
