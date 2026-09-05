@@ -37,3 +37,26 @@ test('browser target groups accept chord notes in any order',async({page})=>{
   const result=await page.evaluate(()=>{const notes=[60,64,67].map(midi=>({midi,start:1})),orders=[[60,64,67],[67,60,64],[64,67,60]];return orders.map(order=>{const tracker=new window.FMQGameplayRules.PianoTargetTracker(notes);return order.map(midi=>tracker.accept(midi)).map(hit=>({accepted:hit.accepted,complete:hit.complete}));});});
   for(const order of result){expect(order.map(hit=>hit.accepted)).toEqual([true,true,true]);expect(order.map(hit=>hit.complete)).toEqual([false,false,true]);}
 });
+
+test('complete Songbook arrangements open in every supported practice path',async({page})=>{
+  await page.goto('/');
+  await page.getByLabel('Your name').fill('Songbook Test');
+  await page.getByRole('button',{name:'Continue'}).click();
+  await page.getByRole('button',{name:'Start Playing'}).click();
+  await page.getByRole('button',{name:/Piano Quest Learn piano/}).click();
+  await page.getByRole('button',{name:'♫ Songs'}).click();
+  const card=page.locator('.piano-list-card').filter({hasText:'Twinkle, Twinkle, Little Star'});
+  await expect(card.getByText('14 measures')).toBeVisible();
+  await expect(card.locator('.piano-section-select option')).toHaveCount(5);
+  await card.getByRole('button',{name:'Listen First'}).click();
+  await expect(page.locator('#pianoGame')).toBeVisible();
+  await expect(page.locator('.piano-game-title')).toContainText('Twinkle');
+  await page.locator('#pianoExitGame').click();
+  await card.locator('.piano-section-select').selectOption('phrase:1');
+  await card.getByRole('button',{name:'Learn Melody'}).click();
+  await expect(page.locator('#pianoGame')).toBeVisible();
+  await page.locator('#pianoExitGame').click();
+  await card.getByRole('button',{name:'Hands Together'}).click();
+  await expect(page.locator('#pianoGame')).toBeVisible();
+  await page.locator('#pianoExitGame').click();
+});

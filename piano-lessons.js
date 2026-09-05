@@ -57,7 +57,7 @@
       {id:'chord-roots',title:'C, F and G Homes',instruction:'Hear C, F and G as musical home signs, one note at a time for microphone practice.',hintMidi:60,pattern:[60,65,67,65,60,67,65,60],skills:['C-major-chord','F-major-chord','G-major-chord']},
       {id:'c-major-concert',title:'C Major Concert',instruction:'Use the whole C scale in a longer melody.',hintMidi:60,piece:'c-major-concert',mode:'normal'}]},
     {id:'first-songs',title:'Level 7 — First Songs',description:'Play complete original pieces with different musical personalities.',lessons:[
-      {id:'morning-bells',title:'Morning Bells',instruction:'Repeated notes ring through an A–A–B–A form.',hintMidi:60,piece:'morning-bells',mode:'normal'},
+      {id:'morning-bells',title:'Morning Bells',instruction:'A bell motif wakes up, finds a brighter answer, then returns home.',hintMidi:60,piece:'morning-bells',mode:'normal'},
       {id:'stepping-stones',title:'Stepping Stones',instruction:'A flowing melody built mostly from neighboring steps.',hintMidi:60,piece:'stepping-stones',mode:'normal'},
       {id:'little-lantern',title:'Little Lantern',instruction:'Play gently through long notes, short notes and rests.',hintMidi:64,piece:'little-lantern',mode:'normal'},
       {id:'river-skips',title:'River Skips',instruction:'Use small skips without losing the steady beat.',hintMidi:60,piece:'river-skips',mode:'normal'},
