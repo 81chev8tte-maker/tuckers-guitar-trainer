@@ -284,6 +284,8 @@
   let selectedDeviceId = '';
   let game = null;
   let feedbackTimer = null;
+  let countdownTimer = null;
+  let countdownToken = 0;
   let tabCurrentIndex = -1;
   let inputChallengeHits = new Set();
   let inputCalibration = null;
@@ -298,6 +300,7 @@
   // Piano has its own detector. Stop Guitar listening before entering Piano so
   // two microphone pipelines never compete; Guitar behavior otherwise stays unchanged.
   window.addEventListener('music-app:leave-guitar', () => {
+    stopGameLoop();
     if (audio.active) audio.stop();
     tunerActive = false;
     $('#inputToggle').textContent = 'Enable Guitar Input';
@@ -683,6 +686,8 @@
   }
 
   function runCountdown(bpm = 80, speed = 1) {
+    cancelCountdown();
+    const token = ++countdownToken;
     return new Promise(resolve => {
       const el = $('#countdown');
       el.hidden = false;
@@ -690,18 +695,28 @@
       let i = 0;
       el.textContent = steps[i];
       clickSound(true);
-      const timer = setInterval(() => {
+      countdownTimer = setInterval(() => {
+        if (token !== countdownToken) { clearInterval(countdownTimer); countdownTimer = null; resolve(false); return; }
         i++;
         if (i >= steps.length) {
-          clearInterval(timer);
+          clearInterval(countdownTimer);
+          countdownTimer = null;
           el.hidden = true;
-          resolve();
+          resolve(true);
           return;
         }
         el.textContent = steps[i];
         clickSound(i === steps.length - 1);
       }, window.FMQPracticeTools?.beatMilliseconds(bpm, speed) || 750);
     });
+  }
+
+  function cancelCountdown() {
+    countdownToken++;
+    if (countdownTimer) clearInterval(countdownTimer);
+    countdownTimer = null;
+    const el = $('#countdown');
+    if (el) el.hidden = true;
   }
 
   function gameLoop(now) {
@@ -714,7 +729,7 @@
     updateGameBoard(t);
     markExpiredNotes(t);
     updateCurrentTab(t);
-    const activeEvents = game.events.filter(ev => ev.status !== 'skipped');
+    const activeEvents = window.FMQGameplayRules?.activeScoringEvents(game.events) || game.events.filter(ev => ev.status !== 'skipped');
     const total = activeEvents.length;
     const done = activeEvents.filter(ev => ev.status === 'hit' || ev.status === 'miss').length;
     $('#gameProgressBar').style.width = `${Math.min(100, (done / total) * 100)}%`;
@@ -1095,13 +1110,15 @@
     if (!game) return;
     stopGameLoop();
     $('#gameScreen').classList.remove('playing');
-    const total = game.events.length;
-    const accuracy = total ? Math.round(game.hits / total * 100) : 0;
+    const summary = window.FMQGameplayRules?.guitarRunSummary(game.events);
+    const activeEvents = summary?.active || game.events.filter(event => event.status !== 'skipped');
+    const total = activeEvents.length;
+    const accuracy = summary?.accuracy ?? (total ? Math.round(game.hits / total * 100) : 0);
     const stars = accuracy >= 90 ? 3 : accuracy >= 75 ? 2 : accuracy >= 55 ? 1 : 0;
     const isSong = game.mode === 'song';
     const coach = buildPracticeCoach(game, accuracy);
     if (window.FMQPracticeIntelligence) {
-      game.events.forEach(event => { state.skillModel = window.FMQPracticeIntelligence.updateSkill(state.skillModel, `string:${event.string}:fret:${event.fret}`, event.status === 'hit', event.timingMs || 0); });
+      activeEvents.forEach(event => { state.skillModel = window.FMQPracticeIntelligence.updateSkill(state.skillModel, `string:${event.string}:fret:${event.fret}`, event.status === 'hit', event.timingMs || 0); });
     }
     const adaptiveMessage = updateAdaptiveDifficulty(game, accuracy);
     if (isSong) {
@@ -1218,6 +1235,7 @@
   }
 
   function stopGameLoop() {
+    cancelCountdown();
     if (game?.raf) cancelAnimationFrame(game.raf);
     if (game?.mode === 'song') releaseSongBacking();
     if (game) { game.startToken++; game.running = false; game.paused = false; game.restartingLoop = false; game.raf = 0; }
@@ -2071,7 +2089,7 @@
   async function registerServiceWorker() {
     if (!('serviceWorker' in navigator)) return;
     try {
-      const reg = await navigator.serviceWorker.register('./sw.js?v=2.6.0');
+      const reg = await navigator.serviceWorker.register('./sw.js?v=2.6.1');
       reg.update().catch(() => null);
     } catch (err) { console.error(err); }
   }
@@ -2085,6 +2103,6 @@
   function formatBytes(n) { if (n < 1024) return `${n} B`; if (n < 1024*1024) return `${(n/1024).toFixed(1)} KB`; return `${(n/1024/1024).toFixed(1)} MB`; }
   function escapeHtml(s) { return String(s).replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c])); }
 
-  window.FMQGuitarTest = { getState:() => JSON.parse(JSON.stringify(state)), reloadActiveProfile, defaultState };
+  window.FMQGuitarTest = { getState:() => JSON.parse(JSON.stringify(state)), reloadActiveProfile, defaultState, startTestCountdown:runCountdown, cancelCountdown, isCountdownActive:()=>Boolean(countdownTimer) };
   console.info(`Guitar Quest ${APP_VERSION}`);
 })();
