@@ -34,6 +34,11 @@ jobs:
           pathlib.Path('.tmp/apply-v268.py').write_text(payload)
           PY
           python .tmp/apply-v268.py
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('browser-tests/app-smoke.spec.js')
+          p.write_text(p.read_text().rstrip() + '\n')
+          PY
       - run: npm ci
       - run: npm test
       - run: npm run check
