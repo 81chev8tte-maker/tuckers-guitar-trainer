@@ -58,6 +58,7 @@ Some product requirements need dedicated acceptance protocols beyond this genera
 - Guitar/imported-song performance and Full Song scale: `CHROMEBOOK_PERFORMANCE_BENCHMARK.md`
 - latency/timing compensation: `LATENCY_CALIBRATION_SPEC.md`
 - guided hardware/input setup: `HARDWARE_SETUP_WIZARD_SPEC.md`
+- guided hardware acceptance report: `HARDWARE_VALIDATION.md` and `MONDAY_HARDWARE_TEST_PLAN.md`
 - automatic weak-section practice: `TROUBLE_SPOT_PRACTICE_SPEC.md`
 - PWA update/offline Guitar playback: `PWA_OFFLINE_UPDATE_SPEC.md`
 - Bass architecture/input/hardware acceptance: `BASS_QUEST_SPEC.md`
@@ -199,6 +200,8 @@ Use `TEST_DEBT_AUDIT.md` to distinguish high-value automatable gaps from require
 Automated tests cannot replace real hardware and child usability checks.
 
 ### Guitar checklist
+
+For v2.6.7 and later acceptance sessions, run the in-app Guided Hardware Test first when practical, export/copy its report, then complete the physical checks below. The report does not automatically approve latency, audio smoothness or child usability.
 
 Adapt this checklist for releases touching Guitar:
 

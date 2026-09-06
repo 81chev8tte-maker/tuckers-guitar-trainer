@@ -128,3 +128,75 @@ test('Guitar rendering stays bounded with a 2,000-event synthetic run',async({pa
   expect(await page.locator('#liveTab .tab-note').count()).toBeLessThanOrEqual(288);
   await expect(page.locator('#liveTab .tab-playhead')).toBeVisible();
 });
+
+
+test('guided Hardware Acceptance Test records mocked measurements and human observations',async({page})=>{
+  await page.goto('/');
+  await page.getByLabel('Your name').fill('Hardware Guide Test');
+  await page.getByRole('button',{name:'Continue'}).click();
+  await page.getByRole('button',{name:'Start Playing'}).click();
+  await page.getByRole('button',{name:/Hardware & Backup/}).click();
+  await page.getByRole('button',{name:/Run Hardware Test/}).click();
+  await expect(page.getByRole('heading',{name:'Guided Hardware Test'})).toBeVisible();
+  await page.getByRole('button',{name:'🎸 Microphone'}).click();
+  await expect(page.getByRole('heading',{name:'Production Guitar Input'})).toBeVisible();
+  await page.getByRole('button',{name:'🧪 Guided Test'}).click();
+
+  await page.evaluate(()=>window.FMQGuidedHardwareTest.beginGuitarSynthetic());
+  await page.evaluate(()=>{for(let i=0;i<36;i++)window.FMQGuidedHardwareTest.feedAudio({rms:.002,freq:null,midi:null,note:'—',onset:false});});
+  await expect(page.locator('#guidedPrompt')).toContainText('thick E string');
+  await page.evaluate(()=>window.FMQGuidedHardwareTest.feedAudio({rms:.03,freq:110,midi:45,note:'A2',onset:true}));
+  expect(await page.evaluate(()=>window.FMQGuidedHardwareTest.getState().stringIndex)).toBe(0);
+  await page.evaluate(()=>{
+    const api=window.FMQGuidedHardwareTest;
+    for(const step of api.rules.GUITAR_STRINGS){
+      const freq=440*Math.pow(2,(step.midi-69)/12);
+      api.feedAudio({rms:.03,freq,midi:step.midi,note:step.note,onset:true});
+      api.feedAudio({rms:.028,freq,midi:step.midi,note:step.note,onset:false});
+    }
+  });
+  const firstString=await page.evaluate(()=>window.FMQGuidedHardwareTest.getSession().guitar.strings[0]);
+  expect(firstString.retries).toBe(1);
+  expect(firstString.stable).toBe(true);
+  await expect(page.locator('#guidedPrompt')).toContainText('A string three times');
+  await page.evaluate(()=>{for(let i=0;i<3;i++)window.FMQGuidedHardwareTest.feedAudio({rms:.03,freq:110,midi:45,note:'A2',onset:true});});
+  await expect(page.locator('#guidedAction')).toHaveText('Start Silence Check');
+  await page.evaluate(()=>window.FMQGuidedHardwareTest.startSilenceSynthetic());
+  await page.evaluate(()=>{for(let i=0;i<36;i++)window.FMQGuidedHardwareTest.feedAudio({rms:.002,freq:null,midi:null,note:'—',onset:false});});
+  expect(await page.evaluate(()=>window.FMQGuidedHardwareTest.getSession().guitar.status)).toBe('complete');
+
+  await page.evaluate(()=>window.FMQGuidedHardwareTest.beginMidiSynthetic());
+  await page.evaluate(()=>{
+    const api=window.FMQGuidedHardwareTest;
+    api.feedMidi({type:'noteon',note:'C4',midi:60,velocity:55,channel:1,polyphony:1});
+    api.feedMidi({type:'noteoff',note:'C4',midi:60,velocity:0,channel:1,polyphony:0});
+    api.feedMidi({type:'noteon',note:'D4',midi:62,velocity:35,channel:1,polyphony:1});
+    api.feedMidi({type:'noteon',note:'E4',midi:64,velocity:105,channel:1,polyphony:1});
+    api.feedMidi({type:'noteon',note:'G4',midi:67,velocity:90,channel:1,polyphony:2});
+    api.feedMidi({type:'controlchange',controller:64,value:127,sustain:true,polyphony:0});
+  });
+  const midi=await page.evaluate(()=>window.FMQGuidedHardwareTest.getSession().midi);
+  expect(midi.status).toBe('complete');
+  expect(midi.noteOn.note).toBe('C4');
+  expect(midi.noteOff.note).toBe('C4');
+  expect(midi.velocitySamples).toEqual([35,105]);
+  expect(midi.polyphonyMax).toBe(2);
+  expect(midi.sustain.observed).toBe(true);
+
+  await page.locator('#guidedFinish').click();
+  for(const id of ['reaction','delay','smooth','readability','keepPlaying']) await page.locator(`input[name="guided-${id}"][value="good"]`).check();
+  await page.getByRole('button',{name:'Save Answers & Finish'}).click();
+  await expect(page.locator('#guidedSummary')).toContainText('Hardware test report saved');
+  const report=await page.evaluate(()=>window.FMQGuidedHardwareTest.reportObject());
+  expect(report.appVersion).toBe('2.6.7');
+  expect(report.guidedAcceptance.humanObservations.source).toBe('human');
+  expect(report.guidedAcceptance.testsNotPerformed.some(item=>item.includes('USB audio disconnect/reconnect'))).toBe(true);
+  expect(await page.evaluate(()=>window.FMQGuidedHardwareTest.reportText())).toContain('HUMAN OBSERVATIONS');
+
+  await page.evaluate(()=>{window.FMQGuidedHardwareTest.beginNew();return window.FMQGuidedHardwareTest.beginGuitarSynthetic();});
+  await page.evaluate(()=>window.FMQGuidedHardwareTest.cancel('Browser cancellation test'));
+  const cleanup=await page.evaluate(()=>window.FMQGuidedHardwareTest.getState());
+  expect(cleanup.path).toBe(null);
+  expect(cleanup.resources.audioSubscribed).toBe(false);
+  expect(cleanup.resources.midiSubscribed).toBe(false);
+});
