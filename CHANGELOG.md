@@ -1,5 +1,16 @@
 # Changelog
 
+## v2.6.6 — Guitar Highway UI Cleanup
+
+- Centered the fret/OPEN value both horizontally and vertically inside moving Highway blocks.
+- Increased fret-number size while keeping two-digit frets and OPEN readable inside the existing note block.
+- Prevented technique labels from shifting the primary fret value off-center.
+- Removed 1–6 ordinals from permanent string labels; the edge strings retain simple thin/thick cues.
+- Moved the PLAY NOW badge toward the top of the strike line so it no longer competes with notes at the hit point.
+- Preserved the v2.6.4 bounded rendering/performance work and all v2.6.5 note/chord simplification.
+- Added browser assertions for actual rendered fret centering/size and simplified string labels.
+- Advanced package/app/PWA asset and service-worker versioning to v2.6.6.
+
 ## v2.6.5 — Guitar Highway Readability Correction
 
 - Simplified moving Highway notes so string color identifies the string and the fret/OPEN value is the dominant visible information.

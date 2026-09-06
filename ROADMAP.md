@@ -25,9 +25,9 @@ These documents define intended direction and acceptance constraints; they do no
 
 ## NOW
 
-### Validate v2.6.5 Guitar Highway Readability on real hardware
+### Validate v2.6.6 Guitar Highway UI cleanup on real hardware
 
-v2.6.4 removed the severe imported Full Song stutter on the known Chromebook stress song, but immediate visual review found the new moving-note presentation harder to decode. v2.6.5 keeps the v2.6.4 performance architecture intact and applies a focused Highway readability correction.
+v2.6.4 removed the severe imported Full Song stutter on the known Chromebook stress song. v2.6.5 simplified the moving-note presentation, and immediate Chromebook review confirmed the fret-dominant direction was substantially clearer. v2.6.6 keeps that performance/readability architecture intact while centering and enlarging fret values and removing the remaining string-label/strike-line clutter.
 
 The known real-world blocker is **not considered resolved until physical Dell Chromebook testing confirms it**.
 
@@ -49,13 +49,13 @@ Automated validation cannot approve audible stutter, perceived latency, musical 
 
 ## NEXT — choose from hardware evidence
 
-### If v2.6.5 still has a blocker: focused follow-up
+### If v2.6.6 still has a blocker: focused follow-up
 
 If hardware testing still finds a reproducible blocker such as scoring/input regression, unusable Tab/Highway readability, save/profile failure, renewed Full Song stutter or serious Piano regression, do another focused maintenance release before expansion.
 
 Use the v2.6.4 diagnostics and exact reproduction matrix to isolate the remaining cause. Do not compensate by weakening scoring, disabling normal backing/input, hiding required events or doing a broad architecture rewrite.
 
-### If v2.6.5 clears hardware acceptance: Bass Quest foundation
+### If v2.6.6 clears hardware acceptance: Bass Quest foundation
 
 If the Guitar player is stable on the target Chromebook and no major regression remains, the next major expansion may begin from `BASS_QUEST_SPEC.md` and `BASS_CURRICULUM_PLAN.md`.
 

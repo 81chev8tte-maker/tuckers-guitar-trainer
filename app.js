@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const APP_VERSION = '2.6.5';
+  const APP_VERSION = '2.6.6';
   const DB_NAME = 'tucker-guitar-trainer';
   const DB_VERSION = 1;
   const STORE_SONGS = 'songs';
@@ -1084,9 +1084,9 @@
     if (!wrap) return;
     wrap.innerHTML = [...info].reverse().map((s, reverseIndex) => {
       const i = info.length - 1 - reverseIndex;
-      const number = info.length - i;
-      const edge = i === 0 ? ' thick' : i === info.length - 1 ? ' thin' : '';
-      return `<span class="string-label-${i}" data-string="${i}" style="--string-color:${s.color || STRING_INFO[i]?.color}">${escapeHtml(s.label)}<small>${number}${edge}</small></span>`;
+      const edge = i === 0 ? 'thick' : i === info.length - 1 ? 'thin' : '';
+      const edgeMarkup = edge ? `<small>${edge}</small>` : '';
+      return `<span class="string-label-${i}" data-string="${i}" style="--string-color:${s.color || STRING_INFO[i]?.color}">${escapeHtml(s.label)}${edgeMarkup}</span>`;
     }).join('');
     $('#stringBed').innerHTML = [...info].reverse().map((s, reverseIndex) => {
       const i = info.length - 1 - reverseIndex;
@@ -2188,7 +2188,7 @@
   async function registerServiceWorker() {
     if (!('serviceWorker' in navigator)) return;
     try {
-      const reg = await navigator.serviceWorker.register('./sw.js?v=2.6.5');
+      const reg = await navigator.serviceWorker.register('./sw.js?v=2.6.6');
       reg.update().catch(() => null);
     } catch (err) { console.error(err); }
   }
