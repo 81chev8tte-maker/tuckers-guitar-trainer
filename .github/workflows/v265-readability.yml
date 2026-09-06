@@ -20,6 +20,8 @@ jobs:
           node --check scripts/v265-readability.cjs
           node scripts/v265-readability.cjs
           sed -i 's#./sw.js?v=2.6.4#./sw.js?v=2.6.5#g' app.js
+          sed -i "s/'E STRING · OPEN'/'D 5  ·  A 3  ·  E OPEN'/" browser-tests/app-smoke.spec.js
+          sed -i "s/'E string · OPEN'/'D 5 · A 3 · E OPEN'/" browser-tests/app-smoke.spec.js
           git diff --check
           grep -q "const APP_VERSION = '2.6.5'" app.js
           grep -q "./sw.js?v=2.6.5" app.js
