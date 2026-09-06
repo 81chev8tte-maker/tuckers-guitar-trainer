@@ -2,6 +2,8 @@
 
 This document defines the minimum testing expectations for future releases. It must stay aligned with the actual repository scripts and test files.
 
+For the current behavior-by-behavior coverage audit and prioritized automated gaps, see `TEST_DEBT_AUDIT.md`. Do not infer that a requirement is automated merely because it appears in a checklist here.
+
 ## Current automated commands
 
 The repository currently provides these package scripts:
@@ -163,6 +165,8 @@ Relevant current files include:
 - `pwa-assets.test.js`
 - `browser-tests/app-smoke.spec.js`
 
+The permanent matrix describes behavior that should be protected over time. The actual current coverage status is recorded in `TEST_DEBT_AUDIT.md`; several items above remain partial, manual-only or missing today.
+
 ## Test debt
 
 Test debt is important behavior that is weakly or not automatically protected. It is not automatically a release blocker, but future work touching the area should consider adding useful coverage.
@@ -184,11 +188,11 @@ Test debt is important behavior that is weakly or not automatically protected. I
 - backup behavior under browser-storage/quota failure;
 - responsive layout across the actual Dell Chromebook screen modes.
 
-The dedicated specs above convert several of these debts into explicit future acceptance protocols even when automation cannot fully cover them.
-
 ### Test-debt rule
 
 When a historical bug is fixed and a stable automated reproduction is practical, add a regression test. Do not fake confidence with a weak test that only searches source code for a CSS property or function name when the actual failure was behavioral.
+
+Use `TEST_DEBT_AUDIT.md` to distinguish high-value automatable gaps from requirements that should remain physical/manual acceptance.
 
 ## Manual acceptance testing
 
@@ -218,8 +222,6 @@ Adapt this checklist for releases touching Guitar:
 - [ ] A/B/section loops restart cleanly;
 - [ ] backing mute/volume behaves correctly;
 - [ ] current player progress saves correctly.
-
-For releases changing imported Guitar performance/rendering, run the matrix in `CHROMEBOOK_PERFORMANCE_BENCHMARK.md` rather than relying on this checklist alone.
 
 ### Piano checklist
 
@@ -255,8 +257,6 @@ Adapt for releases touching Piano:
 - [ ] version update does not leave obviously stale core assets;
 - [ ] major navigation fits target Chromebook viewport.
 
-When hardware setup, timing calibration or PWA lifecycle behavior is in scope, also use `HARDWARE_SETUP_WIZARD_SPEC.md`, `LATENCY_CALIBRATION_SPEC.md`, or `PWA_OFFLINE_UPDATE_SPEC.md` as applicable.
-
 ## Performance-sensitive validation process
 
 Do not invent numerical performance budgets without baseline measurements.
@@ -271,7 +271,7 @@ For changes touching animation, audio, imports, pitch detection, MIDI, or large 
 6. avoid unnecessary allocations/whole-list scans/layout work inside animation/audio loops;
 7. document meaningful regressions or tradeoffs.
 
-For Guitar/imported-song work, `CHROMEBOOK_PERFORMANCE_BENCHMARK.md` is the canonical repeatable baseline protocol.
+For Guitar Full Song/imported-song performance, follow `CHROMEBOOK_PERFORMANCE_BENCHMARK.md` rather than substituting CI browser timing for target-device acceptance.
 
 Once repeatable measurements exist, concrete budgets can be added here.
 
@@ -292,7 +292,5 @@ Good browser-test targets include:
 - one result panel;
 - current-release persistence after reload;
 - offline app-shell behavior where feasible.
-
-Future feature work should also add focused browser coverage where practical for guided hardware flow, update-ready/restart UX, Trouble Spot launch, and progress-summary navigation without pretending browser automation proves physical audio/MIDI quality.
 
 Visual readability and audio quality still require human acceptance.
