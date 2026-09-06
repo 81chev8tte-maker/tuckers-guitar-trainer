@@ -1,5 +1,16 @@
 # Changelog
 
+## v2.6.7 — Guided Hardware Acceptance Test
+
+- Added a child-friendly `Run Hardware Test` flow inside Hardware & Backup while preserving Advanced Diagnostics.
+- Reused the production Guitar audio service for a measurement-only quiet baseline, all six open strings, repeated-note onset observation and a final silence/noise observation.
+- Reused the shared Web MIDI service for guided Note On/Off, velocity, polyphony and optional sustain capability checks.
+- Added five clearly labeled human-observation questions for reaction, delay, smoothness, readability and willingness to keep playing.
+- Extended the existing local Hardware Validation report with FMQ version, guided measurements, retries, MIDI observations, warnings, tests not performed and human observations; Copy Report and Export JSON remain local-only.
+- Did not change production scoring, pitch/onset thresholds, noise gates, Highway behavior, AlphaTab behavior, profile/save schemas or MIDI-service semantics.
+- Added deterministic rule tests and a mocked browser regression for the guided flow/report while keeping real Chromebook/instrument acceptance manual.
+- Advanced package/app/PWA asset and service-worker versioning to v2.6.7.
+
 ## v2.6.6 — Guitar Highway UI Cleanup
 
 - Centered the fret/OPEN value both horizontally and vertically inside moving Highway blocks.

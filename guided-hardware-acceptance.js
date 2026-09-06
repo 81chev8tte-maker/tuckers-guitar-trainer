@@ -212,14 +212,16 @@
     $('guidedAction').onclick = handleGuidedAction;
     $('guidedSkip').onclick = skipGuidedStep;
     $('guidedFinish').onclick = showQuestions;
-    $('guidedCancel').onclick = () => cancelGuided('Stopped by tester');
+    $('guidedCancel').onclick = () => { if (path || phase === 'questions' || phase === 'summary') cancelGuided('Stopped by tester'); else document.querySelector('[data-diag-tab="microphone"]')?.click(); };
     document.querySelector('[data-diag-tab="report"]')?.addEventListener('click', () => setTimeout(refreshCombinedReport, 0));
     $('closeDiagnostics')?.addEventListener('click', () => { if (path) cancelGuided('Hardware & Backup closed'); else cleanupResources(); });
     $('diagReset')?.addEventListener('click', () => setTimeout(() => { session = null; path = null; phase = null; renderGuided(); }, 0));
+    $('openDiagnostics')?.addEventListener('click', () => setTimeout(() => { loadSession(); phase = session?.status === 'complete' ? 'summary' : null; renderGuided(); refreshCombinedReport(); }, 0));
     window.addEventListener('family-music:profile-changed', () => { if (path) cancelGuided('Player changed'); cleanupResources(); session = null; });
   }
 
   function showGuided() {
+    if (session?.status === 'complete' && !path && !phase) phase = 'summary';
     document.querySelectorAll('.diagnostic-view').forEach(v => v.hidden = v.dataset.diagView !== 'guided');
     document.querySelectorAll('[data-diag-tab]').forEach(b => b.classList.toggle('active', b.dataset.diagTab === 'guided'));
     renderGuided();
@@ -250,7 +252,7 @@
     questions.hidden = phase !== 'questions';
     summary.hidden = phase !== 'summary';
     $('guidedFinish').hidden = Boolean(path) || phase === 'questions' || phase === 'summary';
-    $('guidedCancel').textContent = path ? 'Stop current test' : 'Close guided test';
+    $('guidedCancel').textContent = path || phase === 'questions' || phase === 'summary' ? 'Stop current test' : 'Back to diagnostics';
     $('guidedProgress').textContent = !s ? 'Ready' : s.status === 'complete' ? 'Report saved' : path === 'guitar' ? 'Guitar' : path === 'midi' ? 'MIDI' : 'In progress';
     $('guidedLead').textContent = s ? `Guitar: ${statusText(s.guitar.status)} · MIDI: ${statusText(s.midi.status)}. Raw measurements stay in the report.` : 'Pick a test. You only need to follow the big instructions — Family Music Quest records the technical details.';
     if (!path) {
@@ -462,11 +464,12 @@
   }
   function renderSummary() {
     if (!session) return;
-    $('guidedSummary').innerHTML = `<strong>✅ Hardware test report saved</strong><p>Guitar: ${statusText(session.guitar.status)} · MIDI: ${statusText(session.midi.status)}</p><p class="muted">Open Report to copy or export the technical results and human observations. Monday physical gameplay checks are still required.</p><button id="guidedViewReport" class="button" type="button">View Report</button>`;
+    $('guidedSummary').innerHTML = `<strong>✅ Hardware test report saved</strong><p>Guitar: ${statusText(session.guitar.status)} · MIDI: ${statusText(session.midi.status)}</p><p class="muted">Open Report to copy or export the technical results and human observations. Monday physical gameplay checks are still required.</p><div class="diagnostic-actions"><button id="guidedViewReport" class="button" type="button">View Report</button><button id="guidedNewSession" class="button secondary" type="button">Start New Test</button></div>`;
     $('guidedViewReport').onclick = () => {
       document.querySelector('[data-diag-tab="report"]')?.click();
       setTimeout(refreshCombinedReport, 0);
     };
+    $('guidedNewSession').onclick = () => { newSession(); phase = null; showGuided(); };
   }
   function cancelGuided(reason='Cancelled') {
     if (session && path) {

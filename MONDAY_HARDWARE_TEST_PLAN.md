@@ -16,7 +16,7 @@ The Monday session should answer five questions:
 2. Does Guitar input work reliably through the intended microphone/USB path?
 3. Does Piano input work reliably through microphone/on-screen/Web MIDI paths that are actually available?
 4. Is Guitar gameplay readable and responsive on the target Chromebook?
-5. Does the v2.6.4 candidate materially improve the known Full Song imported-Guitar problem without breaking existing Guitar/Piano behavior?
+5. Does v2.6.7 preserve the v2.6.6 Guitar fixes while giving us a complete guided hardware report without breaking Guitar/Piano behavior?
 
 Do not turn the session into a long technical endurance test for the children. Use short rounds and let the adult handle diagnostic captures between them.
 
@@ -76,6 +76,18 @@ Then:
 - make sure no previous game is still active;
 - have the instrument/cable/keyboard connected as intended for the first run;
 - keep the complex local Guitar Pro stress file available, but do not upload it to the repository.
+
+
+## 3A — Run the in-app guided hardware acceptance
+
+Before the longer gameplay matrix, open **Hardware & Backup → Run Hardware Test**.
+
+- Run **Guitar audio** with the intended microphone/USB input.
+- Run **Piano MIDI** when the physical MIDI keyboard is available.
+- Answer the five short Human Observations questions without coaching the child toward an expected answer.
+- Open **Report** and use **Copy Report** or **Export JSON**.
+
+The guided report is evidence collection, not automatic acceptance. Continue with the manual Guitar/Piano/gameplay checks below, including disconnect/reconnect, Piano microphone, perceived delay, audio smoothness, Highway/Tab readability and normal save/profile behavior.
 
 ---
 
@@ -214,7 +226,7 @@ Adult observations:
 
 Use the same complex local Guitar Pro file used during the original failure.
 
-This is the primary v2.6.4 acceptance case.
+This remains the primary gameplay/performance acceptance case. v2.6.7 only adds the guided measurement/reporting layer; it does not replace this Full Song run.
 
 Follow the matrix in `CHROMEBOOK_PERFORMANCE_BENCHMARK.md`:
 
@@ -441,7 +453,7 @@ Examples:
 - Tab/Highway is unusable for the intended child;
 - serious Piano regression.
 
-A blocker should normally produce a focused v2.6.5 before Bass expansion.
+A blocker should normally produce one focused maintenance release before Bass expansion.
 
 ## SHOULD FIX SOON
 
@@ -458,7 +470,7 @@ Can be scheduled based on dependency/risk.
 
 Minor polish that does not undermine learning or reliability.
 
-If v2.6.4 clears its blockers and Guitar/Piano remain healthy, the project can seriously consider moving to the Bass Quest foundation described in `BASS_QUEST_SPEC.md`.
+If Monday clears the v2.6.6 gameplay/hardware gate while v2.6.7 reporting remains healthy, the project can seriously consider moving to the Bass Quest foundation described in `BASS_QUEST_SPEC.md`.
 
 ---
 
