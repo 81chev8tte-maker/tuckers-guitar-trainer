@@ -210,6 +210,8 @@ test('guided Hardware Acceptance Test records evidence and supports project copy
 
   const projectText=await page.evaluate(()=>window.FMQGuidedHardwareTest.reportText());
   expect(projectText).toContain('Family Music Quest — Project Hardware Report');
+  expect(projectText).toContain('Commit/build: Not available');
+  expect(projectText).toContain('Browser tab');
   expect(projectText).toContain(`Session: ${sessionId}`);
   expect(projectText).toContain('Adult result: NOT DECIDED');
   expect(projectText).toContain('Adult help required: 1');
@@ -218,6 +220,15 @@ test('guided Hardware Acceptance Test records evidence and supports project copy
   expect(projectText).toContain('Piano/MIDI: COMPLETE');
   expect(projectText).toContain('highway-open-note.jpg');
   expect(projectText).not.toContain('recentEvents');
+
+  const standaloneProjectText=await page.evaluate(()=>{
+    const originalMatchMedia=window.matchMedia;
+    window.matchMedia=query=>({matches:query==='(display-mode: standalone)'});
+    const text=window.FMQGuidedHardwareTest.reportText();
+    window.matchMedia=originalMatchMedia;
+    return text;
+  });
+  expect(standaloneProjectText).toContain('Installed PWA');
 
   await page.getByRole('button',{name:'View Report'}).click();
   await expect(page.getByRole('button',{name:'Copy Project Report'})).toBeVisible();

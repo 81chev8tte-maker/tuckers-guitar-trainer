@@ -630,7 +630,8 @@
   function combinedReportObject() {
     const base = baseReportObject ? baseReportObject() : { format:'family-music-quest-hardware-report', version:1, generatedAt:new Date().toISOString(), player:activeProfile(), platform:platform() };
     const saved = getJson(RESULT_KEY)[activeId()]?.guidedAcceptance || session || null;
-    return { ...base, appVersion:APP_VERSION, commit:null, guidedAcceptance:saved };
+    const currentPlatform = platform();
+    return { ...base, appVersion:APP_VERSION, commit:base.commit || null, platform:{ ...(base.platform || {}), displayMode:currentPlatform.displayMode }, guidedAcceptance:saved };
   }
   function projectReportText(report=combinedReportObject()) {
     const s = report.guidedAcceptance;
@@ -640,6 +641,7 @@
     const lines = [
       'Family Music Quest — Project Hardware Report',
       `FMQ version: ${report.appVersion || APP_VERSION}`,
+      `Commit/build: ${report.commit || 'Not available'}`,
       `Session: ${s?.sessionId || 'NOT RUN'}`,
       `Generated: ${report.generatedAt || new Date().toISOString()}`,
       `Player: ${report.player?.name || s?.player?.name || 'Unknown'}`,
