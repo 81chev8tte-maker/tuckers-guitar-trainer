@@ -1,5 +1,17 @@
 # Changelog
 
+## v2.6.4 — Guitar Player & String Engine Polish (release candidate)
+
+- Reworked Guitar gameplay rendering to materialize only the bounded visible clock window instead of creating note DOM for an entire imported Full Song.
+- Replaced repeated frame/input whole-song scans with clock indexes and pending/expiry pointers while preserving Guitar scoring thresholds and skipped-note rules.
+- Rebuilt playable Tab View as a bounded, time-spaced staff with a stable NOW playhead, aligned chord notes, measure markers and no per-note smooth scrolling.
+- Strengthened per-string identity and fret/OPEN readability on Highway notes and added compact chord-shape cues.
+- Added collapsed performance diagnostics for frame timing, rendered/event counts, Tab window size, pitch-analysis cost/rate and AlphaTab tick freshness, plus a diagnosis-only input-analysis bypass.
+- Removed fixed-six geometry from the touched renderer paths and generalized imported tuning/string helpers while continuing to expose only six-string Guitar tracks in this release.
+- Added a 2,000-event synthetic browser regression proving Highway and Tab DOM remain bounded.
+- Advanced package/app/PWA asset and service-worker cache versioning to v2.6.4.
+- Physical Dell Chromebook 3100 audio/readability acceptance remains required before declaring the Full Song stutter blocker resolved.
+
 ## v2.6.3 — Musical Feel & Guitar Songbook
 
 - Set natural authored 100% tempos for all built-in Piano pieces while retaining relative 50–100% practice speeds.

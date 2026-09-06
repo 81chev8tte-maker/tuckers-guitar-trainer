@@ -37,9 +37,7 @@ Do not guess at one cause. Add useful performance instrumentation and compare fr
 
 ### Whole-event-list work in Guitar animation paths
 
-Several high-frequency Guitar gameplay functions scan/filter full event arrays. This is acceptable for small lessons but may become expensive for large imported songs.
-
-Prefer moving indexes/windows/cached active sets where profiling demonstrates benefit.
+The v2.6.4 candidate replaces the identified frame-sensitive full-list scans and full-song note DOM materialization with bounded clock windows/indexes. Keep this item open until the complex Full Song benchmark passes on the target Chromebook; if stutter remains, use the new diagnostics to identify the next bottleneck rather than assuming the renderer is still responsible.
 
 ### Hard-coded six-string Guitar assumptions
 

@@ -81,3 +81,25 @@ test('built-in Guitar Songbook launches both learning views and phrase practice'
   await expect(page.locator('#gameLevelTitle')).toContainText('Answer');
   await page.locator('#exitGame').click();
 });
+
+
+test('Guitar rendering stays bounded with a 2,000-event synthetic run',async({page})=>{
+  await page.goto('/');
+  await page.getByLabel('Your name').fill('Guitar Stress Test');
+  await page.getByRole('button',{name:'Continue'}).click();
+  await page.getByRole('button',{name:'Start Playing'}).click();
+  await page.getByRole('button',{name:/Guitar Quest Learn guitar/}).click();
+  const first=await page.evaluate(()=>window.FMQGuitarTest.launchSyntheticStressLevel(2000));
+  expect(first.totalEvents).toBe(2000);
+  expect(first.renderedEvents).toBeLessThan(120);
+  expect(await page.locator('#noteLayer .falling-note').count()).toBeLessThan(120);
+  const middle=await page.evaluate(()=>window.FMQGuitarTest.jumpRenderForTest(60));
+  expect(middle.totalEvents).toBe(2000);
+  expect(middle.renderedEvents).toBeLessThan(120);
+  expect(await page.locator('#noteLayer .falling-note').count()).toBeLessThan(120);
+  await page.evaluate(()=>window.FMQGuitarTest.setGameViewForTest('tab'));
+  const tab=await page.evaluate(()=>window.FMQGuitarTest.jumpRenderForTest(60));
+  expect(tab.tabEvents).toBeLessThanOrEqual(48);
+  expect(await page.locator('#liveTab .tab-note').count()).toBeLessThanOrEqual(288);
+  await expect(page.locator('#liveTab .tab-playhead')).toBeVisible();
+});

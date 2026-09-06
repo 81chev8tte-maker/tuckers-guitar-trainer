@@ -156,3 +156,28 @@ main{width:min(1180px,calc(100% - 28px));margin:0 auto;padding:26px 0 10px}.view
 @media(max-width:700px){.calibration-row{align-items:stretch;flex-direction:column}.game-start-controls{min-width:0;flex-wrap:wrap}.adaptive-toggle{padding-bottom:0}}
 .game-practice-controls{display:flex;align-items:center;justify-content:flex-end;flex-wrap:wrap;gap:6px}.count-in-toggle{display:flex;align-items:center;gap:5px;white-space:nowrap;font-size:.72rem;font-weight:800;color:var(--muted)}
 .guitar-songbook-panel{margin-bottom:14px}.guitar-songbook-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin-top:14px}.guitar-book-card{display:flex;flex-direction:column;gap:8px;background:var(--surface-2);border:1px solid var(--line);border-radius:14px;padding:15px}.guitar-book-card h3,.guitar-book-card p{margin:0}.guitar-book-card>p:not(.eyebrow),.guitar-book-card>small{color:var(--muted)}.guitar-book-meta,.guitar-book-actions{display:flex;gap:6px;flex-wrap:wrap}.guitar-book-meta span{font-size:.68rem;font-weight:800;padding:4px 7px;border-radius:999px;background:#080b0f;color:var(--accent)}.guitar-book-card .field{margin-top:auto}.guitar-book-card select{width:100%}
+
+/* v2.6.4 Guitar player readability + bounded live-tab presentation */
+.falling-note{background:var(--string-color)!important;border:2px solid rgba(255,255,255,.95)!important;box-shadow:0 0 0 3px color-mix(in srgb,var(--string-color) 78%,#000 22%),0 5px 14px rgba(0,0,0,.34)!important}
+.falling-note b{display:grid;place-items:center;min-width:34px;min-height:28px;padding:2px 7px;border-radius:8px;background:#071018;color:#fff;font-size:clamp(1rem,2.2vw,1.35rem);line-height:1;text-shadow:none}
+.falling-note.open-note b{min-width:48px;font-size:.88rem;letter-spacing:.04em}
+.falling-note .note-string{background:#071018!important;color:var(--string-color)!important;border:1px solid color-mix(in srgb,var(--string-color) 70%,#fff 30%);font-weight:1000}
+.hand-position.chord-focus #handPositionText{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;letter-spacing:.03em}
+.live-tab{overflow:hidden!important;min-height:198px;border-radius:12px;background:#090d13;border:1px solid var(--line);padding:8px 10px}
+.tab-staff{position:relative;min-height:180px;padding:8px 8px 8px 54px;overflow:hidden}
+.tab-line-row{position:relative;height:27px}
+.tab-row-label{position:absolute;left:-48px;top:50%;transform:translateY(-50%);width:42px;text-align:right;font-weight:1000;color:var(--string-color);font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;z-index:4}
+.tab-row-label small{display:inline;margin-left:3px;font-size:.62rem;color:var(--muted)}
+.tab-string-line{position:absolute;left:0;right:0;top:50%;border-top:2px solid color-mix(in srgb,var(--string-color) 45%,#aab6c5 55%);opacity:.9}
+.tab-note{position:absolute;top:50%;transform:translate(-50%,-50%);z-index:5;min-width:25px;height:23px;display:grid;place-items:center;border-radius:6px;background:#091018;color:#fff;border:2px solid var(--string-color);font:900 .82rem/1 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;transition:left .05s linear,transform .08s,background .08s}
+.tab-note.current{transform:translate(-50%,-50%) scale(1.18);background:var(--string-color);color:#061018;box-shadow:0 0 0 2px #fff}
+.tab-note.hit,.tab-note.demo{opacity:.45}.tab-note.miss{border-style:dashed;opacity:.6}
+.tab-playhead{position:absolute;left:28%;top:4px;bottom:4px;width:3px;background:#fff;z-index:3;box-shadow:0 0 8px rgba(255,255,255,.7)}
+.tab-playhead small{position:absolute;top:0;left:6px;color:#fff;font-size:.55rem;letter-spacing:.12em}
+.tab-measures{position:absolute;left:54px;right:8px;top:5px;bottom:5px;pointer-events:none}
+.tab-measure-marker{position:absolute;top:12px;bottom:0;border-left:1px solid rgba(255,255,255,.2);z-index:1}
+.tab-measure-marker small{position:absolute;top:-11px;left:4px;color:var(--muted);font-size:.58rem}
+.game-perf-panel{flex:1 0 100%;margin-top:4px;padding:7px 9px;border:1px solid var(--line);border-radius:10px;background:rgba(0,0,0,.2);color:var(--muted);font-size:.68rem}
+.game-perf-panel summary{cursor:pointer;color:var(--muted);font-weight:800}
+.game-perf-panel>span{display:block;margin:7px 0;line-height:1.45;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+.game-perf-panel label{display:flex;align-items:center;gap:6px}.game-perf-panel label small{color:var(--muted)}

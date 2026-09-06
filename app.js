@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const APP_VERSION = '2.6.3';
+  const APP_VERSION = '2.6.4';
   const DB_NAME = 'tucker-guitar-trainer';
   const DB_VERSION = 1;
   const STORE_SONGS = 'songs';
@@ -290,6 +290,7 @@
   let inputChallengeHits = new Set();
   let inputCalibration = null;
   let dailyPractice = null;
+  const performanceDiagnostics = { inputAnalysisEnabled:true };
 
   const $ = (sel, root = document) => root.querySelector(sel);
   const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
@@ -498,6 +499,17 @@
       $('#gameLoop').setAttribute('aria-pressed', String(game.loop));
       if (game.loop && game.running) restartPracticeLoop();
     });
+    const perfInput=$('#gamePerfInputAnalysis');
+    if(perfInput){
+      perfInput.checked=performanceDiagnostics.inputAnalysisEnabled;
+      perfInput.addEventListener('change',async e=>{
+        performanceDiagnostics.inputAnalysisEnabled=Boolean(e.target.checked);
+        if(!performanceDiagnostics.inputAnalysisEnabled&&audio.active)audio.stop();
+        else if(performanceDiagnostics.inputAnalysisEnabled&&game?.running&&!game.listenOnly&&!audio.active){try{await startAudioInput(selectedDeviceId);}catch(err){console.error(err);toast('Could not restart Guitar input.');}}
+        if(game&&!game.running)$('#gameStart').textContent=performanceDiagnostics.inputAnalysisEnabled?(audio.active?(game.mode==='song'?'Start Song Level':'Start Mission'):'Enable Guitar & Start'):'Start Diagnostic Run';
+        updatePerformanceDiagnostics();
+      });
+    }
     $('#showNoteHighway').addEventListener('click', () => setGameView('highway'));
     $('#showTabHighway').addEventListener('click', () => setGameView('tab'));
     $('#gameNoteDensity').addEventListener('change', e => {
@@ -561,146 +573,108 @@
     $('#showTabHighway').classList.toggle('active', next === 'tab');
   }
 
-  function launchLevel(levelOrId, freePractice = false) {
-    const isSongLevel = levelOrId && typeof levelOrId === 'object';
-    const level = isSongLevel ? levelOrId : flatLevels.find(l => l.id === levelOrId);
-    if (!level) return;
-    if (!freePractice && !isSongLevel && !isLevelUnlocked(flatLevels.findIndex(l => l.id === level.id))) {
-      toast('Earn a star on the previous mission first.');
-      return;
-    }
+  function launchLevel(levelOrId,freePractice=false){
+    const isSongLevel=levelOrId&&typeof levelOrId==='object';
+    const level=isSongLevel?levelOrId:flatLevels.find(l=>l.id===levelOrId);
+    if(!level)return;
+    if(!freePractice&&!isSongLevel&&!isLevelUnlocked(flatLevels.findIndex(l=>l.id===level.id))){toast('Earn a star on the previous mission first.');return;}
     stopGameLoop();
     $('#gameScreen').classList.remove('playing');
-    const stringInfo = level.stringInfo || STRING_INFO;
-    const secondsPerBeat = 60 / Math.max(20, Number(level.bpm) || 80);
-    const practiceKey = levelPracticeKey(level);
-    const density = Math.max(.5, Math.min(1, Number(state.levelDensity?.[practiceKey] ?? state.settings?.noteDensity) || 1));
-    const sourceNotes = density >= 1 ? level.notes : level.notes.filter((_, i) => i === 0 || Math.floor((i + 1) * density) > Math.floor(i * density));
-    const events = sourceNotes.map((n, i) => ({
-      ...n,
-      index:i,
-      time:Number.isFinite(n.time) ? n.time : n.beat * secondsPerBeat,
-      clock:level.mode === 'song' && level.songSpec?.backingEnabled && Number.isFinite(n.tick)
-        ? n.tick - Number(level.sectionStartTick || 0)
-        : (Number.isFinite(n.time) ? n.time : n.beat * secondsPerBeat),
-      durationClock:level.mode === 'song' && level.songSpec?.backingEnabled
-        ? Math.max(0, Number(n.durationTicks) || 0)
-        : Math.max(0, Number(n.duration) || (Number(n.durationTicks) || 0) / 960) * secondsPerBeat,
-      midi:Number.isFinite(n.midi) ? n.midi : (stringInfo[n.string]?.openMidi ?? STRING_INFO[n.string]?.openMidi ?? 40) + n.fret,
-      status:'pending',
-      element:null,
-      elements:[]
-    })).sort((a,b) => a.clock - b.clock).map((e, i) => ({ ...e, index:i }));
-    if (!events.length) {
-      toast('This section has no playable guitar notes.');
-      return;
-    }
-    game = {
-      mode:level.mode || 'mission',
-      level,
-      practiceKey,
-      density,
-      stringInfo,
-      events,
-      running:false,
-      paused:false,
-      startPerf:0,
-      songClockTick:0,
-      songTempo:Number(level.bpm) || 80,
-      pausedAt:0,
-      raf:0,
-      hits:0,
-      misses:0,
-      combo:0,
-      bestCombo:0,
-      score:0,
-      loop:false,
-      loopStart:0,
-      loopEnd:null,
-      restartingLoop:false,
-      startToken:0,
-      listenOnly:Boolean(level.listenOnly),
-      lastWrongFeedback:0,
-      lastAcceptedPitchClass:null,
-      lastAcceptedEvent:-1,
-      tabWindowStart:0,
-      fretWindowStart:1,
-      startedAtDate:Date.now(),
-      endTime:(events.at(-1)?.time || 0) + 1.2,
-      endClock:Number(level.sectionEndTick) > Number(level.sectionStartTick)
-        ? Number(level.sectionEndTick) - Number(level.sectionStartTick)
-        : null
+    const stringInfo=level.stringInfo||STRING_INFO;
+    const secondsPerBeat=60/Math.max(20,Number(level.bpm)||80);
+    const practiceKey=levelPracticeKey(level);
+    const density=Math.max(.5,Math.min(1,Number(state.levelDensity?.[practiceKey]??state.settings?.noteDensity)||1));
+    const sourceNotes=density>=1?level.notes:level.notes.filter((_,i)=>i===0||Math.floor((i+1)*density)>Math.floor(i*density));
+    const events=sourceNotes.map((n,i)=>({
+      ...n,index:i,
+      time:Number.isFinite(n.time)?n.time:n.beat*secondsPerBeat,
+      clock:level.mode==='song'&&level.songSpec?.backingEnabled&&Number.isFinite(n.tick)?n.tick-Number(level.sectionStartTick||0):(Number.isFinite(n.time)?n.time:n.beat*secondsPerBeat),
+      durationClock:level.mode==='song'&&level.songSpec?.backingEnabled?Math.max(0,Number(n.durationTicks)||0):Math.max(0,Number(n.duration)||(Number(n.durationTicks)||0)/960)*secondsPerBeat,
+      midi:Number.isFinite(n.midi)?n.midi:(stringInfo[n.string]?.openMidi??STRING_INFO[n.string]?.openMidi??40)+n.fret,
+      measure:Number.isFinite(n.measure)?Number(n.measure):Math.floor(Math.max(0,Number(n.beat)||0)/4)+1,
+      status:'pending',element:null,elements:[]
+    })).sort((a,b)=>a.clock-b.clock).map((e,i)=>({...e,index:i}));
+    if(!events.length){toast('This section has no playable guitar notes.');return;}
+    game={
+      mode:level.mode||'mission',level,practiceKey,density,stringInfo,events,running:false,paused:false,startPerf:0,songClockTick:0,songTempo:Number(level.bpm)||80,pausedAt:0,raf:0,
+      hits:0,misses:0,combo:0,bestCombo:0,score:0,loop:false,loopStart:0,loopEnd:null,restartingLoop:false,startToken:0,listenOnly:Boolean(level.listenOnly),lastWrongFeedback:0,lastAcceptedPitchClass:null,lastAcceptedEvent:-1,
+      activeTotal:events.length,completedCount:0,nextPendingIndex:0,expireIndex:0,renderedEventIndexes:new Set(),tabWindowClockStart:-Infinity,tabWindowClockEnd:-Infinity,tabBefore:0,tabAfter:0,tabVisibleEventCount:0,tabPositionElements:[],fretWindowStart:1,lastSongClockUpdate:0,
+      perf:{frameSamples:new Array(120),frameCursor:0,frameSampleCount:0,lastFrameAt:0,lastUiAt:0},
+      startedAtDate:Date.now(),endTime:(events.at(-1)?.time||0)+1.2,
+      endClock:Number(level.sectionEndTick)>Number(level.sectionStartTick)?Number(level.sectionEndTick)-Number(level.sectionStartTick):null
     };
-    tabCurrentIndex = -1;
-    $('#gameScreen').hidden = false;
-    setGameView(state.settings?.gameView || 'highway');
-    $('#resultScreen').hidden = true;
-    $('#gameStart').hidden = false;
-    $('#gameNoteDensity').value = String(density);
-    $('#gameAdaptive').checked = state.settings?.adaptiveDifficulty !== false;
-    $('#resultEyebrow').textContent = game.mode === 'song' ? 'SONG SECTION COMPLETE' : 'MISSION COMPLETE';
-    $('#backToMap').textContent = game.mode === 'song' ? 'Back to Song' : 'Mission Map';
-    $('#gameWorldLabel').textContent = game.mode === 'song'
-      ? `SONG LEVEL · ${String(level.trackName || 'GUITAR').toUpperCase()}`
-      : `WORLD ${level.worldNumber} · ${level.worldTitle.toUpperCase()}`;
-    $('#gameLevelTitle').textContent = level.title;
-    $('#gameLessonTag').textContent = level.tag;
-    $('#gameLessonHeadline').textContent = level.headline;
-    $('#gameLessonText').textContent = level.lesson;
-    $('#tabHint').textContent = level.hint;
-    $('#gameStart').textContent = audio.active ? (game.mode === 'song' ? 'Start Song Level' : 'Start Mission') : 'Enable Guitar & Start';
-    $('#gameStart').disabled = false;
-    $('#gamePause').disabled = true;
-    $('#gamePause').textContent = 'Pause';
-    $('#gameLoop').textContent = '↻ Loop Off';
-    $('#gameLoop').setAttribute('aria-pressed', 'false');
-    $('#gameCountIn').checked = state.settings?.countIn !== false;
-    $('#gameLoopStart').hidden = $('#gameLoopEnd').hidden = game.mode !== 'song';
-    $('#gameLoopStart').textContent = 'A · Start';
-    $('#gameLoopEnd').textContent = 'B · End';
-    $('#gameScore').textContent = '0';
-    $('#gameAccuracy').textContent = '100%';
-    $('#gameCombo').textContent = '0';
-    $('#gameHearing').textContent = audio.lastResult?.note || '—';
-    $('#nextNoteText').textContent = formatExpected(events[0]);
-    $('#gameProgressBar').style.width = '0%';
+    tabCurrentIndex=-1;
+    $('#gameScreen').hidden=false;
+    setGameView(state.settings?.gameView||'highway');
+    $('#resultScreen').hidden=true;
+    $('#gameStart').hidden=false;
+    $('#gameNoteDensity').value=String(density);
+    $('#gameAdaptive').checked=state.settings?.adaptiveDifficulty!==false;
+    $('#resultEyebrow').textContent=game.mode==='song'?'SONG SECTION COMPLETE':'MISSION COMPLETE';
+    $('#backToMap').textContent=game.mode==='song'?'Back to Song':'Mission Map';
+    $('#gameWorldLabel').textContent=game.mode==='song'?`SONG LEVEL · ${String(level.trackName||'GUITAR').toUpperCase()}`:`WORLD ${level.worldNumber} · ${level.worldTitle.toUpperCase()}`;
+    $('#gameLevelTitle').textContent=level.title;
+    $('#gameLessonTag').textContent=level.tag;
+    $('#gameLessonHeadline').textContent=level.headline;
+    $('#gameLessonText').textContent=level.lesson;
+    $('#tabHint').textContent=level.hint;
+    $('#gameStart').textContent=!performanceDiagnostics.inputAnalysisEnabled?'Start Diagnostic Run':audio.active?(game.mode==='song'?'Start Song Level':'Start Mission'):'Enable Guitar & Start';
+    $('#gameStart').disabled=false;
+    $('#gamePause').disabled=true;
+    $('#gamePause').textContent='Pause';
+    $('#gameLoop').textContent='↻ Loop Off';
+    $('#gameLoop').setAttribute('aria-pressed','false');
+    $('#gameCountIn').checked=state.settings?.countIn!==false;
+    $('#gameLoopStart').hidden=$('#gameLoopEnd').hidden=game.mode!=='song';
+    $('#gameLoopStart').textContent='A · Start';
+    $('#gameLoopEnd').textContent='B · End';
+    $('#gameScore').textContent='0';
+    $('#gameAccuracy').textContent='100%';
+    $('#gameCombo').textContent='0';
+    $('#gameHearing').textContent=audio.lastResult?.note||'—';
+    $('#nextNoteText').textContent=formatExpected(events[0]);
+    $('#gameProgressBar').style.width='0%';
+    const perfInput=$('#gamePerfInputAnalysis');if(perfInput)perfInput.checked=performanceDiagnostics.inputAnalysisEnabled;
+    const perfStats=$('#gamePerfStats');if(perfStats)perfStats.textContent=`Ready · ${events.length} total events`;
     renderStringLabels();
-    renderLiveTab();
     renderGameNotes();
+    renderLiveTabWindow(0);
     updateGameBoard(0);
+    updatePerformanceDiagnostics();
   }
 
   function levelPracticeKey(level) {
     return level?.mode === 'song' ? level.songKey || level.id || level.title : level?.id || level?.title || 'practice';
   }
 
-  async function startMission() {
-    if (!game || game.running) return;
-    const startingGame = game;
-    const startToken = ++game.startToken;
-    $('#gameStart').disabled = true;
-    $('#gameStart').textContent = 'Getting input…';
-    try {
-      if (!game.listenOnly && !audio.active) await startAudioInput(selectedDeviceId);
+  async function startMission(){
+    if(!game||game.running)return;
+    const startingGame=game;
+    const startToken=++game.startToken;
+    $('#gameStart').disabled=true;
+    $('#gameStart').textContent='Getting input…';
+    try{
+      if(!game.listenOnly&&performanceDiagnostics.inputAnalysisEnabled&&!audio.active)await startAudioInput(selectedDeviceId);
       $('#gameScreen').classList.add('playing');
-      if (state.settings?.countIn !== false) await runCountdown(game.songTempo, game.level?.songSpec?.speed || 1);
-      if (game !== startingGame || startToken !== game.startToken || !$('#gameScreen').classList.contains('playing')) return;
-      if (usesSongBackingClock()) {
+      if(state.settings?.countIn!==false)await runCountdown(game.songTempo,game.level?.songSpec?.speed||1);
+      if(game!==startingGame||startToken!==game.startToken||!$('#gameScreen').classList.contains('playing'))return;
+      if(usesSongBackingClock()){
         configureSongBacking(game.level);
-        if (!alphaApi.play()) throw new Error('Backing player is not ready yet.');
+        if(!alphaApi.play())throw new Error('Backing player is not ready yet.');
       }
-      game.running = true;
-      game.startPerf = performance.now();
-      game.paused = false;
-      $('#gameStart').hidden = true;
-      $('#gamePause').disabled = false;
-      game.raf = requestAnimationFrame(gameLoop);
-    } catch (err) {
+      game.running=true;
+      game.startPerf=performance.now();
+      game.paused=false;
+      game.perf.lastFrameAt=0;
+      $('#gameStart').hidden=true;
+      $('#gamePause').disabled=false;
+      game.raf=requestAnimationFrame(gameLoop);
+    }catch(err){
       console.error(err);
       $('#gameScreen').classList.remove('playing');
-      $('#gameStart').disabled = false;
-      $('#gameStart').textContent = 'Try Guitar Input Again';
-      toast('I could not access the guitar input. Check Chrome microphone permission.');
+      $('#gameStart').disabled=false;
+      $('#gameStart').textContent=performanceDiagnostics.inputAnalysisEnabled?'Try Guitar Input Again':'Start Diagnostic Run';
+      toast(performanceDiagnostics.inputAnalysisEnabled?'I could not access the guitar input. Check Chrome microphone permission.':'Could not start this diagnostic run.');
     }
   }
 
@@ -738,63 +712,62 @@
     if (el) el.hidden = true;
   }
 
-  function gameLoop(now) {
-    if (!game?.running) return;
-    if (game.paused) {
-      game.raf = requestAnimationFrame(gameLoop);
-      return;
-    }
-    const t = currentGameClock(now);
+  function gameLoop(now){
+    if(!game?.running)return;
+    if(game.paused){game.raf=requestAnimationFrame(gameLoop);return;}
+    recordFramePerformance(now);
+    const t=currentGameClock(now);
     updateGameBoard(t);
     markExpiredNotes(t);
     updateCurrentTab(t);
-    const activeEvents = window.FMQGameplayRules?.activeScoringEvents(game.events) || game.events.filter(ev => ev.status !== 'skipped');
-    const total = activeEvents.length;
-    const done = activeEvents.filter(ev => ev.status === 'hit' || ev.status === 'miss').length;
-    $('#gameProgressBar').style.width = `${Math.min(100, (done / total) * 100)}%`;
-    const endClock = game.loop && Number.isFinite(game.loopEnd)
-      ? game.loopEnd
-      : usesSongBackingClock() ? (game.endClock ?? game.events.at(-1)?.clock) : game.endTime;
-    if (t >= endClock && done >= total) {
-      if (game.loop) {
-        restartPracticeLoop();
-        return;
-      }
-      finishMission();
-      return;
+    const total=Math.max(1,Number(game.activeTotal)||0);
+    const done=Math.min(total,Number(game.completedCount)||0);
+    $('#gameProgressBar').style.width=`${Math.min(100,(done/total)*100)}%`;
+    const endClock=game.loop&&Number.isFinite(game.loopEnd)?game.loopEnd:usesSongBackingClock()?(game.endClock??game.events.at(-1)?.clock):game.endTime;
+    if(t>=endClock&&done>=total){
+      if(game.loop){restartPracticeLoop();return;}
+      finishMission();return;
     }
-    game.raf = requestAnimationFrame(gameLoop);
+    game.raf=requestAnimationFrame(gameLoop);
   }
 
-  async function restartPracticeLoop() {
-    if (!game || game.restartingLoop) return;
-    game.restartingLoop = true;
-    const loopGame = game;
-    game.running = false;
+  async function restartPracticeLoop(){
+    if(!game||game.restartingLoop)return;
+    game.restartingLoop=true;
+    const loopGame=game;
+    game.running=false;
     cancelAnimationFrame(game.raf);
-    if (usesSongBackingClock()) alphaApi?.pause?.();
-    const start = Number.isFinite(game.loopStart) ? game.loopStart : 0;
-    const end = Number.isFinite(game.loopEnd) ? game.loopEnd : (usesSongBackingClock() ? game.endClock : game.endTime);
-    game.events.forEach(ev => {
-      ev.status = ev.clock >= start && ev.clock <= end ? 'pending' : 'skipped';
-      ev.elements.forEach(el => { el.classList.remove('hit','miss','demo'); el.hidden = true; });
-    });
-    game.hits = 0; game.misses = 0; game.combo = 0; game.score = 0; game.songClockTick = start;
-    $$('.tab-cell.hit,.tab-cell.miss,.tab-cell.demo', $('#liveTab')).forEach(cell => cell.classList.remove('hit','miss','demo'));
+    if(usesSongBackingClock())alphaApi?.pause?.();
+    const start=Number.isFinite(game.loopStart)?game.loopStart:0;
+    const end=Number.isFinite(game.loopEnd)?game.loopEnd:(usesSongBackingClock()?game.endClock:game.endTime);
+    let activeTotal=0;
+    game.events.forEach(ev=>{ev.status=ev.clock>=start&&ev.clock<=end?'pending':'skipped';if(ev.status==='pending')activeTotal++;});
+    renderGameNotes();
+    game.activeTotal=activeTotal;
+    game.completedCount=0;
+    game.hits=0;game.misses=0;game.combo=0;game.score=0;game.songClockTick=start;
+    game.nextPendingIndex=lowerBoundClock(game.events,start);
+    game.expireIndex=game.nextPendingIndex;
+    advancePendingIndex();
+    tabCurrentIndex=-1;
+    game.tabWindowClockStart=-Infinity;game.tabWindowClockEnd=-Infinity;
     updateGameHud();
-    if (state.settings?.countIn !== false) await runCountdown(game.songTempo, game.level?.songSpec?.speed || 1);
-    if (game !== loopGame || !$('#gameScreen').classList.contains('playing')) { loopGame.restartingLoop = false; return; }
-    if (usesSongBackingClock()) {
+    renderLiveTabWindow(start);
+    updateGameBoard(start);
+    if(state.settings?.countIn!==false)await runCountdown(game.songTempo,game.level?.songSpec?.speed||1);
+    if(game!==loopGame||!$('#gameScreen').classList.contains('playing')){loopGame.restartingLoop=false;return;}
+    if(usesSongBackingClock()){
       configureSongBacking(game.level);
-      const absoluteStart = Number(game.level.sectionStartTick || 0) + start;
-      alphaApi.tickPosition = absoluteStart;
-      game.songClockTick = start;
+      const absoluteStart=Number(game.level.sectionStartTick||0)+start;
+      alphaApi.tickPosition=absoluteStart;
+      game.songClockTick=start;
       alphaApi.play();
     }
-    game.startPerf = performance.now() - start * 1000;
-    game.running = true;
-    game.restartingLoop = false;
-    game.raf = requestAnimationFrame(gameLoop);
+    game.startPerf=performance.now()-start*1000;
+    game.running=true;
+    game.restartingLoop=false;
+    game.perf.lastFrameAt=0;
+    game.raf=requestAnimationFrame(gameLoop);
   }
 
   function guitarLoopLimit() {
@@ -823,63 +796,188 @@
     if (game.running) restartPracticeLoop();
   }
 
-  function updateGameBoard(t) {
-    if (!game) return;
-    const board = $('#gameBoard');
-    const rect = board.getBoundingClientRect();
-    const hitY = rect.height - 58;
-    const spawnY = 48;
-    const hitX = Math.max(118, rect.width * .16);
-    const spawnX = rect.width - 44;
-    const clock = gameClockWindows();
-    updateFretWindow(t, clock.lookahead);
-    renderBeatMarkers(t, clock, spawnY, hitY, hitX, spawnX);
-    game.events.forEach(ev => {
-      const dt = ev.clock - t;
-      if (!ev.elements?.length) return;
-      const inRange = dt <= clock.lookahead && dt >= -clock.expired;
-      ev.elements.forEach(el => { el.hidden = !inRange; });
-      if (!inRange) return;
-      const progress = Math.max(0, Math.min(1.08, 1 - dt / clock.lookahead));
-      const y = spawnY + progress * (hitY - spawnY);
-      const flatView = $('#gameScreen').classList.contains('tab-mode');
-      const scale = .58 + .42 * Math.min(1, progress);
-      const sustainTravel = flatView ? hitY - spawnY : spawnX - hitX;
-      const sustain = Math.min(flatView ? 110 : 190, Math.max(0, Number(ev.durationClock || 0) / clock.lookahead * sustainTravel));
-      ev.elements.forEach(el => {
-        const stringIndex = Number(el.dataset.stringIndex);
-        const x = flatView
-          ? rect.width * ((stringIndex + .5) / 6)
-          : spawnX - progress * (spawnX - hitX);
-        const laneTop = 58;
-        const laneBottom = rect.height - 35;
-        const laneY = laneTop + ((5 - stringIndex) + .5) / 6 * (laneBottom - laneTop);
-        const stringOffset = flatView ? 0 : laneY - y;
-        el.style.left = `${x}px`;
-        el.style.top = `${y + stringOffset}px`;
-        el.style.transform = `translate(-50%,-50%) scale(${scale})`;
-        el.style.setProperty('--sustain-length', `${sustain}px`);
-      });
+  function lowerBoundClock(events,value){
+    let lo=0,hi=events.length;
+    while(lo<hi){const mid=(lo+hi)>>1;if(Number(events[mid].clock)<value)lo=mid+1;else hi=mid;}
+    return lo;
+  }
+
+  function upperBoundClock(events,value){
+    let lo=0,hi=events.length;
+    while(lo<hi){const mid=(lo+hi)>>1;if(Number(events[mid].clock)<=value)lo=mid+1;else hi=mid;}
+    return lo;
+  }
+
+  function eventClockRange(start,end){
+    if(!game?.events?.length)return[0,0];
+    return[lowerBoundClock(game.events,start),upperBoundClock(game.events,end)];
+  }
+
+  function stringCount(){return Math.max(1,Number(game?.stringInfo?.length)||STRING_INFO.length);}
+
+  function advancePendingIndex(){
+    if(!game)return;
+    while(game.nextPendingIndex<game.events.length&&game.events[game.nextPendingIndex].status!=='pending')game.nextPendingIndex++;
+  }
+
+  function releaseGameEventElements(ev){
+    if(!ev?.elements?.length)return;
+    ev.elements.forEach(el=>el.remove());
+    ev.elements=[];ev.element=null;
+    game?.renderedEventIndexes?.delete(ev.index);
+  }
+
+  function ensureGameEventElements(ev){
+    if(!game||ev.status==='skipped')return[];
+    if(ev.elements?.length)return ev.elements;
+    const layer=$('#noteLayer');
+    const info=game.stringInfo||STRING_INFO;
+    const count=info.length||STRING_INFO.length;
+    const shape=Array.isArray(ev.chordNotes)&&ev.chordNotes.length?ev.chordNotes:[{string:ev.string,fret:ev.fret,midi:ev.midi,technique:ev.technique}];
+    ev.elements=shape.map(note=>{
+      const el=document.createElement('div');
+      const technique=note.technique||ev.technique||'';
+      const fret=Number(note.fret)||0;
+      const stringIndex=Number(note.string)||0;
+      const string=info[stringIndex]||STRING_INFO[stringIndex]||{};
+      const stringNumber=Number(string.number)||count-stringIndex;
+      const stringName=`${string.label||'?'}${stringNumber}`;
+      el.className=`falling-note string-${stringIndex} ${game.listenOnly?'listen-note':''} ${fret===0?'open-note':''} ${technique?'has-technique':''} ${shape.length>1?'chord-note':''}`;
+      el.style.setProperty('--string-color',string.color||STRING_INFO[stringIndex%STRING_INFO.length]?.color||'#a8f23d');
+      el.innerHTML=`<span class="note-string">${escapeHtml(stringName)}</span><b>${fret===0?'OPEN':fret}</b>${technique?`<small>${escapeHtml(technique)}</small>`:''}`;
+      el.dataset.eventIndex=ev.index;
+      el.dataset.stringIndex=stringIndex;
+      el.dataset.fret=fret;
+      el.dataset.chordSize=shape.length;
+      if(ev.status!=='pending')el.classList.add(ev.status);
+      layer.appendChild(el);
+      return el;
     });
-    const next = game.events.find(e => e.status === 'pending');
-    $('#nextNoteText').textContent = next ? formatExpected(next) : 'Finish strong!';
+    ev.element=ev.elements[0]||null;
+    game.renderedEventIndexes.add(ev.index);
+    return ev.elements;
+  }
+
+  function syncRenderedEvents(startIndex,endIndex){
+    if(!game)return;
+    for(const index of game.renderedEventIndexes){
+      if(index<startIndex||index>=endIndex)releaseGameEventElements(game.events[index]);
+    }
+    for(let i=startIndex;i<endIndex;i++)if(game.events[i]?.status!=='skipped')ensureGameEventElements(game.events[i]);
+  }
+
+  function tabPercentForClock(value,t){
+    const playhead=28;
+    const before=Math.max(1,Number(game?.tabBefore)||1);
+    const after=Math.max(1,Number(game?.tabAfter)||1);
+    const dt=Number(value)-Number(t);
+    if(dt>=0)return playhead+Math.min(1,dt/after)*(96-playhead);
+    return playhead-Math.min(1,-dt/before)*(playhead-7);
+  }
+
+  function recordFramePerformance(now){
+    const p=game?.perf;if(!p)return;
+    if(p.lastFrameAt){
+      const delta=Math.max(0,now-p.lastFrameAt);
+      p.frameSamples[p.frameCursor]=delta;
+      p.frameCursor=(p.frameCursor+1)%p.frameSamples.length;
+      p.frameSampleCount=Math.min(p.frameSamples.length,p.frameSampleCount+1);
+    }
+    p.lastFrameAt=now;
+    if(now-p.lastUiAt>=500){p.lastUiAt=now;updatePerformanceDiagnostics();}
+  }
+
+  function getPerformanceSnapshot(){
+    const p=game?.perf;
+    let avg=0,worst=0;
+    if(p?.frameSampleCount){
+      for(let i=0;i<p.frameSampleCount;i++){const value=Number(p.frameSamples[i])||0;avg+=value;worst=Math.max(worst,value);}
+      avg/=p.frameSampleCount;
+    }
+    const tickAge=game?.lastSongClockUpdate?Math.max(0,performance.now()-game.lastSongClockUpdate):null;
+    return{
+      version:APP_VERSION,
+      fps:avg>0?1000/avg:0,
+      averageFrameMs:avg,
+      worstFrameMs:worst,
+      totalEvents:game?.events?.length||0,
+      activeEvents:game?.activeTotal||0,
+      completedEvents:game?.completedCount||0,
+      renderedEvents:game?.renderedEventIndexes?.size||0,
+      tabEvents:game?.tabVisibleEventCount||0,
+      pitchAnalysisMs:Number(audio?.analysisMs)||0,
+      pitchAnalysisHz:Number(audio?.analysisHz)||0,
+      inputAnalysisEnabled:Boolean(performanceDiagnostics.inputAnalysisEnabled),
+      clockSource:usesSongBackingClock()?'AlphaTab ticks':'local seconds',
+      songClockTick:Number(game?.songClockTick)||0,
+      backingTickAgeMs:tickAge
+    };
+  }
+
+  function updatePerformanceDiagnostics(){
+    const el=$('#gamePerfStats');if(!el)return;
+    const s=getPerformanceSnapshot();
+    const age=s.backingTickAgeMs==null?'—':`${Math.round(s.backingTickAgeMs)} ms`;
+    el.textContent=`FPS ${s.fps?s.fps.toFixed(0):'—'} · frame ${s.averageFrameMs?s.averageFrameMs.toFixed(1):'—'} ms (worst ${s.worstFrameMs?s.worstFrameMs.toFixed(1):'—'}) · events ${s.totalEvents} · rendered ${s.renderedEvents} · tab ${s.tabEvents} · pitch ${s.pitchAnalysisMs?s.pitchAnalysisMs.toFixed(1):'—'} ms @ ${s.pitchAnalysisHz?s.pitchAnalysisHz.toFixed(0):'—'} Hz · clock ${s.clockSource} · tick age ${age}`;
+  }
+
+  function updateGameBoard(t){
+    if(!game)return;
+    const board=$('#gameBoard');
+    const rect=board.getBoundingClientRect();
+    const hitY=rect.height-58,spawnY=48;
+    const hitX=Math.max(118,rect.width*.16),spawnX=rect.width-44;
+    const clock=gameClockWindows();
+    const [startIndex,endIndex]=eventClockRange(t-clock.expired,t+clock.lookahead);
+    syncRenderedEvents(startIndex,endIndex);
+    updateFretWindow(t,clock.lookahead);
+    renderBeatMarkers(t,clock,spawnY,hitY,hitX,spawnX);
+    const flatView=$('#gameScreen').classList.contains('tab-mode');
+    const count=stringCount();
+    for(let i=startIndex;i<endIndex;i++){
+      const ev=game.events[i];if(!ev?.elements?.length)continue;
+      const dt=ev.clock-t;
+      const progress=Math.max(0,Math.min(1.08,1-dt/clock.lookahead));
+      const y=spawnY+progress*(hitY-spawnY);
+      const scale=.58+.42*Math.min(1,progress);
+      const sustainTravel=flatView?hitY-spawnY:spawnX-hitX;
+      const sustain=Math.min(flatView?110:190,Math.max(0,Number(ev.durationClock||0)/clock.lookahead*sustainTravel));
+      ev.elements.forEach(el=>{
+        const stringIndex=Number(el.dataset.stringIndex);
+        const x=flatView?rect.width*((stringIndex+.5)/count):spawnX-progress*(spawnX-hitX);
+        const laneTop=58,laneBottom=rect.height-35;
+        const laneY=laneTop+((count-1-stringIndex)+.5)/count*(laneBottom-laneTop);
+        const stringOffset=flatView?0:laneY-y;
+        el.hidden=false;
+        el.style.left=`${x}px`;
+        el.style.top=`${y+stringOffset}px`;
+        el.style.transform=`translate(-50%,-50%) scale(${scale})`;
+        el.style.setProperty('--sustain-length',`${sustain}px`);
+      });
+    }
+    advancePendingIndex();
+    const next=game.events[game.nextPendingIndex];
+    $('#nextNoteText').textContent=next?formatExpected(next):'Finish strong!';
     updateHighwayFocus(next);
   }
 
-  function updateHighwayFocus(next) {
-    if (!next) return;
-    const shape = Array.isArray(next.chordNotes) && next.chordNotes.length ? next.chordNotes : [next];
-    const activeStrings = new Set(shape.map(note => Number(note.string)));
-    $$('.string-labels span').forEach(label => label.classList.toggle('active', activeStrings.has(Number(label.dataset.string))));
-    const frets = eventFrets(next);
-    $$('.fret-lane').forEach(lane => lane.classList.toggle('active', frets.includes(Number(lane.dataset.fret)) || (!frets.length && Number(lane.dataset.fret) === 0)));
-    const info = game.stringInfo || STRING_INFO;
-    const cue = shape.map(note => {
-      const string = info[note.string] || STRING_INFO[note.string];
-      return `${string?.name || `String ${6 - note.string}`} · ${Number(note.fret) === 0 ? 'OPEN' : `FRET ${note.fret}`}`;
-    }).join('  +  ');
-    $('#handPosition').classList.toggle('open-focus', !frets.length);
-    $('#handPositionText').textContent = cue;
+  function updateHighwayFocus(next){
+    if(!next)return;
+    const shape=Array.isArray(next.chordNotes)&&next.chordNotes.length?next.chordNotes:[next];
+    const activeStrings=new Set(shape.map(note=>Number(note.string)));
+    $$('.string-labels span').forEach(label=>label.classList.toggle('active',activeStrings.has(Number(label.dataset.string))));
+    const frets=eventFrets(next);
+    $$('.fret-lane').forEach(lane=>lane.classList.toggle('active',frets.includes(Number(lane.dataset.fret))||(!frets.length&&Number(lane.dataset.fret)===0)));
+    const info=game.stringInfo||STRING_INFO;
+    const count=info.length||STRING_INFO.length;
+    const cue=shape.map(note=>{
+      const string=info[note.string]||STRING_INFO[note.string]||{};
+      const number=Number(string.number)||count-Number(note.string);
+      return `${string.label||'?'}${number} ${Number(note.fret)===0?'OPEN':note.fret}`;
+    }).join(' · ');
+    $('#handPosition').classList.toggle('open-focus',!frets.length);
+    $('#handPosition').classList.toggle('chord-focus',shape.length>1);
+    $('#handPositionText').textContent=cue;
   }
 
   function eventFrets(ev) {
@@ -887,17 +985,18 @@
     return shape.map(note => Number(note?.fret)).filter(fret => Number.isFinite(fret) && fret > 0);
   }
 
-  function updateFretWindow(t, lookahead) {
-    const upcoming = game.events.filter(ev => ev.status === 'pending' && ev.clock >= t - .15 * lookahead && ev.clock <= t + lookahead * .72);
-    const frets = upcoming.flatMap(eventFrets);
-    const anchor = frets.length ? Math.min(...frets) : 1;
-    let nextStart = Math.max(1, anchor - 1);
-    if (frets.length) {
-      const max = Math.max(...frets);
-      if (max - nextStart > 4) nextStart = Math.max(1, max - 4);
+  function updateFretWindow(t,lookahead){
+    const [startIndex,endIndex]=eventClockRange(t-.15*lookahead,t+lookahead*.72);
+    let anchor=Infinity,max=-Infinity;
+    for(let i=startIndex;i<endIndex;i++){
+      const ev=game.events[i];if(ev.status!=='pending')continue;
+      const frets=eventFrets(ev);
+      for(const fret of frets){anchor=Math.min(anchor,fret);max=Math.max(max,fret);}
     }
-    if (nextStart === game.fretWindowStart) return;
-    game.fretWindowStart = nextStart;
+    let nextStart=Number.isFinite(anchor)?Math.max(1,anchor-1):1;
+    if(Number.isFinite(max)&&max-nextStart>4)nextStart=Math.max(1,max-4);
+    if(nextStart===game.fretWindowStart)return;
+    game.fretWindowStart=nextStart;
     renderFretboard();
   }
 
@@ -939,41 +1038,37 @@
     Array.from(layer.children).slice(markerIndex).forEach(marker => { marker.hidden = true; });
   }
 
-  function markExpiredNotes(t) {
-    game.events.forEach(ev => {
-      if (ev.status === 'pending' && game.listenOnly && t >= ev.clock) markDemo(ev);
-      else if (ev.status === 'pending' && t > ev.clock + gameClockWindows().hit) markMiss(ev);
-    });
+  function markExpiredNotes(t){
+    if(!game)return;
+    const hit=gameClockWindows().hit;
+    while(game.expireIndex<game.events.length){
+      const ev=game.events[game.expireIndex];
+      const ready=game.listenOnly?t>=ev.clock:t>ev.clock+hit;
+      if(!ready)break;
+      if(ev.status==='pending'){if(game.listenOnly)markDemo(ev);else markMiss(ev);}
+      game.expireIndex++;
+    }
   }
 
-  function markDemo(ev) {
-    ev.status = 'demo';
-    game.hits++;
-    ev.elements.forEach(el => el.classList.add('demo'));
-    updateTabEvent(ev);
-    updateGameHud();
+  function markDemo(ev){
+    if(ev.status!=='pending')return;
+    ev.status='demo';game.hits++;game.completedCount++;
+    ev.elements.forEach(el=>el.classList.add('demo'));
+    updateTabEvent(ev);advancePendingIndex();updateGameHud();
   }
 
-  function updateCurrentTab(t) {
-    if (!game) return;
-    let closest = -1;
-    let closestDelta = Infinity;
-    game.events.forEach(ev => {
-      if (ev.status !== 'pending') return;
-      const d = Math.abs(ev.clock - t);
-      if (d < closestDelta) { closestDelta = d; closest = ev.index; }
-    });
-    if (closest === tabCurrentIndex) return;
-    tabCurrentIndex = closest;
-    if (closest >= 0 && (closest < game.tabWindowStart + 4 || closest >= game.tabWindowStart + 28)) {
-      renderLiveTabWindow(Math.max(0, closest - 8));
-    }
-    $$('.tab-cell.current', $('#liveTab')).forEach(c => c.classList.remove('current'));
-    if (closest >= 0) {
-      $$(`[data-tab-col="${closest}"]`, $('#liveTab')).forEach(c => c.classList.add('current'));
-      const target = $(`[data-tab-col="${closest}"]`, $('#liveTab'));
-      target?.scrollIntoView({ behavior:'smooth', inline:'center', block:'nearest' });
-    }
+  function updateCurrentTab(t){
+    if(!game)return;
+    const before=Math.max(1,Number(game.tabBefore)||gameClockWindows().lookahead*.25);
+    const after=Math.max(1,Number(game.tabAfter)||gameClockWindows().lookahead*1.35);
+    if(!Number.isFinite(game.tabWindowClockStart)||t<game.tabWindowClockStart+before*.25||t>game.tabWindowClockEnd-after*.35)renderLiveTabWindow(t);
+    (game.tabPositionElements||[]).forEach(el=>{el.style.left=`${tabPercentForClock(Number(el.dataset.tabClock),t)}%`;});
+    advancePendingIndex();
+    const closest=game.nextPendingIndex<game.events.length?game.nextPendingIndex:-1;
+    if(closest===tabCurrentIndex)return;
+    tabCurrentIndex=closest;
+    $$('.tab-cell.current',$('#liveTab')).forEach(c=>c.classList.remove('current'));
+    if(closest>=0)$$(`[data-tab-event="${closest}"]`,$('#liveTab')).forEach(c=>c.classList.add('current'));
   }
 
   function renderStringLabels() {
@@ -993,110 +1088,111 @@
     renderFretboard();
   }
 
-  function renderGameNotes() {
-    const layer = $('#noteLayer');
-    layer.innerHTML = '';
-    game.events.forEach(ev => {
-      const shape = Array.isArray(ev.chordNotes) && ev.chordNotes.length ? ev.chordNotes : [{ string:ev.string, fret:ev.fret, midi:ev.midi, technique:ev.technique }];
-      ev.elements = shape.map(note => {
-        const el = document.createElement('div');
-        const technique = note.technique || ev.technique || '';
-        el.className = `falling-note string-${note.string} ${game.listenOnly ? 'listen-note' : ''} ${Number(note.fret) === 0 ? 'open-note' : ''} ${technique ? 'has-technique' : ''}`;
-        const string = (game.stringInfo || STRING_INFO)[note.string] || STRING_INFO[note.string];
-        const stringName = `${string?.label || '?'}${string?.number || 6 - Number(note.string)}`;
-        el.innerHTML = `<span class="note-string">${escapeHtml(stringName)}</span><b>${Number(note.fret) === 0 ? 'OPEN' : Number(note.fret)}</b>${technique ? `<small>${escapeHtml(technique)}</small>` : ''}`;
-        el.hidden = true;
-        el.dataset.eventIndex = ev.index;
-        el.dataset.stringIndex = note.string;
-        el.dataset.fret = Number(note.fret) || 0;
-        el.dataset.chordSize = shape.length;
-        layer.appendChild(el);
-        return el;
-      });
-      ev.element = ev.elements[0];
-    });
+  function renderGameNotes(){
+    const layer=$('#noteLayer');
+    if(!game||!layer)return;
+    for(const index of game.renderedEventIndexes||[])if(game.events[index]){game.events[index].elements=[];game.events[index].element=null;}
+    layer.innerHTML='';
+    game.renderedEventIndexes=new Set();
   }
 
   function renderLiveTab() {
     renderLiveTabWindow(0);
   }
 
-  function renderLiveTabWindow(start = 0) {
-    const wrap = $('#liveTab');
-    const info = game?.stringInfo || STRING_INFO;
-    game.tabWindowStart = Math.max(0, Math.min(start, Math.max(0, game.events.length - 32)));
-    const visibleEvents = game.events.slice(game.tabWindowStart, game.tabWindowStart + 32);
-    const rows = Array.from({ length:info.length }, (_, i) => info.length - 1 - i);
-    wrap.innerHTML = `<div class="tab-grid" style="--tab-cols:${visibleEvents.length}">${rows.map(stringIndex => {
-      const label = info[stringIndex]?.label || `S${info.length - stringIndex}`;
-      const cells = visibleEvents.map(ev => {
-        const shape = Array.isArray(ev.chordNotes) && ev.chordNotes.length ? ev.chordNotes : [ev];
-        const tabNote = shape.find(note => note.string === stringIndex);
-        return `<span class="tab-cell string-text-${stringIndex} ${tabNote ? 'note' : ''} ${ev.status !== 'pending' ? ev.status : ''}" data-tab-col="${ev.index}" data-tab-event="${ev.index}">${tabNote ? tabNote.fret : '—'}</span>`;
-      }).join('');
-      return `<div class="tab-row"><span class="tab-row-label">${escapeHtml(label)}</span>${cells}</div>`;
+  function renderLiveTabWindow(centerClock=0){
+    const wrap=$('#liveTab');if(!wrap||!game)return;
+    const info=game.stringInfo||STRING_INFO;
+    const clock=gameClockWindows();
+    const before=Math.max(clock.unitsPerSecond*.6,clock.lookahead*.22);
+    const after=Math.max(clock.unitsPerSecond*3.2,clock.lookahead*1.35);
+    game.tabBefore=before;game.tabAfter=after;
+    game.tabWindowClockStart=Math.max(0,centerClock-before);
+    game.tabWindowClockEnd=centerClock+after;
+    let [startIndex,endIndex]=eventClockRange(game.tabWindowClockStart,game.tabWindowClockEnd);
+    const centerIndex=lowerBoundClock(game.events,centerClock);
+    if(endIndex-startIndex>48){
+      startIndex=Math.max(startIndex,centerIndex-12);
+      endIndex=Math.min(game.events.length,startIndex+48);
+      if(endIndex-startIndex<48)startIndex=Math.max(0,endIndex-48);
+    }
+    const visibleEvents=[];
+    for(let i=startIndex;i<endIndex;i++)if(game.events[i].status!=='skipped')visibleEvents.push(game.events[i]);
+    game.tabVisibleEventCount=visibleEvents.length;
+    const rows=Array.from({length:info.length},(_,i)=>info.length-1-i);
+    const measureMarkers=[];let priorMeasure=null;
+    for(const ev of visibleEvents){
+      const measure=Number(ev.measure)||null;
+      if(measure&&measure!==priorMeasure){measureMarkers.push(`<i class="tab-measure-marker" data-tab-clock="${ev.clock}" style="left:${tabPercentForClock(ev.clock,centerClock)}%"><small>${measure}</small></i>`);priorMeasure=measure;}
+    }
+    wrap.innerHTML=`<div class="tab-staff"><i class="tab-playhead" aria-hidden="true"><small>NOW</small></i><div class="tab-measures" aria-hidden="true">${measureMarkers.join('')}</div>${rows.map(stringIndex=>{
+      const string=info[stringIndex]||{};
+      const label=string.label||`S${info.length-stringIndex}`;
+      const number=Number(string.number)||info.length-stringIndex;
+      const color=string.color||STRING_INFO[stringIndex%STRING_INFO.length]?.color||'#a8f23d';
+      const notes=[];
+      for(const ev of visibleEvents){
+        const shape=Array.isArray(ev.chordNotes)&&ev.chordNotes.length?ev.chordNotes:[ev];
+        const tabNote=shape.find(note=>Number(note.string)===stringIndex);if(!tabNote)continue;
+        const fret=Number(tabNote.fret)||0;
+        notes.push(`<span class="tab-cell tab-note ${ev.status!=='pending'?ev.status:''}" data-tab-event="${ev.index}" data-tab-clock="${ev.clock}" style="left:${tabPercentForClock(ev.clock,centerClock)}%;--string-color:${color}" aria-label="${escapeHtml(label)}${number} ${fret===0?'open':`fret ${fret}`}">${fret}</span>`);
+      }
+      return `<div class="tab-line-row" data-tab-string="${stringIndex}" style="--string-color:${color}"><span class="tab-row-label">${escapeHtml(label)}<small>${number}</small></span><i class="tab-string-line" aria-hidden="true"></i>${notes.join('')}</div>`;
     }).join('')}</div>`;
+    game.tabPositionElements=$$('[data-tab-clock]',wrap);
   }
 
   function updateTabEvent(ev) {
     $$(`[data-tab-event="${ev.index}"]`, $('#liveTab')).forEach(c => c.classList.add(ev.status));
   }
 
-  function handleAudioFrame(result) {
-    if (inputCalibration && result.freq && result.rms > .001) inputCalibration.samples.push(result.rms);
+  function handleAudioFrame(result){
+    if(inputCalibration&&result.freq&&result.rms>.001)inputCalibration.samples.push(result.rms);
     updateInputMonitor(result);
-    if (tunerActive) updateTuner(result);
-    if (!game?.running || game.paused || !result.freq) return;
-    $('#gameHearing').textContent = result.note || '—';
-    const t = currentGameClock(performance.now());
-    const hitWindow = gameClockWindows().hit;
-    const candidates = game.events
-      .filter(ev => ev.status === 'pending' && Math.abs(ev.clock - t) <= hitWindow && pitchMatches(result.freq, midiToFreq(ev.midi)))
-      .sort((a,b) => Math.abs(a.clock - t) - Math.abs(b.clock - t));
-    if (!candidates.length) {
-      const expected = game.events.find(ev => ev.status === 'pending' && Math.abs(ev.clock - t) <= hitWindow);
-      if (expected && result.onset && performance.now() - game.lastWrongFeedback > 500) {
-        game.lastWrongFeedback = performance.now();
-        showGameFeedback('WRONG NOTE', 'miss', expected);
-      }
+    if(tunerActive)updateTuner(result);
+    if(!performanceDiagnostics.inputAnalysisEnabled||!game?.running||game.paused||!result.freq)return;
+    $('#gameHearing').textContent=result.note||'—';
+    const t=currentGameClock(performance.now());
+    const hitWindow=gameClockWindows().hit;
+    const [startIndex,endIndex]=eventClockRange(t-hitWindow,t+hitWindow);
+    let best=null,bestDelta=Infinity,expected=null,expectedDelta=Infinity;
+    for(let i=startIndex;i<endIndex;i++){
+      const ev=game.events[i];if(ev.status!=='pending')continue;
+      const delta=Math.abs(ev.clock-t);
+      if(delta<expectedDelta){expected=ev;expectedDelta=delta;}
+      if(delta<bestDelta&&pitchMatches(result.freq,midiToFreq(ev.midi))){best=ev;bestDelta=delta;}
+    }
+    if(!best){
+      if(expected&&result.onset&&performance.now()-game.lastWrongFeedback>500){game.lastWrongFeedback=performance.now();showGameFeedback('WRONG NOTE','miss',expected);}
       return;
     }
-    const ev = candidates[0];
-    const pitchClass = ev.midi % 12;
-    const repeatedPitch = game.lastAcceptedPitchClass === pitchClass;
-    if (repeatedPitch && !result.onset) return;
-    markHit(ev, t);
-    game.lastAcceptedPitchClass = pitchClass;
-    game.lastAcceptedEvent = ev.index;
+    const pitchClass=best.midi%12;
+    const repeatedPitch=game.lastAcceptedPitchClass===pitchClass;
+    if(repeatedPitch&&!result.onset)return;
+    markHit(best,t);
+    game.lastAcceptedPitchClass=pitchClass;
+    game.lastAcceptedEvent=best.index;
   }
 
-  function markHit(ev, t) {
-    if (ev.status !== 'pending') return;
-    ev.status = 'hit';
-    ev.timingMs = (t - ev.clock) / gameClockWindows().unitsPerSecond * 1000;
-    game.hits++;
-    game.combo++;
-    game.bestCombo = Math.max(game.bestCombo, game.combo);
-    const timing = Math.abs(ev.clock - t) / gameClockWindows().unitsPerSecond;
-    const timingBonus = timing < .12 ? 60 : timing < .24 ? 30 : 0;
-    game.score += 100 + timingBonus + Math.min(100, game.combo * 4);
-    ev.elements.forEach(el => el.classList.add('hit'));
+  function markHit(ev,t){
+    if(ev.status!=='pending')return;
+    ev.status='hit';ev.timingMs=(t-ev.clock)/gameClockWindows().unitsPerSecond*1000;
+    game.hits++;game.completedCount++;game.combo++;game.bestCombo=Math.max(game.bestCombo,game.combo);
+    const timing=Math.abs(ev.clock-t)/gameClockWindows().unitsPerSecond;
+    const timingBonus=timing<.12?60:timing<.24?30:0;
+    game.score+=100+timingBonus+Math.min(100,game.combo*4);
+    ev.elements.forEach(el=>el.classList.add('hit'));
     updateTabEvent(ev);
-    const signedTiming = (t - ev.clock) / gameClockWindows().unitsPerSecond;
-    const feedback = timing < .1 ? 'PERFECT!' : signedTiming < 0 ? 'EARLY' : 'LATE';
-    showGameFeedback(feedback, 'hit', ev);
-    updateGameHud();
+    const signedTiming=(t-ev.clock)/gameClockWindows().unitsPerSecond;
+    const feedback=timing<.1?'PERFECT!':signedTiming<0?'EARLY':'LATE';
+    showGameFeedback(feedback,'hit',ev);advancePendingIndex();updateGameHud();
   }
 
-  function markMiss(ev) {
-    if (ev.status !== 'pending') return;
-    ev.status = 'miss';
-    game.misses++;
-    game.combo = 0;
-    ev.elements.forEach(el => el.classList.add('miss'));
-    updateTabEvent(ev);
-    showGameFeedback('MISS', 'miss', ev);
-    updateGameHud();
+  function markMiss(ev){
+    if(ev.status!=='pending')return;
+    ev.status='miss';game.misses++;game.completedCount++;game.combo=0;
+    ev.elements.forEach(el=>el.classList.add('miss'));
+    updateTabEvent(ev);showGameFeedback('MISS','miss',ev);advancePendingIndex();updateGameHud();
   }
 
   function updateGameHud() {
@@ -1107,22 +1203,14 @@
     $('#gameAccuracy').textContent = `${accuracy}%`;
   }
 
-  function showGameFeedback(text, type, ev = null) {
-    const el = $('#gameFeedback');
-    clearTimeout(feedbackTimer);
-    el.textContent = text;
-    el.className = `game-feedback show ${type}`;
-    if (ev && !$('#gameScreen').classList.contains('tab-mode')) {
-      const board = $('#gameBoard').getBoundingClientRect();
-      el.style.top = `${58 + ((5 - Number(ev.string)) + .5) / 6 * (board.height - 93)}px`;
-      el.style.left = `${Math.max(118, board.width * .16) + 72}px`;
-      el.style.bottom = 'auto';
-    } else {
-      el.style.top = '';
-      el.style.left = '50%';
-      el.style.bottom = '';
-    }
-    feedbackTimer = setTimeout(() => { el.className = 'game-feedback'; }, 350);
+  function showGameFeedback(text,type,ev=null){
+    const el=$('#gameFeedback');clearTimeout(feedbackTimer);el.textContent=text;el.className=`game-feedback show ${type}`;
+    if(ev&&!$('#gameScreen').classList.contains('tab-mode')){
+      const board=$('#gameBoard').getBoundingClientRect(),count=stringCount();
+      el.style.top=`${58+((count-1-Number(ev.string))+.5)/count*(board.height-93)}px`;
+      el.style.left=`${Math.max(118,board.width*.16)+72}px`;el.style.bottom='auto';
+    }else{el.style.top='';el.style.left='50%';el.style.bottom='';}
+    feedbackTimer=setTimeout(()=>{el.className='game-feedback';},350);
   }
 
   function finishMission() {
@@ -1482,65 +1570,47 @@
     $('#tunerMessage').textContent = Math.abs(cents) < 5 ? 'In tune ✓' : cents < 0 ? `${Math.abs(cents).toFixed(0)} cents flat` : `${Math.abs(cents).toFixed(0)} cents sharp`;
   }
 
-  function createAudioEngine() {
-    const listeners = new Set();
-    return {
-      context:null, stream:null, source:null, analyser:null, buffer:null, active:false, raf:0, lastTick:0,
-      lastResult:{ freq:null, rms:0, note:'—', onset:false, midi:null }, envelope:0, lastMidi:null, noiseGate:.018, deviceId:'',
-      subscribe(fn) { listeners.add(fn); return () => listeners.delete(fn); },
-      async ensureContext() {
-        if (!this.context) this.context = new (window.AudioContext || window.webkitAudioContext)();
-        if (this.context.state === 'suspended') await this.context.resume();
-        return this.context;
-      },
-      async start(deviceId = '') {
-        if (!navigator.mediaDevices?.getUserMedia) throw new Error('Audio input is not supported in this browser.');
+  function createAudioEngine(){
+    const listeners=new Set();
+    return{
+      context:null,stream:null,source:null,analyser:null,buffer:null,active:false,raf:0,lastTick:0,
+      lastResult:{freq:null,rms:0,note:'—',onset:false,midi:null},envelope:0,lastMidi:null,noiseGate:.018,deviceId:'',analysisMs:0,analysisHz:0,_analysisCount:0,_analysisWindowAt:0,
+      subscribe(fn){listeners.add(fn);return()=>listeners.delete(fn);},
+      async ensureContext(){if(!this.context)this.context=new(window.AudioContext||window.webkitAudioContext)();if(this.context.state==='suspended')await this.context.resume();return this.context;},
+      async start(deviceId=''){
+        if(!navigator.mediaDevices?.getUserMedia)throw new Error('Audio input is not supported in this browser.');
         this.stop(false);
-        const constraints = { audio:{ echoCancellation:false, noiseSuppression:false, autoGainControl:false, channelCount:1 } };
-        if (deviceId) constraints.audio.deviceId = { exact:deviceId };
-        this.stream = await navigator.mediaDevices.getUserMedia(constraints);
-        this.deviceId = this.stream.getAudioTracks()[0]?.getSettings()?.deviceId || deviceId || '';
-        const ctx = await this.ensureContext();
-        this.source = ctx.createMediaStreamSource(this.stream);
-        this.analyser = ctx.createAnalyser();
-        this.analyser.fftSize = 2048;
-        this.analyser.smoothingTimeConstant = 0;
-        this.buffer = new Float32Array(this.analyser.fftSize);
-        this.source.connect(this.analyser);
-        this.active = true;
-        this.envelope = 0;
-        this.lastMidi = null;
-        const tick = now => {
-          if (!this.active) return;
-          if (now - this.lastTick >= 42) {
-            this.lastTick = now;
-            this.analyser.getFloatTimeDomainData(this.buffer);
-            const raw = autoCorrelate(this.buffer, ctx.sampleRate, this.noiseGate);
-            const prevEnvelope = this.envelope;
-            this.envelope = prevEnvelope * .82 + raw.rms * .18;
-            const onset = raw.rms > this.noiseGate && raw.rms > Math.max(this.noiseGate * 1.4, prevEnvelope * 1.38);
-            let result = { freq:raw.freq, rms:raw.rms, onset, note:'—', midi:null };
-            if (raw.freq) {
-              const midiFloat = 69 + 12 * Math.log2(raw.freq / 440);
-              const midi = Math.round(midiFloat);
-              result.midi = midi;
-              result.note = midiToName(midi);
-            }
-            this.lastResult = result;
-            listeners.forEach(fn => { try { fn(result); } catch (err) { console.error(err); } });
+        const constraints={audio:{echoCancellation:false,noiseSuppression:false,autoGainControl:false,channelCount:1}};
+        if(deviceId)constraints.audio.deviceId={exact:deviceId};
+        this.stream=await navigator.mediaDevices.getUserMedia(constraints);
+        this.deviceId=this.stream.getAudioTracks()[0]?.getSettings()?.deviceId||deviceId||'';
+        const ctx=await this.ensureContext();
+        this.source=ctx.createMediaStreamSource(this.stream);this.analyser=ctx.createAnalyser();this.analyser.fftSize=2048;this.analyser.smoothingTimeConstant=0;this.buffer=new Float32Array(this.analyser.fftSize);this.source.connect(this.analyser);
+        this.active=true;this.envelope=0;this.lastMidi=null;this.analysisMs=0;this.analysisHz=0;this._analysisCount=0;this._analysisWindowAt=performance.now();
+        const tick=now=>{
+          if(!this.active)return;
+          if(now-this.lastTick>=42){
+            this.lastTick=now;this.analyser.getFloatTimeDomainData(this.buffer);
+            const analysisStarted=performance.now();
+            const raw=autoCorrelate(this.buffer,ctx.sampleRate,this.noiseGate);
+            const cost=performance.now()-analysisStarted;
+            this.analysisMs=this.analysisMs?this.analysisMs*.85+cost*.15:cost;
+            this._analysisCount++;
+            if(now-this._analysisWindowAt>=1000){this.analysisHz=this._analysisCount*1000/Math.max(1,now-this._analysisWindowAt);this._analysisCount=0;this._analysisWindowAt=now;}
+            const prevEnvelope=this.envelope;this.envelope=prevEnvelope*.82+raw.rms*.18;
+            const onset=raw.rms>this.noiseGate&&raw.rms>Math.max(this.noiseGate*1.4,prevEnvelope*1.38);
+            let result={freq:raw.freq,rms:raw.rms,onset,note:'—',midi:null};
+            if(raw.freq){const midiFloat=69+12*Math.log2(raw.freq/440),midi=Math.round(midiFloat);result.midi=midi;result.note=midiToName(midi);}
+            this.lastResult=result;listeners.forEach(fn=>{try{fn(result);}catch(err){console.error(err);}});
           }
-          this.raf = requestAnimationFrame(tick);
+          this.raf=requestAnimationFrame(tick);
         };
-        this.raf = requestAnimationFrame(tick);
+        this.raf=requestAnimationFrame(tick);
       },
-      stop(updateUi = true) {
-        if (this.raf) cancelAnimationFrame(this.raf);
-        this.raf = 0;
-        this.stream?.getTracks().forEach(t => t.stop());
-        try { this.source?.disconnect(); } catch {}
-        this.stream = null; this.source = null; this.analyser = null; this.buffer = null; this.active = false;
-        this.lastResult = { freq:null, rms:0, note:'—', onset:false, midi:null };
-        if (updateUi) updateInputButtons();
+      stop(updateUi=true){
+        if(this.raf)cancelAnimationFrame(this.raf);this.raf=0;this.stream?.getTracks().forEach(t=>t.stop());try{this.source?.disconnect();}catch{}
+        this.stream=null;this.source=null;this.analyser=null;this.buffer=null;this.active=false;this.analysisHz=0;
+        this.lastResult={freq:null,rms:0,note:'—',onset:false,midi:null};if(updateUi)updateInputButtons();
       }
     };
   }
@@ -1765,6 +1835,7 @@
         if (!game || game.mode !== 'song') return;
         game.songClockTick = Math.max(0, Number(args.currentTick) - Number(game.level.sectionStartTick || 0));
         game.songTempo = Number(args.modifiedTempo) || Number(game.level.bpm) || 80;
+        game.lastSongClockUpdate = performance.now();
       });
       alphaApi.playerStateChanged.on(args => { $('#alphaPlay').textContent = args.state === 1 ? '❚❚ Pause' : '▶ Play'; });
       alphaApi.error.on(err => { console.error(err); $('#alphaStatus').textContent = 'Could not open this file'; $('#songGameSetup').hidden = true; });
@@ -1772,35 +1843,25 @@
     } catch (err) { console.error(err); $('#alphaStatus').textContent = err.message || 'Could not load tab.'; toast(err.message || 'Could not load tab.'); }
   }
 
-  function setupSongGame(score) {
-    const tracks = Array.from(score?.tracks || []);
-    loadedSongTracks = tracks.map((track, index) => {
-      const staff = getFrettedStaff(track);
-      const bars = staff ? Array.from(staff.bars || []) : [];
-      const stringCount = staff ? getStaffTuning(staff).length : 0;
-      const noteCount = staff ? countPlayableNotes(staff) : 0;
-      return { index, track, staff, bars, stringCount, noteCount, playable:Boolean(staff && stringCount === 6 && noteCount > 0) };
+  function setupSongGame(score){
+    const tracks=Array.from(score?.tracks||[]);
+    loadedSongTracks=tracks.map((track,index)=>{
+      const staff=getFrettedStaff(track);
+      const bars=staff?Array.from(staff.bars||[]):[];
+      const stringCount=staff?getStaffTuning(staff).length:0;
+      const noteCount=staff?countPlayableNotes(staff):0;
+      return{index,track,staff,bars,stringCount,noteCount,playable:Boolean(staff&&stringCount===STRING_INFO.length&&noteCount>0)};
     });
-    const playable = loadedSongTracks.filter(t => t.playable);
-    const select = $('#songTrackSelect');
-    select.innerHTML = loadedSongTracks.map(t => {
-      const name = t.track?.name || t.track?.shortName || `Track ${t.index + 1}`;
-      const detail = t.playable ? `${t.stringCount} strings · ${t.noteCount} notes` : 'not a 6-string guitar track';
-      return `<option value="${t.index}" ${t.playable ? '' : 'disabled'}>${escapeHtml(name)} — ${detail}</option>`;
+    const playable=loadedSongTracks.filter(t=>t.playable),select=$('#songTrackSelect');
+    select.innerHTML=loadedSongTracks.map(t=>{
+      const name=t.track?.name||t.track?.shortName||`Track ${t.index+1}`;
+      const detail=t.playable?`${t.stringCount} strings · ${t.noteCount} notes`:`not a ${STRING_INFO.length}-string guitar track`;
+      return `<option value="${t.index}" ${t.playable?'':'disabled'}>${escapeHtml(name)} — ${detail}</option>`;
     }).join('');
-    if (!playable.length) {
-      $('#songGameSetup').hidden = false;
-      $('#songGameInfo').textContent = 'I could not find a playable six-string guitar track in this file.';
-      $('#playSongAsLevel').disabled = true;
-      $('#songSectionSelect').innerHTML = '<option>No playable sections</option>';
-      return;
-    }
-    select.value = String(playable[0].index);
-    $('#playSongAsLevel').disabled = false;
-    $('#songGameSetup').hidden = false;
-    $('#songGameInfo').textContent = `${playable.length} playable guitar track${playable.length === 1 ? '' : 's'} found. Full chord shapes are shown; the selected low or high anchor lets the microphone score them reliably.`;
-    updateSongSectionOptions();
-    updateSongLevelPreview();
+    if(!playable.length){$('#songGameSetup').hidden=false;$('#songGameInfo').textContent=`I could not find a playable ${STRING_INFO.length}-string guitar track in this file.`;$('#playSongAsLevel').disabled=true;$('#songSectionSelect').innerHTML='<option>No playable sections</option>';return;}
+    select.value=String(playable[0].index);$('#playSongAsLevel').disabled=false;$('#songGameSetup').hidden=false;
+    $('#songGameInfo').textContent=`${playable.length} playable guitar track${playable.length===1?'':'s'} found. Full chord shapes are shown; the selected low or high anchor lets the microphone score them reliably.`;
+    updateSongSectionOptions();updateSongLevelPreview();
   }
 
   function getFrettedStaff(track) {
@@ -1824,13 +1885,11 @@
     return [];
   }
 
-  function countPlayableNotes(staff) {
-    let count = 0;
-    Array.from(staff?.bars || []).forEach(bar => Array.from(bar?.voices || []).forEach(voice => Array.from(voice?.beats || []).forEach(beat => {
-      Array.from(beat?.notes || []).forEach(note => {
-        const str = Number(note?.string), fret = Number(note?.fret);
-        if (Number.isFinite(str) && str >= 1 && str <= 6 && Number.isFinite(fret) && fret >= 0 && !note.isDead && !note.tieOrigin) count++;
-      });
+  function countPlayableNotes(staff){
+    let count=0;
+    const tuningCount=getStaffTuning(staff).length||STRING_INFO.length;
+    Array.from(staff?.bars||[]).forEach(bar=>Array.from(bar?.voices||[]).forEach(voice=>Array.from(voice?.beats||[]).forEach(beat=>{
+      Array.from(beat?.notes||[]).forEach(note=>{const str=Number(note?.string),fret=Number(note?.fret);if(Number.isFinite(str)&&str>=1&&str<=tuningCount&&Number.isFinite(fret)&&fret>=0&&!note.isDead&&!note.tieOrigin)count++;});
     })));
     return count;
   }
@@ -1926,6 +1985,7 @@
     const track = meta.track;
     const staff = meta.staff;
     const bars = meta.bars.slice(spec.startBar, spec.endBar);
+    const stringCount = Math.max(1, Number(meta.stringCount) || STRING_INFO.length);
     const groups = new Map();
     let chordGroups = 0;
     bars.forEach(bar => {
@@ -1933,7 +1993,7 @@
         Array.from(voice?.beats || []).forEach(beat => {
           const notes = Array.from(beat?.notes || []).filter(note => {
             const str = Number(note?.string), fret = Number(note?.fret);
-            return Number.isFinite(str) && str >= 1 && str <= 6 && Number.isFinite(fret) && fret >= 0 && !note.isDead && !note.tieOrigin;
+            return Number.isFinite(str) && str >= 1 && str <= stringCount && Number.isFinite(fret) && fret >= 0 && !note.isDead && !note.tieOrigin;
           });
           if (!notes.length) return;
           const fallbackTick = Number(bar?.masterBar?.start || 0) + Number(beat?.playbackStart || 0);
@@ -1972,7 +2032,7 @@
       unique.sort((a,b) => a.midi - b.midi);
       const chosen = spec.lineMode === 'high' ? unique.at(-1) : unique[0];
       const quarterBeats = (group.tick - firstTick) / 960;
-      raw.push({ string:chosen.stringNumber - 1, fret:chosen.fret, midi:chosen.midi, tick:group.tick, beat:2 + quarterBeats, durationTicks:group.durationTicks, technique:chosen.technique, chordNotes:unique.map(note => ({ string:note.string, fret:note.fret, midi:note.midi, technique:note.technique })) });
+      raw.push({ string:chosen.stringNumber - 1, fret:chosen.fret, midi:chosen.midi, tick:group.tick, beat:2 + quarterBeats, measure:spec.startBar + Math.floor(quarterBeats / 4) + 1, durationTicks:group.durationTicks, technique:chosen.technique, chordNotes:unique.map(note => ({ string:note.string, fret:note.fret, midi:note.midi, technique:note.technique })) });
     });
     const completeNotes = raw.filter((n, i) => i === 0 || n.beat !== raw[i-1].beat || n.midi !== raw[i-1].midi);
     const notes = applySongDifficulty(completeNotes, spec.difficulty);
@@ -2037,13 +2097,13 @@
     return '';
   }
 
-  function makeStringInfoFromStaff(staff) {
-    const tuningTopToBottom = getStaffTuning(staff);
-    const tuningLowToHigh = tuningTopToBottom.length === 6 ? [...tuningTopToBottom].reverse() : STRING_INFO.map(s => s.openMidi);
-    return tuningLowToHigh.map((midi, i) => {
-      const name = midiToName(Math.round(midi));
-      const pitch = name.replace(/\d+$/, '');
-      return { label:i === 5 && pitch === 'E' ? 'e' : pitch, number:6 - i, name:`String ${6 - i} (${name})`, openMidi:Math.round(midi), color:STRING_INFO[i]?.color };
+  function makeStringInfoFromStaff(staff){
+    const tuningTopToBottom=getStaffTuning(staff);
+    const tuningLowToHigh=tuningTopToBottom.length?[...tuningTopToBottom].reverse():STRING_INFO.map(s=>s.openMidi);
+    const count=tuningLowToHigh.length;
+    return tuningLowToHigh.map((midi,i)=>{
+      const name=midiToName(Math.round(midi)),pitch=name.replace(/\d+$/,'');
+      return{label:count===6&&i===count-1&&pitch==='E'?'e':pitch,number:count-i,name:`String ${count-i} (${name})`,openMidi:Math.round(midi),color:STRING_INFO[i%STRING_INFO.length]?.color||'#a8f23d'};
     });
   }
 
@@ -2108,7 +2168,7 @@
   async function registerServiceWorker() {
     if (!('serviceWorker' in navigator)) return;
     try {
-      const reg = await navigator.serviceWorker.register('./sw.js?v=2.6.3');
+      const reg = await navigator.serviceWorker.register('./sw.js?v=2.6.4');
       reg.update().catch(() => null);
     } catch (err) { console.error(err); }
   }
@@ -2122,6 +2182,18 @@
   function formatBytes(n) { if (n < 1024) return `${n} B`; if (n < 1024*1024) return `${(n/1024).toFixed(1)} KB`; return `${(n/1024/1024).toFixed(1)} MB`; }
   function escapeHtml(s) { return String(s).replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c])); }
 
-  window.FMQGuitarTest = { getState:() => JSON.parse(JSON.stringify(state)), reloadActiveProfile, defaultState, startTestCountdown:runCountdown, cancelCountdown, isCountdownActive:()=>Boolean(countdownTimer) };
+  window.FMQGuitarTest = {
+    getState:() => JSON.parse(JSON.stringify(state)), reloadActiveProfile, defaultState, startTestCountdown:runCountdown, cancelCountdown, isCountdownActive:()=>Boolean(countdownTimer),
+    getPerformanceSnapshot,
+    setPerformanceInputAnalysis:enabled=>{performanceDiagnostics.inputAnalysisEnabled=Boolean(enabled);const input=$('#gamePerfInputAnalysis');if(input)input.checked=performanceDiagnostics.inputAnalysisEnabled;return performanceDiagnostics.inputAnalysisEnabled;},
+    launchSyntheticStressLevel:(noteCount=2000)=>{
+      const count=Math.max(1,Math.min(2000,Number(noteCount)||2000));
+      const notes=Array.from({length:count},(_,i)=>({string:i%STRING_INFO.length,fret:i%13,beat:i*.08,duration:.06,chordNotes:i%17===0?[{string:i%STRING_INFO.length,fret:i%13},{string:(i+1)%STRING_INFO.length,fret:(i+3)%13},{string:(i+2)%STRING_INFO.length,fret:(i+5)%13}]:undefined}));
+      launchLevel({id:'synthetic-stress',mode:'mission',worldNumber:0,worldTitle:'Diagnostics',title:'Synthetic Stress',tag:'DIAGNOSTIC',headline:'Bounded renderer test',lesson:'Synthetic original events for automated rendering tests.',hint:'Diagnostic only.',bpm:80,notes},true);
+      return getPerformanceSnapshot();
+    },
+    jumpRenderForTest:t=>{if(!game)return null;const value=Math.max(0,Number(t)||0);game.nextPendingIndex=lowerBoundClock(game.events,value);game.expireIndex=game.nextPendingIndex;updateGameBoard(value);renderLiveTabWindow(value);updateCurrentTab(value);return getPerformanceSnapshot();},
+    setGameViewForTest:view=>{setGameView(view);if(game)renderLiveTabWindow(game.events[Math.min(game.nextPendingIndex,game.events.length-1)]?.clock||0);return view;}
+  };
   console.info(`Guitar Quest ${APP_VERSION}`);
 })();
