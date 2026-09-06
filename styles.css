@@ -212,3 +212,20 @@ main{width:min(1180px,calc(100% - 28px));margin:0 auto;padding:26px 0 10px}.view
 #noteLayer .falling-note.has-technique .fret-value{transform:translateY(-3px)}
 #noteLayer .falling-note>small{font-size:.56rem;line-height:1;margin-top:2px}
 #handPosition.chord-focus #handPositionText{letter-spacing:.035em;word-spacing:.12em}
+
+
+/* v2.6.6 — Guitar Highway UI cleanup. */
+#noteLayer .falling-note .fret-value{
+  display:grid!important;
+  place-items:center!important;
+  width:100%!important;
+  height:100%!important;
+  padding:0!important;
+  margin:0!important;
+  font-size:clamp(1.6rem,3.1vw,1.95rem)!important;
+  line-height:1!important;
+  text-align:center!important;
+}
+#noteLayer .falling-note.open-note .fret-value{font-size:1.2rem!important;letter-spacing:.035em}
+#noteLayer .falling-note.has-technique .fret-value{transform:none!important}
+.game-screen:not(.tab-mode) .hit-line span{top:8px!important;left:-62px!important;transform:none!important}

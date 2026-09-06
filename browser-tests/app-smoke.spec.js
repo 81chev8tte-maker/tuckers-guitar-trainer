@@ -94,7 +94,28 @@ test('Guitar rendering stays bounded with a 2,000-event synthetic run',async({pa
   expect(first.renderedEvents).toBeLessThan(120);
   expect(await page.locator('#noteLayer .falling-note').count()).toBeLessThan(120);
   await expect(page.locator('#noteLayer .note-string')).toHaveCount(0);
-  await expect(page.locator('#noteLayer .falling-note').first().locator('.fret-value')).toBeVisible();
+  const firstNote=page.locator('#noteLayer .falling-note').first();
+  await expect(firstNote.locator('.fret-value')).toBeVisible();
+  const numericNote=page.locator('#noteLayer .falling-note:not(.open-note)').first();
+  await expect(numericNote.locator('.fret-value')).toBeVisible();
+  const fretPresentation=await numericNote.evaluate(el=>{
+    const fret=el.querySelector('.fret-value');
+    const noteRect=el.getBoundingClientRect();
+    const fretRect=fret.getBoundingClientRect();
+    return {
+      dx:Math.abs((noteRect.left+noteRect.width/2)-(fretRect.left+fretRect.width/2)),
+      dy:Math.abs((noteRect.top+noteRect.height/2)-(fretRect.top+fretRect.height/2)),
+      fontSize:Number.parseFloat(getComputedStyle(fret).fontSize)
+    };
+  });
+  expect(fretPresentation.dx).toBeLessThan(2.5);
+  expect(fretPresentation.dy).toBeLessThan(2.5);
+  expect(fretPresentation.fontSize).toBeGreaterThanOrEqual(24);
+  const openFontSize=await page.locator('#noteLayer .falling-note.open-note .fret-value').first().evaluate(el=>Number.parseFloat(getComputedStyle(el).fontSize));
+  expect(openFontSize).toBeGreaterThanOrEqual(18);
+  await expect(page.locator('#stringLabels small')).toHaveCount(2);
+  await expect(page.locator('#stringLabels')).not.toContainText('6 thick');
+  await expect(page.locator('#stringLabels')).not.toContainText('1 thin');
   await expect(page.locator('#handPositionText')).toHaveText('D 5  ·  A 3  ·  E OPEN');
   await expect(page.locator('#nextNoteText')).toHaveText('D 5 · A 3 · E OPEN');
   const middle=await page.evaluate(()=>window.FMQGuitarTest.jumpRenderForTest(60));
