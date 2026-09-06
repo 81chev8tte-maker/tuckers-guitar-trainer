@@ -6,27 +6,27 @@
   <meta name="theme-color" content="#0d1117" />
   <meta name="description" content="A free family music trainer that listens while children learn guitar and piano." />
   <title>Family Music Quest</title>
-  <link rel="manifest" href="./manifest.webmanifest?v=2.6.3" />
+  <link rel="manifest" href="./manifest.webmanifest?v=2.6.4" />
   <link rel="icon" href="./icon.svg" />
-  <link rel="stylesheet" href="./styles.css?v=2.6.3" />
-  <link rel="stylesheet" href="./piano.css?v=2.6.3" />
-  <link rel="stylesheet" href="./profiles.css?v=2.6.3" />
-  <link rel="stylesheet" href="./diagnostics.css?v=2.6.3" />
-  <link rel="stylesheet" href="./diagnostics-layer.css?v=2.6.3" />
-  <link rel="stylesheet" href="./piano-songbook.css?v=2.6.3" />
+  <link rel="stylesheet" href="./styles.css?v=2.6.4" />
+  <link rel="stylesheet" href="./piano.css?v=2.6.4" />
+  <link rel="stylesheet" href="./profiles.css?v=2.6.4" />
+  <link rel="stylesheet" href="./diagnostics.css?v=2.6.4" />
+  <link rel="stylesheet" href="./diagnostics-layer.css?v=2.6.4" />
+  <link rel="stylesheet" href="./piano-songbook.css?v=2.6.4" />
   <script defer src="https://cdn.jsdelivr.net/npm/@coderline/alphatab@1.8.4/dist/alphaTab.min.js"></script>
-  <script defer src="./profiles.js?v=2.6.3"></script>
-  <script defer src="./practice-tools.js?v=2.6.3"></script>
-  <script defer src="./practice-intelligence.js?v=2.6.3"></script>
-  <script defer src="./hardware-services.js?v=2.6.3"></script>
-  <script defer src="./gameplay-rules.js?v=2.6.3"></script>
-  <script defer src="./guitar-songbook.js?v=2.6.3"></script>
-  <script defer src="./app.js?v=2.6.3"></script>
-  <script defer src="./piano-songbook.js?v=2.6.3"></script>
-  <script defer src="./piano-lessons.js?v=2.6.3"></script>
-  <script defer src="./midi-analysis.js?v=2.6.3"></script>
-  <script defer src="./piano.js?v=2.6.3"></script>
-  <script defer src="./diagnostics.js?v=2.6.3"></script>
+  <script defer src="./profiles.js?v=2.6.4"></script>
+  <script defer src="./practice-tools.js?v=2.6.4"></script>
+  <script defer src="./practice-intelligence.js?v=2.6.4"></script>
+  <script defer src="./hardware-services.js?v=2.6.4"></script>
+  <script defer src="./gameplay-rules.js?v=2.6.4"></script>
+  <script defer src="./guitar-songbook.js?v=2.6.4"></script>
+  <script defer src="./app.js?v=2.6.4"></script>
+  <script defer src="./piano-songbook.js?v=2.6.4"></script>
+  <script defer src="./piano-lessons.js?v=2.6.4"></script>
+  <script defer src="./midi-analysis.js?v=2.6.4"></script>
+  <script defer src="./piano.js?v=2.6.4"></script>
+  <script defer src="./diagnostics.js?v=2.6.4"></script>
 </head>
 <body>
   <section id="profileSetup" class="profile-overlay" hidden aria-label="Player setup"></section>
@@ -320,6 +320,7 @@
       <footer class="game-footer">
         <div><span>NEXT</span><strong id="nextNoteText">—</strong></div>
         <div class="game-progress-track"><span id="gameProgressBar"></span></div>
+        <details id="gamePerfPanel" class="game-perf-panel"><summary>Performance diagnostics</summary><span id="gamePerfStats">Waiting for a run…</span><label><input id="gamePerfInputAnalysis" type="checkbox" checked> Input analysis <small>(turn off only to diagnose performance; scoring is disabled)</small></label></details>
         <div class="game-practice-controls"><button id="gameLoopStart" class="button secondary">A · Start</button><button id="gameLoopEnd" class="button secondary">B · End</button><button id="gameLoop" class="button secondary" aria-pressed="false">↻ Loop Off</button><label class="count-in-toggle"><input id="gameCountIn" type="checkbox" checked> Count-In</label><button id="gamePause" class="button secondary" disabled>Pause</button></div>
       </footer>
     </div>

@@ -281,11 +281,11 @@ There is currently no bundler production-build command, lint command, or TypeScr
 
 These are documented rather than silently changed by this governance pass:
 
-1. `app.js` contains an internal `APP_VERSION` value that is older than the package/PWA release version. PWA versioning itself is separately aligned through package/service-worker assets, but the stale constant is confusing technical debt.
+1. `app.js` remains large and highly coupled, but its internal release constant is aligned with the package/PWA release as of the v2.6.4 candidate.
 2. `app.js` is very large and contains Guitar curriculum, input, rendering, imports, gameplay and UI behavior in one file. Incremental modularization may become appropriate, but a major rewrite is not authorized by this document.
 3. Guitar rendering contains hard-coded six-string assumptions that should be generalized before Bass Quest.
 4. Guitar Tab View is event-column based and has known readability limitations in dense songs.
-5. Guitar imported-song gameplay performs repeated whole-event-list operations in animation-sensitive paths.
+5. The v2.6.4 candidate replaces the known frame-sensitive whole-event scans and full-song note DOM materialization with bounded clock windows/indexes; real Chromebook performance acceptance is still required before considering the stutter debt closed.
 6. Guitar and Piano pitch analysis are still main-thread CPU work.
 7. AlphaTab/soundfont offline completeness is not guaranteed.
 8. Backup excludes imported song blobs and restore is not transactional.
