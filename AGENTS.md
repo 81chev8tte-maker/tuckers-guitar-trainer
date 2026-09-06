@@ -36,6 +36,7 @@ Also inspect feature-specific documentation relevant to the work. Current durabl
 
 - `CHROMEBOOK_PERFORMANCE_BENCHMARK.md`
 - `BASS_QUEST_SPEC.md`
+- `INCREMENTAL_MODULARIZATION_PLAN.md`
 
 ### Practice intelligence and progress
 
@@ -61,6 +62,7 @@ When a task touches one of these areas, read the listed spec before designing th
 | Bass Quest / shared string-instrument work | `BASS_QUEST_SPEC.md` |
 | Bass curriculum, grooves, Drum Lock or built-in Bass content | `BASS_CURRICULUM_PLAN.md` |
 | Guitar Full Song/import/render performance | `CHROMEBOOK_PERFORMANCE_BENCHMARK.md` |
+| Guitar `app.js` extraction, renderer/input/transport modularization or architecture cleanup | `INCREMENTAL_MODULARIZATION_PLAN.md` |
 | Input/backing/visual/MIDI timing compensation | `LATENCY_CALIBRATION_SPEC.md` |
 | Child-facing hardware/input setup | `HARDWARE_SETUP_WIZARD_SPEC.md` |
 | Automatic weak-section/phrase practice | `TROUBLE_SPOT_PRACTICE_SPEC.md` |
