@@ -29,6 +29,24 @@ Family Music Quest should:
 - maintain independent player progress;
 - provide useful practice intelligence without overwhelming children with technical detail.
 
+## Durable feature specifications
+
+The repository contains focused planning/source-of-truth documents for major future systems. These capture product decisions and acceptance constraints so future agents do not have to reconstruct them from chat history.
+
+Current durable specifications:
+
+- `BASS_QUEST_SPEC.md` — Bass architecture, shared string-engine direction, low-frequency detector requirements, imports, profiles and acceptance.
+- `BASS_CURRICULUM_PLAN.md` — Bass worlds, grooves, Drum Lock, checkpoints, content identity and staged curriculum scope.
+- `CHROMEBOOK_PERFORMANCE_BENCHMARK.md` — repeatable real-device Guitar/imported-song performance validation protocol.
+- `LATENCY_CALIBRATION_SPEC.md` — separate input, backing/audio, visual and MIDI timing-compensation model.
+- `HARDWARE_SETUP_WIZARD_SPEC.md` — child/parent-facing guided Guitar/Piano/future Bass hardware setup over existing diagnostics/services.
+- `TROUBLE_SPOT_PRACTICE_SPEC.md` — automatic musically bounded weak-section recommendation and Smart Practice integration.
+- `PWA_OFFLINE_UPDATE_SPEC.md` — installed-PWA update lifecycle, offline readiness and dependable AlphaTab/soundfont direction.
+- `PARENT_TEACHER_PROGRESS_SPEC.md` — local-first parent/helper progress summary and bounded history direction.
+- `SONG_AUTHORING_PIPELINE_SPEC.md` — shared built-in music authoring/validation model with instrument-specific runtime adapters.
+
+These documents do **not** automatically authorize implementation. Release scope is still controlled by `ROADMAP.md`, `DECISIONS.md`, current real-world blockers, and the explicit task. Agents must inspect the current implementation before applying a specification.
+
 ## Primary real-world users
 
 The product is currently tested primarily by children learning Guitar and Piano. Child-facing decisions should prioritize:
@@ -83,7 +101,7 @@ Working behavior is a constraint. Before changing a system, inspect why it exist
 
 ### Chromebook performance is a product requirement
 
-Low-cost Chromebook rendering, audio, input latency, and memory behavior are first-class constraints, not afterthoughts.
+Low-cost Chromebook rendering, audio, input latency, and memory behavior are first-class constraints, not afterthoughts. Performance-sensitive Guitar/import work should use `CHROMEBOOK_PERFORMANCE_BENCHMARK.md` rather than relying only on subjective impressions or desktop tests.
 
 ### No unnecessary architectural rewrites
 
@@ -159,6 +177,8 @@ Preferred content workflow:
 3. document source, rights basis, simplification/transposition, and included musical material;
 4. do not copy commercial or unknown-license arrangements.
 
+For new built-in music/content-tool work, `SONG_AUTHORING_PIPELINE_SPEC.md` defines the intended shared authoring/validation direction while preserving instrument-specific runtime adapters.
+
 Open-source projects may be used for conceptual research. Do not copy GPL or unlicensed source code into this repository unless an explicit licensing decision permits it. Independently implement concepts when license compatibility is uncertain.
 
 ## Definition of Done
@@ -174,6 +194,8 @@ A feature or focused release is normally done when:
 - regression risks were considered;
 - manual hardware checks are identified where automation is insufficient;
 - no known major blocker is hidden in the completion report.
+
+When a dedicated feature specification or benchmark applies, satisfying its relevant acceptance criteria is part of Definition of Done for that scoped work.
 
 `Works on my machine` is not sufficient.
 
