@@ -1,0 +1,50 @@
+name: v2.6.4 one-shot upgrade
+
+on:
+  push:
+    branches:
+      - feature/guitar-player-string-polish-v2.6.4
+
+permissions:
+  contents: write
+
+jobs:
+  upgrade:
+    if: ${{ !contains(github.event.head_commit.message, 'implement Guitar player polish v2.6.4') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/guitar-player-string-polish-v2.6.4
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Validate and apply v2.6.4 transformation
+        run: |
+          node --check scripts/v264-upgrade.cjs
+          node scripts/v264-upgrade.cjs
+
+      - run: npm ci
+      - run: npm test
+      - run: npm run check
+
+      - name: Install browser test runtime
+        run: npx playwright install --with-deps chromium
+
+      - run: npm run test:browser
+
+      - name: Commit validated implementation
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No implementation changes to commit"
+            exit 0
+          fi
+          git commit -m "feat: implement Guitar player polish v2.6.4"
+          git push origin HEAD:feature/guitar-player-string-polish-v2.6.4
