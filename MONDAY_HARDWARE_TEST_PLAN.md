@@ -16,7 +16,7 @@ The Monday session should answer five questions:
 2. Does Guitar input work reliably through the intended microphone/USB path?
 3. Does Piano input work reliably through microphone/on-screen/Web MIDI paths that are actually available?
 4. Is Guitar gameplay readable and responsive on the target Chromebook?
-5. Does v2.6.7 preserve the v2.6.6 Guitar fixes while giving us a complete guided hardware report without breaking Guitar/Piano behavior?
+5. Does v2.6.8 preserve the v2.6.6/v2.6.7 gameplay and guided-test behavior while making the evidence easy to move from Chromebook to phone?
 
 Do not turn the session into a long technical endurance test for the children. Use short rounds and let the adult handle diagnostic captures between them.
 
@@ -85,7 +85,17 @@ Before the longer gameplay matrix, open **Hardware & Backup → Run Hardware Tes
 - Run **Guitar audio** with the intended microphone/USB input.
 - Run **Piano MIDI** when the physical MIDI keyboard is available.
 - Answer the five short Human Observations questions without coaching the child toward an expected answer.
-- Open **Report** and use **Copy Report** or **Export JSON**.
+- Record **Adult help required** (0 / 1 / 2+).
+- Ask the child whether the game usually agreed with what they thought they played (**Yes / Mostly / No / unsure**).
+- Add an optional verbatim child comment, short tester/context note, and screenshot/video filenames when useful.
+- Explicitly choose **PASS / BLOCKER / NOT DECIDED**; diagnostics never choose this automatically.
+- Open **Report** and verify **Copy Project Report**.
+- Paste the Project Report into the Family Music Quest Project Manager chat on the phone.
+- Use **Share Test Report** and verify the physical ChromeOS share sheet where supported. Use any available destination (Quick Share may or may not be offered by ChromeOS) to move the JSON to the Android phone.
+- Attach the JSON to the Family Music Quest Project for technical analysis.
+- Also verify **Download JSON** and the unsupported-share fallback.
+
+Screenshots remain supplemental evidence for visual/readability problems. Short external phone video is preferred for stutter, audio glitches, perceived latency or timing problems. FMQ stores only evidence filenames/labels, not the media itself.
 
 The guided report is evidence collection, not automatic acceptance. Continue with the manual Guitar/Piano/gameplay checks below, including disconnect/reconnect, Piano microphone, perceived delay, audio smoothness, Highway/Tab readability and normal save/profile behavior.
 
@@ -226,7 +236,7 @@ Adult observations:
 
 Use the same complex local Guitar Pro file used during the original failure.
 
-This remains the primary gameplay/performance acceptance case. v2.6.7 only adds the guided measurement/reporting layer; it does not replace this Full Song run.
+This remains the primary gameplay/performance acceptance case. v2.6.8 only extends the guided measurement/reporting and local transfer layer; it does not replace this Full Song run.
 
 Follow the matrix in `CHROMEBOOK_PERFORMANCE_BENCHMARK.md`:
 
@@ -470,7 +480,7 @@ Can be scheduled based on dependency/risk.
 
 Minor polish that does not undermine learning or reliability.
 
-If Monday clears the v2.6.6 gameplay/hardware gate while v2.6.7 reporting remains healthy, the project can seriously consider moving to the Bass Quest foundation described in `BASS_QUEST_SPEC.md`.
+If Monday clears the v2.6.6 gameplay/hardware gate while v2.6.8 reporting/sharing remains healthy, the project can seriously consider moving to the Bass Quest foundation described in `BASS_QUEST_SPEC.md`.
 
 ---
 

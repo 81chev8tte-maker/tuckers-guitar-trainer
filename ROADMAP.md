@@ -25,15 +25,15 @@ These documents define intended direction and acceptance constraints; they do no
 
 ## NOW
 
-### Run v2.6.7 Guided Hardware Acceptance on real hardware
+### Run v2.6.8 Guided Hardware Acceptance and report transfer on real hardware
 
-v2.6.4 removed the severe imported Full Song stutter on the known Chromebook stress song. v2.6.5/v2.6.6 corrected and polished Highway readability. v2.6.7 adds a short Guided Hardware Acceptance Test over the existing diagnostics/input services so Monday can capture consistent technical results and human observations without changing the v2.6.6 gameplay/scoring/input behavior being accepted.
+v2.6.4 removed the severe imported Full Song stutter on the known Chromebook stress song. v2.6.5/v2.6.6 corrected and polished Highway readability. v2.6.7 added the Guided Hardware Acceptance Test. v2.6.8 adds local session/human-evidence metadata plus Copy Project Report, native file sharing and Download JSON so Monday evidence can move cleanly from Chromebook to the Android phone without a backend.
 
-The underlying v2.6.6 gameplay/hardware gate is **not considered fully accepted until Monday physical Dell Chromebook/instrument testing confirms it**. The v2.6.7 report helps collect that evidence but does not replace it.
+The underlying v2.6.6 gameplay/hardware gate is **not considered fully accepted until Monday physical Dell Chromebook/instrument testing confirms it**. The v2.6.8 report/sharing workflow helps collect and transfer that evidence but does not replace it.
 
 Primary acceptance goals:
 
-- run Hardware & Backup → Run Hardware Test and export/copy the guided acceptance report;
+- run Hardware & Backup → Run Hardware Test, record human evidence, Copy Project Report, and transfer the JSON by native share or download fallback;
 - run the complex local imported Guitar Pro Full Song with backing and normal input analysis at 100%;
 - compare Full Song Highway and Tab View against a short imported section and a built-in Guitar Songbook control;
 - verify that severe scale-dependent audio stutter/lag is gone or materially isolated with the new diagnostics;
@@ -50,13 +50,13 @@ Automated validation cannot approve audible stutter, perceived latency, musical 
 
 ## NEXT — choose from hardware evidence
 
-### If Monday v2.6.7 acceptance still has a blocker: focused follow-up
+### If Monday v2.6.8 acceptance still has a blocker: focused follow-up
 
 If hardware testing still finds a reproducible blocker such as scoring/input regression, unusable Tab/Highway readability, save/profile failure, renewed Full Song stutter or serious Piano regression, do another focused maintenance release before expansion.
 
 Use the v2.6.4 diagnostics and exact reproduction matrix to isolate the remaining cause. Do not compensate by weakening scoring, disabling normal backing/input, hiding required events or doing a broad architecture rewrite.
 
-### If Monday v2.6.7 acceptance clears the v2.6.6 gameplay/hardware gate: Bass Quest foundation
+### If Monday v2.6.8 acceptance clears the v2.6.6 gameplay/hardware gate: Bass Quest foundation
 
 If the Guitar/Piano player and real hardware are stable on the target Chromebook and no major regression remains, the next major expansion may begin from `BASS_QUEST_SPEC.md` and `BASS_CURRICULUM_PLAN.md`.
 
@@ -98,7 +98,7 @@ A likely staged approach:
 3. Bass beginner curriculum and Smart Practice integration;
 4. physical hardware validation and polish.
 
-The exact Bass release numbers should be chosen only after Monday v2.6.7 acceptance closes the current v2.6.6 gameplay/hardware gate.
+The exact Bass release numbers should be chosen only after Monday v2.6.8 acceptance closes the current v2.6.6 gameplay/hardware gate.
 
 ## LATER — Reliability and learning-system improvements
 

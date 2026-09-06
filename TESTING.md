@@ -201,7 +201,7 @@ Automated tests cannot replace real hardware and child usability checks.
 
 ### Guitar checklist
 
-For v2.6.7 and later acceptance sessions, run the in-app Guided Hardware Test first when practical, export/copy its report, then complete the physical checks below. The report does not automatically approve latency, audio smoothness or child usability.
+For v2.6.8 and later acceptance sessions, run the in-app Guided Hardware Test first when practical, copy/share/download its report, then complete the physical checks below. The report does not automatically approve latency, audio smoothness or child usability.
 
 Adapt this checklist for releases touching Guitar:
 
@@ -253,6 +253,9 @@ Adapt for releases touching Piano:
 - [ ] instrument chooser works;
 - [ ] Hardware & Backup opens directly from chooser;
 - [ ] hardware diagnostics close cleanly;
+- [ ] Copy Project Report produces a concise paste-ready summary;
+- [ ] Share Test Report opens the physical Chromebook share sheet where supported, while cancel/error leaves evidence intact;
+- [ ] Download JSON works and unsupported file sharing falls back to the same JSON download;
 - [ ] backup export works;
 - [ ] restore works with a current supported backup;
 - [ ] current-release progress survives normal reload;
@@ -294,6 +297,7 @@ Good browser-test targets include:
 - song/practice path launch;
 - one result panel;
 - current-release persistence after reload;
+- hardware-report share/download fallback behavior using browser mocks (without claiming native ChromeOS destinations work);
 - offline app-shell behavior where feasible.
 
 Visual readability and audio quality still require human acceptance.

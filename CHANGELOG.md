@@ -1,5 +1,15 @@
 # Changelog
 
+## v2.6.8 — Hardware Report Sharing & Human Evidence
+
+- Reworked the Hardware Validation Report into three primary actions: **Copy Project Report**, **Share Test Report**, and **Download JSON**.
+- Added a compact paste-ready Project Report summarizing version/session/device inputs, guided Guitar/MIDI results, human observations, warnings, tests not performed, evidence labels and an explicit adult PASS/BLOCKER/NOT DECIDED decision.
+- Added local session IDs plus lightweight adult-help, scoring-trust, child-comment, tester-context and evidence-reference fields without changing gameplay/profile/scoring schemas.
+- Added native Web Share file transfer for the same structured JSON used by Download JSON; unsupported file sharing falls back to local download, share cancellation preserves evidence without downloading, and unexpected share errors keep manual download available.
+- Kept report transfer local-first: no backend, accounts, telemetry, API keys, automatic uploads or stored media were added.
+- Added deterministic and Playwright coverage for report metadata, Project Report formatting, file-share success/fallback/cancel/error paths and JSON-source consistency.
+- Advanced package/app/PWA asset and service-worker versioning to v2.6.8. Actual ChromeOS native-share/Quick Share behavior remains a physical Monday check.
+
 ## v2.6.7 — Guided Hardware Acceptance Test
 
 - Added a child-friendly `Run Hardware Test` flow inside Hardware & Backup while preserving Advanced Diagnostics.
