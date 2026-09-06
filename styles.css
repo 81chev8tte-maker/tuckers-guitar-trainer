@@ -181,3 +181,34 @@ main{width:min(1180px,calc(100% - 28px));margin:0 auto;padding:26px 0 10px}.view
 .game-perf-panel summary{cursor:pointer;color:var(--muted);font-weight:800}
 .game-perf-panel>span{display:block;margin:7px 0;line-height:1.45;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
 .game-perf-panel label{display:flex;align-items:center;gap:6px}.game-perf-panel label small{color:var(--muted)}
+
+
+/* v2.6.5 — Guitar Highway readability correction.
+   String color identifies the lane; the moving block exists primarily to show the fret. */
+#noteLayer .falling-note:not(.hit):not(.miss):not(.demo){
+  background:var(--string-color)!important;
+  border:2px solid rgba(255,255,255,.55)!important;
+  box-shadow:0 3px 12px rgba(0,0,0,.38)!important;
+  display:grid!important;
+  place-items:center!important;
+  min-width:58px;
+}
+#noteLayer .falling-note .note-string{display:none!important}
+#noteLayer .falling-note .fret-value{
+  display:block;
+  padding:0!important;
+  margin:0!important;
+  border:0!important;
+  background:transparent!important;
+  box-shadow:none!important;
+  color:#071018!important;
+  font-size:1.55rem!important;
+  font-weight:950!important;
+  line-height:1!important;
+  letter-spacing:-.04em;
+  text-shadow:0 1px 0 rgba(255,255,255,.28);
+}
+#noteLayer .falling-note.open-note .fret-value{font-size:.88rem!important;letter-spacing:.04em}
+#noteLayer .falling-note.has-technique .fret-value{transform:translateY(-3px)}
+#noteLayer .falling-note>small{font-size:.56rem;line-height:1;margin-top:2px}
+#handPosition.chord-focus #handPositionText{letter-spacing:.035em;word-spacing:.12em}

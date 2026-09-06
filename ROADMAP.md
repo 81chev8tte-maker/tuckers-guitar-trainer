@@ -25,9 +25,9 @@ These documents define intended direction and acceptance constraints; they do no
 
 ## NOW
 
-### Validate v2.6.4 Guitar Player & String Engine Polish on real hardware
+### Validate v2.6.5 Guitar Highway Readability on real hardware
 
-v2.6.4 is merged to `main` as the technically validated candidate. Automated Node, syntax, Playwright and PWA/offline-shell checks are green, including a synthetic 2,000-event regression that verifies bounded Guitar Highway/Tab rendering.
+v2.6.4 removed the severe imported Full Song stutter on the known Chromebook stress song, but immediate visual review found the new moving-note presentation harder to decode. v2.6.5 keeps the v2.6.4 performance architecture intact and applies a focused Highway readability correction.
 
 The known real-world blocker is **not considered resolved until physical Dell Chromebook testing confirms it**.
 
@@ -49,13 +49,13 @@ Automated validation cannot approve audible stutter, perceived latency, musical 
 
 ## NEXT — choose from hardware evidence
 
-### If v2.6.4 has a blocker: focused v2.6.5
+### If v2.6.5 still has a blocker: focused follow-up
 
-If Monday testing finds a reproducible blocker such as severe Full Song stutter, scoring/input regression, unusable Tab/Highway readability, save/profile failure or serious Piano regression, do a focused v2.6.5 before expansion.
+If hardware testing still finds a reproducible blocker such as scoring/input regression, unusable Tab/Highway readability, save/profile failure, renewed Full Song stutter or serious Piano regression, do another focused maintenance release before expansion.
 
 Use the v2.6.4 diagnostics and exact reproduction matrix to isolate the remaining cause. Do not compensate by weakening scoring, disabling normal backing/input, hiding required events or doing a broad architecture rewrite.
 
-### If v2.6.4 clears hardware acceptance: Bass Quest foundation
+### If v2.6.5 clears hardware acceptance: Bass Quest foundation
 
 If the Guitar player is stable on the target Chromebook and no major regression remains, the next major expansion may begin from `BASS_QUEST_SPEC.md` and `BASS_CURRICULUM_PLAN.md`.
 

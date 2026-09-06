@@ -93,6 +93,10 @@ test('Guitar rendering stays bounded with a 2,000-event synthetic run',async({pa
   expect(first.totalEvents).toBe(2000);
   expect(first.renderedEvents).toBeLessThan(120);
   expect(await page.locator('#noteLayer .falling-note').count()).toBeLessThan(120);
+  await expect(page.locator('#noteLayer .note-string')).toHaveCount(0);
+  await expect(page.locator('#noteLayer .falling-note').first().locator('.fret-value')).toBeVisible();
+  await expect(page.locator('#handPositionText')).toHaveText('D 5  ·  A 3  ·  E OPEN');
+  await expect(page.locator('#nextNoteText')).toHaveText('D 5 · A 3 · E OPEN');
   const middle=await page.evaluate(()=>window.FMQGuitarTest.jumpRenderForTest(60));
   expect(middle.totalEvents).toBe(2000);
   expect(middle.renderedEvents).toBeLessThan(120);
