@@ -6,26 +6,27 @@
   <meta name="theme-color" content="#0d1117" />
   <meta name="description" content="A free family music trainer that listens while children learn guitar and piano." />
   <title>Family Music Quest</title>
-  <link rel="manifest" href="./manifest.webmanifest?v=2.6.2" />
+  <link rel="manifest" href="./manifest.webmanifest?v=2.6.3" />
   <link rel="icon" href="./icon.svg" />
-  <link rel="stylesheet" href="./styles.css?v=2.6.2" />
-  <link rel="stylesheet" href="./piano.css?v=2.6.2" />
-  <link rel="stylesheet" href="./profiles.css?v=2.6.2" />
-  <link rel="stylesheet" href="./diagnostics.css?v=2.6.2" />
-  <link rel="stylesheet" href="./diagnostics-layer.css?v=2.6.2" />
-  <link rel="stylesheet" href="./piano-songbook.css?v=2.6.2" />
+  <link rel="stylesheet" href="./styles.css?v=2.6.3" />
+  <link rel="stylesheet" href="./piano.css?v=2.6.3" />
+  <link rel="stylesheet" href="./profiles.css?v=2.6.3" />
+  <link rel="stylesheet" href="./diagnostics.css?v=2.6.3" />
+  <link rel="stylesheet" href="./diagnostics-layer.css?v=2.6.3" />
+  <link rel="stylesheet" href="./piano-songbook.css?v=2.6.3" />
   <script defer src="https://cdn.jsdelivr.net/npm/@coderline/alphatab@1.8.4/dist/alphaTab.min.js"></script>
-  <script defer src="./profiles.js?v=2.6.2"></script>
-  <script defer src="./practice-tools.js?v=2.6.2"></script>
-  <script defer src="./practice-intelligence.js?v=2.6.2"></script>
-  <script defer src="./hardware-services.js?v=2.6.2"></script>
-  <script defer src="./gameplay-rules.js?v=2.6.2"></script>
-  <script defer src="./app.js?v=2.6.2"></script>
-  <script defer src="./piano-songbook.js?v=2.6.2"></script>
-  <script defer src="./piano-lessons.js?v=2.6.2"></script>
-  <script defer src="./midi-analysis.js?v=2.6.2"></script>
-  <script defer src="./piano.js?v=2.6.2"></script>
-  <script defer src="./diagnostics.js?v=2.6.2"></script>
+  <script defer src="./profiles.js?v=2.6.3"></script>
+  <script defer src="./practice-tools.js?v=2.6.3"></script>
+  <script defer src="./practice-intelligence.js?v=2.6.3"></script>
+  <script defer src="./hardware-services.js?v=2.6.3"></script>
+  <script defer src="./gameplay-rules.js?v=2.6.3"></script>
+  <script defer src="./guitar-songbook.js?v=2.6.3"></script>
+  <script defer src="./app.js?v=2.6.3"></script>
+  <script defer src="./piano-songbook.js?v=2.6.3"></script>
+  <script defer src="./piano-lessons.js?v=2.6.3"></script>
+  <script defer src="./midi-analysis.js?v=2.6.3"></script>
+  <script defer src="./piano.js?v=2.6.3"></script>
+  <script defer src="./diagnostics.js?v=2.6.3"></script>
 </head>
 <body>
   <section id="profileSetup" class="profile-overlay" hidden aria-label="Player setup"></section>
@@ -158,6 +159,10 @@
         <div><p class="eyebrow">PERSONAL LIBRARY</p><h1 id="songsTitle">My Songs</h1><p class="muted">Import Guitar Pro, MusicXML, or text tabs. Files stay in this browser.</p></div>
         <button class="button secondary" data-view-target="find-tabs">Find Tabs</button>
       </div>
+      <article class="panel guitar-songbook-panel">
+        <div class="section-heading"><div><p class="eyebrow">BUILT-IN · WORKS OFFLINE</p><h2>Guitar Songbook</h2><p class="muted">Recognizable public-domain music in original Family Music Quest guitar arrangements.</p></div></div>
+        <div id="guitarSongbookList" class="guitar-songbook-grid"></div>
+      </article>
       <div class="song-game-note panel compact-panel">
         <strong>🎮 Imported tabs can become levels.</strong>
         <span>Open a Guitar Pro or MusicXML file, choose a guitar track, then practise an 8-bar section or play the full song. Chords appear as full shapes while the mic scores a reliable anchor note.</span>

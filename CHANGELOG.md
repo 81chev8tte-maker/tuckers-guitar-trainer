@@ -1,5 +1,14 @@
 # Changelog
 
+## v2.6.3 — Musical Feel & Guitar Songbook
+
+- Set natural authored 100% tempos for all built-in Piano pieces while retaining relative 50–100% practice speeds.
+- Added deterministic Piano velocity/articulation metadata, quieter accompaniment, phrase-opening emphasis and an effective-BPM readout.
+- Added an offline five-piece Guitar Songbook with independently authored FMQ arrangements of verified public-domain music.
+- Added full-song and phrase practice, 50–100% speed choice, Note Highway and Tab View entry points for built-in Guitar songs.
+- Added shared `MUSIC_SOURCES.md`, Guitar content validation and a Guitar Songbook browser smoke test.
+- Advanced package, asset and service-worker cache versions to v2.6.3.
+
 Meaningful Family Music Quest release summaries belong here. Keep entries focused on user-visible behavior, important correctness fixes, testing, and known limitations rather than reproducing every commit.
 
 Do not fabricate historical details. Older history remains available in Git and the existing README release notes; migrate older entries here only when the information can be verified.

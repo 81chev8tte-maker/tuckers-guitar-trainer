@@ -150,6 +150,17 @@ This file records durable product/architecture decisions that future agents shou
 - Imported MIDI retains source tempo maps.
 - Human listening remains required to judge whether a tempo feels musical.
 
+## 2026-09 — Built-in Guitar songs reuse the production Guitar player
+
+**Decision:** Built-in Guitar Songbook arrangements are a separate local library, but launch the established Guitar song-level engine.
+
+**Implications:**
+
+- Note Highway and Tab View render one canonical event set.
+- Microphone scoring remains monophonic and does not claim chord recognition.
+- Built-in music does not depend on AlphaTab, remote tabs, downloaded MIDI, recordings or backing tracks.
+- Imported Guitar libraries and curriculum missions remain separate and unchanged.
+
 ## 2026-09 — Guitar/Bass should eventually share a configurable string foundation
 
 **Decision:** A future Bass Quest should reuse/generalize the existing string-instrument engine rather than duplicate Guitar into a second codebase.

@@ -60,3 +60,24 @@ test('complete Songbook arrangements open in every supported practice path',asyn
   await expect(page.locator('#pianoGame')).toBeVisible();
   await page.locator('#pianoExitGame').click();
 });
+
+test('built-in Guitar Songbook launches both learning views and phrase practice',async({page})=>{
+  await page.goto('/');
+  await page.getByLabel('Your name').fill('Guitar Book Test');
+  await page.getByRole('button',{name:'Continue'}).click();
+  await page.getByRole('button',{name:'Start Playing'}).click();
+  await page.getByRole('button',{name:/Guitar Quest Learn guitar/}).click();
+  await page.locator('.nav-button[data-view-target="songs"]').click();
+  const card=page.locator('.guitar-book-card').filter({hasText:'Ode to Joy'});
+  await expect(card.getByText('104 BPM',{exact:true})).toBeVisible();
+  await card.getByRole('button',{name:'Note Highway'}).click();
+  await expect(page.locator('#gameScreen')).toBeVisible();
+  await expect(page.locator('#gameScreen')).not.toHaveClass(/tab-mode/);
+  await page.locator('#exitGame').click();
+  await card.locator('[data-guitar-book-section]').selectOption('1');
+  await card.getByRole('button',{name:'Tab View'}).click();
+  await expect(page.locator('#gameScreen')).toBeVisible();
+  await expect(page.locator('#gameScreen')).toHaveClass(/tab-mode/);
+  await expect(page.locator('#gameLevelTitle')).toContainText('Answer');
+  await page.locator('#exitGame').click();
+});
