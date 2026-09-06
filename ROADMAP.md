@@ -4,19 +4,19 @@ This roadmap is a planning aid, not a promise. It should be updated when real-wo
 
 ## NOW
 
-### Finish the current focused Piano/Guitar work
+### Validate v2.6.3 musical feel and Guitar Songbook on real hardware
 
-The currently planned/in-progress direction is musical-feel polish plus the first Guitar Songbook/public-domain content pass.
+The v2.6.3 code pass adds musical-feel polish plus the first Guitar Songbook/public-domain content pass. Remaining acceptance is physical and subjective.
 
 Important goals include:
 
-- natural 100% performance tempos for built-in Piano songs;
-- better Piano dynamics/articulation/phrasing without a major audio-engine rewrite;
+- listen to natural 100% Piano performance tempos and dynamics on the target Chromebook;
+- play the five Guitar arrangements through microphone and USB/direct input;
 - preserving all v2.6.1/v2.6.2 scoring/correctness fixes;
-- establishing a small, high-quality Guitar Songbook from verified public-domain compositions with independently authored FMQ Guitar arrangements;
+- verify Songbook fingering, phrase boundaries, tempos and child readability with a real Guitar;
 - keeping rights/source documentation current.
 
-The repository main branch may lag the active agent pass until that release is merged.
+Automated validation cannot approve musical feel or physical-instrument behavior.
 
 ## NEXT
 

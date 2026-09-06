@@ -21,6 +21,7 @@ Primary entry/UI files include:
 - `midi-analysis.js` — imported MIDI learning analysis.
 - `piano-lessons.js` — built-in Piano curriculum/song definitions.
 - `piano-songbook.js` — built-in Piano Songbook arrangements and arrangement extraction.
+- `guitar-songbook.js` — built-in Guitar Songbook arrangements, phrase sections, rights metadata and Guitar-level event data.
 - `sw.js` / `manifest.webmanifest` — PWA/offline shell.
 
 ## Navigation and top-level UI
@@ -66,6 +67,8 @@ Guitar Quest currently lives primarily in `app.js` and includes:
 - score/accuracy/combo/stars/XP;
 - adaptive note density and weak-note coaching;
 - imported-song library and playback/practice flow.
+
+The built-in Guitar Songbook is separate from imported files but deliberately launches the existing Guitar song-level engine. Its local event data therefore uses the same Note Highway, Tab View, microphone scoring, count-in, speed, phrase practice, loop, cleanup and result behavior.
 
 ### Guitar string model
 

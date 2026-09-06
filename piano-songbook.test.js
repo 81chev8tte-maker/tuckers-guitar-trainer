@@ -7,7 +7,7 @@ book.songs.forEach(song=>{
   assert(song.notes.length>20&&song.measureCount>=6);
   assert(song.targetDuration>=15,`${song.id} has an implausibly short generated timeline`);
   assert(song.phraseBoundaries.length>=3);
-  song.notes.forEach(note=>{assert(Number.isFinite(note.beat)&&note.beat>=0);assert(note.durationBeats>0);assert(Number.isFinite(note.start)&&Number.isFinite(note.duration));});
+  song.notes.forEach(note=>{assert(Number.isFinite(note.beat)&&note.beat>=0);assert(note.durationBeats>0);assert(Number.isFinite(note.start)&&Number.isFinite(note.duration));assert(Number.isFinite(note.velocity)&&note.velocity>=1&&note.velocity<=127);assert(note.articulation>0&&note.articulation<=1);});
   assert(Math.max(...song.notes.map(n=>n.beat+n.durationBeats))<=song.measureCount*4,'events must remain inside declared measures');
   assert(song.notes.some((n,i)=>song.notes.some((m,j)=>i!==j&&m.beat===n.beat)),`${song.id} needs simultaneous arrangement events`);
   const listen=book.arrangement(song,'listen','screen');assert.equal(listen.player.length,song.notes.length);
@@ -19,6 +19,7 @@ book.songs.forEach(song=>{
 book.publicDomain.forEach(song=>{assert.equal(song.rights.status,'Public Domain');assert(song.rights.source.startsWith('https://'));assert(song.rights.arrangement.includes('Family Music Quest'));assert.equal(song.rights.lyrics,false);});
 assert.equal(book.version,2);
 assert.equal(book.manifest.length,book.songs.length);
+assert.deepEqual(Object.fromEntries(book.publicDomain.map(song=>[song.id,song.tempo])),{'songbook-twinkle':104,'songbook-frere-jacques':112,'songbook-row-row':108,'songbook-jingle-bells':116,'songbook-ode-to-joy':104});
 book.manifest.forEach(item=>{assert(item.composer&&item.arrangement&&item.source);assert(Number.isFinite(item.approximateDuration));assert(item.measureCount>0);});
 const forms=Object.fromEntries(book.publicDomain.map(song=>[song.id,song.form]));
 assert.deepEqual(forms['songbook-twinkle'],['A · Opening','B · Stars Above','A · Return','Ending']);

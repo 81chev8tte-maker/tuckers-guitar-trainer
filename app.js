@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const APP_VERSION = '2.3.0';
+  const APP_VERSION = '2.6.3';
   const DB_NAME = 'tucker-guitar-trainer';
   const DB_VERSION = 1;
   const STORE_SONGS = 'songs';
@@ -327,6 +327,7 @@
     renderTabLessons();
     renderChords();
     renderInputChallenges();
+    renderGuitarSongbook();
     updateStats();
     refreshSongs();
     updateNetworkBadge();
@@ -383,6 +384,24 @@
     $$('.nav-button').forEach(b => b.classList.toggle('active', b.dataset.viewTarget === name));
     window.scrollTo({ top:0, behavior:'smooth' });
     if (name === 'progress') renderAchievements();
+  }
+
+  function renderGuitarSongbook() {
+    const root=$('#guitarSongbookList'),book=window.FMQGuitarSongbook;
+    if(!root||!book)return;
+    root.innerHTML=book.songs.map(song=>`<article class="guitar-book-card"><p class="eyebrow">${escapeHtml(song.arrangementType)}</p><h3>${escapeHtml(song.title)}</h3><p>${escapeHtml(song.composer)}</p><div class="guitar-book-meta"><span>${escapeHtml(song.difficulty)}</span><span>${song.bpm} BPM</span><span>~${song.approximateDuration}s</span><span>${song.measureCount} measures</span></div><small>${escapeHtml(song.coaching)}</small><label class="field">Practice part<select data-guitar-book-section="${song.id}"><option value="full">Full Song</option>${song.sections.map((section,index)=>`<option value="${index}">${escapeHtml(section.label)} · measures ${section.startMeasure}–${section.endMeasure}</option>`).join('')}</select></label><label class="field">Practice speed<select data-guitar-book-speed="${song.id}"><option value=".5">50%</option><option value=".6">60%</option><option value=".7">70%</option><option value=".8">80%</option><option value=".9">90%</option><option value="1" selected>100% · ${song.bpm} BPM</option></select></label><div class="guitar-book-actions"><button class="button small" data-guitar-book-play="${song.id}" data-view="highway">Note Highway</button><button class="button small secondary" data-guitar-book-play="${song.id}" data-view="tab">Tab View</button></div><small>Great after: ${escapeHtml(song.recommendedAfter)}</small></article>`).join('');
+    $$('[data-guitar-book-play]',root).forEach(button=>button.addEventListener('click',()=>{
+      const source=book.songs.find(song=>song.id===button.dataset.guitarBookPlay);if(!source)return;
+      const selected=root.querySelector(`[data-guitar-book-section="${source.id}"]`)?.value||'full';
+      const practiceSpeed=Number(root.querySelector(`[data-guitar-book-speed="${source.id}"]`)?.value)||1;
+      let level={...source,bpm:source.bpm*practiceSpeed,notes:source.notes.map(note=>({...note})),songSpec:{...source.songSpec,practiceSpeed}};
+      if(selected!=='full'){
+        const section=source.sections[Number(selected)];
+        level={...level,id:`${source.id}:${selected}`,title:`${source.title} · ${section.label}`,notes:source.notes.filter(note=>note.beat>=section.startBeat&&note.beat<section.endBeat).map(note=>({...note,beat:note.beat-section.startBeat})),songKey:`built-in:${source.id}:section:${selected}`,songSpec:{...source.songSpec,fullSong:false,startBar:section.startMeasure-1,endBar:section.endMeasure,totalBars:source.measureCount}};
+      }
+      setGameView(button.dataset.view);
+      launchLevel(level,true);
+    }));
   }
 
   function renderTabLessons() {
@@ -2089,7 +2108,7 @@
   async function registerServiceWorker() {
     if (!('serviceWorker' in navigator)) return;
     try {
-      const reg = await navigator.serviceWorker.register('./sw.js?v=2.6.2');
+      const reg = await navigator.serviceWorker.register('./sw.js?v=2.6.3');
       reg.update().catch(() => null);
     } catch (err) { console.error(err); }
   }

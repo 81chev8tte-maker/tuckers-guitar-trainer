@@ -51,10 +51,6 @@ The PWA caches the external AlphaTab script opportunistically, but Guitar playba
 
 Future options: local bundling or explicit offline playback-asset download/status.
 
-### Stale Guitar internal version constant
-
-`app.js` contains an internal `APP_VERSION` value older than the current package/PWA version. The actual v2.6.2 PWA asset references are aligned elsewhere, so this is not currently recorded as a functional cache failure, but the stale constant is misleading and should be resolved during a focused versioning/maintenance pass.
-
 ### Backup completeness and restore robustness
 
 Current backup excludes imported song blobs. Restore validation is not a transactional multi-store operation and could theoretically leave partial state if browser storage fails mid-process.

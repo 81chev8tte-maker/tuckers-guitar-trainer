@@ -1,5 +1,15 @@
 # Family Music Quest
 
+## v2.6.3 Musical Feel & Guitar Songbook
+
+- Makes 100% the intended performance tempo for every built-in Piano piece; existing 50–100% practice speeds remain relative to that authored tempo
+- Adds intentional Piano melody/accompaniment velocity balance, phrase accents, articulation metadata, and a compact effective-BPM display
+- Adds an offline Guitar Songbook with five original FMQ arrangements: Ode to Joy, Jingle Bells, Amazing Grace, Auld Lang Syne, and an honestly labelled In the Hall of the Mountain King beginner theme
+- Runs every built-in Guitar arrangement through the existing Note Highway, Tab View, microphone scoring, count-in, looping, section-practice, results, and progression paths
+- Documents shared Piano/Guitar rights research in [MUSIC_SOURCES.md](MUSIC_SOURCES.md)
+
+No third-party tabs, MIDI arrangements, recordings, or backing tracks are bundled. Musical listening and physical Chromebook/guitar acceptance testing remain manual.
+
 ## v2.6.2 Songbook Quality & Complete Music
 
 - Completes Twinkle, Frère Jacques, and Row, Row, Row Your Boat
