@@ -1,5 +1,15 @@
 # Changelog
 
+## v2.6.5 — Guitar Highway Readability Correction
+
+- Simplified moving Highway notes so string color identifies the string and the fret/OPEN value is the dominant visible information.
+- Removed redundant E6/A5/D4-style string-number labels from moving note blocks.
+- Simplified NEXT/NEXT NOTE cues to use plain string labels and frets without MIDI pitch-name clutter.
+- Made multi-string shapes read like a compact tab cue (for example D 11 · A 11 · E 9).
+- Reduced pending-note border/glow clutter while preserving hit/miss/demo feedback states.
+- Preserved all v2.6.4 bounded rendering/indexing/performance work; the known imported Full Song stutter was reported gone on the original Chromebook stress song before this visual-only correction.
+- Advanced package/app/PWA asset and service-worker versioning to v2.6.5.
+
 ## v2.6.4 — Guitar Player & String Engine Polish (release candidate)
 
 - Reworked Guitar gameplay rendering to materialize only the bounded visible clock window instead of creating note DOM for an entire imported Full Song.

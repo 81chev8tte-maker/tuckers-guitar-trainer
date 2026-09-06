@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const APP_VERSION = '2.6.4';
+  const APP_VERSION = '2.6.5';
   const DB_NAME = 'tucker-guitar-trainer';
   const DB_VERSION = 1;
   const STORE_SONGS = 'songs';
@@ -841,10 +841,11 @@
       const stringIndex=Number(note.string)||0;
       const string=info[stringIndex]||STRING_INFO[stringIndex]||{};
       const stringNumber=Number(string.number)||count-stringIndex;
-      const stringName=`${string.label||'?'}${stringNumber}`;
+      const fretLabel=fret===0?'OPEN':String(fret);
       el.className=`falling-note string-${stringIndex} ${game.listenOnly?'listen-note':''} ${fret===0?'open-note':''} ${technique?'has-technique':''} ${shape.length>1?'chord-note':''}`;
       el.style.setProperty('--string-color',string.color||STRING_INFO[stringIndex%STRING_INFO.length]?.color||'#a8f23d');
-      el.innerHTML=`<span class="note-string">${escapeHtml(stringName)}</span><b>${fret===0?'OPEN':fret}</b>${technique?`<small>${escapeHtml(technique)}</small>`:''}`;
+      el.innerHTML=`<b class="fret-value">${fretLabel}</b>${technique?`<small>${escapeHtml(technique)}</small>`:''}`;
+      el.setAttribute('aria-label',`${string.name||`${string.label||'?'} string ${stringNumber}`} · ${fret===0?'open':`fret ${fret}`}`);
       el.dataset.eventIndex=ev.index;
       el.dataset.stringIndex=stringIndex;
       el.dataset.fret=fret;
@@ -969,15 +970,21 @@
     const frets=eventFrets(next);
     $$('.fret-lane').forEach(lane=>lane.classList.toggle('active',frets.includes(Number(lane.dataset.fret))||(!frets.length&&Number(lane.dataset.fret)===0)));
     const info=game.stringInfo||STRING_INFO;
-    const count=info.length||STRING_INFO.length;
-    const cue=shape.map(note=>{
+    const ordered=[...shape].sort((a,b)=>Number(b.string)-Number(a.string));
+    const readable=ordered.map(note=>{
       const string=info[note.string]||STRING_INFO[note.string]||{};
-      const number=Number(string.number)||count-Number(note.string);
-      return `${string.label||'?'}${number} ${Number(note.fret)===0?'OPEN':note.fret}`;
-    }).join(' · ');
+      const label=string.label||'?';
+      const fret=Number(note.fret)||0;
+      return `${label} ${fret===0?'OPEN':fret}`;
+    });
+    const single=ordered[0];
+    const singleString=info[single.string]||STRING_INFO[single.string]||{};
+    const singleFret=Number(single.fret)||0;
     $('#handPosition').classList.toggle('open-focus',!frets.length);
     $('#handPosition').classList.toggle('chord-focus',shape.length>1);
-    $('#handPositionText').textContent=cue;
+    $('#handPositionText').textContent=shape.length===1
+      ? `${singleString.label||'?'} STRING · ${singleFret===0?'OPEN':`FRET ${singleFret}`}`
+      : readable.join('  ·  ');
   }
 
   function eventFrets(ev) {
@@ -1403,8 +1410,21 @@
   function formatExpected(ev) {
     if (!ev) return '—';
     const info = game?.stringInfo || STRING_INFO;
-    const s = info[ev.string] || STRING_INFO[ev.string] || { name:`String ${6 - ev.string}` };
-    return `${s.name} · fret ${ev.fret} · ${midiToName(ev.midi)}`;
+    const shape = Array.isArray(ev.chordNotes) && ev.chordNotes.length ? ev.chordNotes : [ev];
+    if (shape.length > 1) {
+      return [...shape]
+        .sort((a,b) => Number(b.string) - Number(a.string))
+        .map(note => {
+          const string = info[note.string] || STRING_INFO[note.string] || {};
+          const fret = Number(note.fret) || 0;
+          return `${string.label || '?'} ${fret === 0 ? 'OPEN' : fret}`;
+        })
+        .join(' · ');
+    }
+    const note = shape[0];
+    const string = info[note.string] || STRING_INFO[note.string] || {};
+    const fret = Number(note.fret) || 0;
+    return `${string.label || '?'} string · ${fret === 0 ? 'OPEN' : `fret ${fret}`}`;
   }
 
   function bindInput() {
@@ -2168,7 +2188,7 @@
   async function registerServiceWorker() {
     if (!('serviceWorker' in navigator)) return;
     try {
-      const reg = await navigator.serviceWorker.register('./sw.js?v=2.6.4');
+      const reg = await navigator.serviceWorker.register('./sw.js?v=2.6.5');
       reg.update().catch(() => null);
     } catch (err) { console.error(err); }
   }
