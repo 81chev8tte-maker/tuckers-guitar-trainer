@@ -1,0 +1,62 @@
+name: Validate v2.6.8 report metadata fix
+on:
+  push:
+    branches: [feature/hardware-report-sharing-v2.6.8]
+jobs:
+  fix:
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/hardware-report-sharing-v2.6.8
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Fix report metadata merge
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('guided-hardware-acceptance.js')
+          s=p.read_text()
+          old="""    return { ...base, appVersion:APP_VERSION, commit:null, guidedAcceptance:saved };"""
+          new="""    const currentPlatform = platform();
+    return { ...base, appVersion:APP_VERSION, commit:base.commit || null, platform:{ ...(base.platform || {}), displayMode:currentPlatform.displayMode }, guidedAcceptance:saved };"""
+          if old not in s: raise SystemExit('combined report metadata anchor not found')
+          s=s.replace(old,new,1)
+          old2="""      `FMQ version: ${report.appVersion || APP_VERSION}`,
+      `Session: ${s?.sessionId || 'NOT RUN'}`,"""
+          new2="""      `FMQ version: ${report.appVersion || APP_VERSION}`,
+      `Commit/build: ${report.commit || 'Not available'}`,
+      `Session: ${s?.sessionId || 'NOT RUN'}`,"""
+          if old2 not in s: raise SystemExit('project report version anchor not found')
+          s=s.replace(old2,new2,1)
+          p.write_text(s)
+
+          p=Path('browser-tests/app-smoke.spec.js')
+          s=p.read_text()
+          old="""  expect(projectText).toContain('Family Music Quest — Project Hardware Report');
+  expect(projectText).toContain(`Session: ${sessionId}`);"""
+          new="""  expect(projectText).toContain('Family Music Quest — Project Hardware Report');
+  expect(projectText).toContain('Commit/build: Not available');
+  expect(projectText).toContain('Browser tab');
+  expect(projectText).toContain(`Session: ${sessionId}`);"""
+          if old not in s: raise SystemExit('browser report assertion anchor not found')
+          p.write_text(s.replace(old,new,1).rstrip()+'\n')
+          PY
+      - run: npm ci
+      - run: npm test
+      - run: npm run check
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:browser
+      - run: git diff --check
+      - name: Commit validated fix
+        run: |
+          rm -f .github/workflows/fix-v268-report-metadata.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'fix: preserve v2.6.8 report platform metadata'
+          git push
