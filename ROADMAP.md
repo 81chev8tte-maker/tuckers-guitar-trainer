@@ -2,6 +2,22 @@
 
 This roadmap is a planning aid, not a promise. It should be updated when real-world testing changes priorities. Do not invent release dates.
 
+## Durable roadmap specifications
+
+Several later roadmap items now have dedicated planning/source-of-truth documents. Future agents should use these instead of rebuilding requirements from old prompts or chat history:
+
+- Guitar/imported-song performance validation: `CHROMEBOOK_PERFORMANCE_BENCHMARK.md`
+- Bass architecture/foundation: `BASS_QUEST_SPEC.md`
+- Bass curriculum/content/Drum Lock: `BASS_CURRICULUM_PLAN.md`
+- input/backing/visual/MIDI timing calibration: `LATENCY_CALIBRATION_SPEC.md`
+- guided child/parent hardware setup: `HARDWARE_SETUP_WIZARD_SPEC.md`
+- automatic weak-section practice: `TROUBLE_SPOT_PRACTICE_SPEC.md`
+- PWA/offline/update reliability: `PWA_OFFLINE_UPDATE_SPEC.md`
+- parent/teacher progress reporting: `PARENT_TEACHER_PROGRESS_SPEC.md`
+- built-in music authoring/validation pipeline: `SONG_AUTHORING_PIPELINE_SPEC.md`
+
+These documents define intended direction and acceptance constraints; they do not move an item into immediate release scope by themselves.
+
 ## NOW
 
 ### Validate v2.6.3 musical feel and Guitar Songbook on real hardware
@@ -36,13 +52,15 @@ Priority areas:
 - **string-engine readiness** — remove obvious hard-coded six-string assumptions only where needed, without changing Guitar behavior;
 - **offline Guitar playback planning** — document/decide how AlphaTab/soundfont assets should be made dependable for installed-PWA use.
 
-Acceptance should include the actual target Chromebook and both a simple built-in song and a complex imported Guitar Pro song.
+Acceptance should include the actual target Chromebook and both a simple built-in song and a complex imported Guitar Pro song. Use `CHROMEBOOK_PERFORMANCE_BENCHMARK.md` for the repeatable physical benchmark.
 
 ## LATER
 
 ### Bass Quest — after shared string/audio systems are ready
 
 Bass Quest is desired, but should not be implemented as "Guitar with four strings" and should not be added before Guitar/string-player foundations are stable.
+
+The durable architecture and acceptance direction is in `BASS_QUEST_SPEC.md`; curriculum/content direction is in `BASS_CURRICULUM_PLAN.md`.
 
 Preferred direction:
 
@@ -86,7 +104,7 @@ The exact release numbers should be chosen when the prerequisite Guitar work is 
 
 ### Input/latency calibration
 
-Add deliberate per-input timing calibration when measurements justify it. Distinguish input latency from visual/backing synchronization offset.
+Add deliberate per-input timing calibration when measurements justify it. Distinguish input latency from visual/backing synchronization offset. Follow `LATENCY_CALIBRATION_SPEC.md`.
 
 Potential needs:
 
@@ -98,7 +116,7 @@ Potential needs:
 
 ### Guided hardware setup
 
-Evolve Hardware & Backup from a technical monitor toward an optional guided validation flow:
+Evolve Hardware & Backup from a technical monitor toward an optional guided validation flow. Follow `HARDWARE_SETUP_WIZARD_SPEC.md`.
 
 - choose input;
 - play expected strings/notes;
@@ -109,7 +127,7 @@ Evolve Hardware & Backup from a technical monitor toward an optional guided vali
 
 ### Automatic trouble-spot practice
 
-Use existing phrase/measure and skill-history data to offer one-click practice around the worst section after a run.
+Use existing phrase/measure and skill-history data to offer one-click practice around the worst section after a run. Follow `TROUBLE_SPOT_PRACTICE_SPEC.md`.
 
 Example outcome:
 
@@ -119,15 +137,23 @@ rather than requiring a child to manually identify and set A/B points.
 
 ### Performance baselines/budgets
 
-After instrumentation exists, record repeatable baseline measurements on the target Chromebook and turn meaningful ones into real budgets. Do not invent numbers before measurement.
+After instrumentation exists, record repeatable baseline measurements on the target Chromebook and turn meaningful ones into real budgets. Do not invent numbers before measurement. Use `CHROMEBOOK_PERFORMANCE_BENCHMARK.md` as the baseline protocol for Guitar/imported-song work.
 
 ### PWA update UX
 
-Replace "refresh/reopen until the service worker updates" with a clear child/parent-facing update-ready/restart flow when practical.
+Replace "refresh/reopen until the service worker updates" with a clear child/parent-facing update-ready/restart flow when practical. Follow `PWA_OFFLINE_UPDATE_SPEC.md`.
 
 ### More dependable offline Guitar playback
 
-Either bundle required AlphaTab playback assets locally or provide a deliberate offline-asset download path with clear status.
+Either bundle required AlphaTab playback assets locally or provide a deliberate offline-asset download path with clear status. Follow `PWA_OFFLINE_UPDATE_SPEC.md` and verify actual offline behavior before claiming completeness.
+
+### Parent / teacher progress summary
+
+Provide a concise local-first view of practice consistency, curriculum progress, song improvement, sufficiently sampled weak skills, Smart Practice state and future Trouble Spot progress. Follow `PARENT_TEACHER_PROGRESS_SPEC.md`. Do not add cloud monitoring or invasive telemetry as part of the first implementation.
+
+### Song authoring / validation pipeline
+
+Move toward a shared authoring/validation layer with instrument-specific runtime adapters rather than forcing Guitar, Piano and Bass into one identical runtime shape. Follow `SONG_AUTHORING_PIPELINE_SPEC.md`. Migrate content incrementally; do not rewrite all current Songbook/curriculum data at once.
 
 ### Modularization
 
@@ -142,7 +168,6 @@ Ideas are not approved scope merely because they appear here.
 - compact local Piano sample set after performance/bundle-size measurement;
 - deeper Guitar/Bass technique instruction;
 - technique recognition only where reliable enough to validate honestly;
-- improved teacher/parent summary of practice and weak skills;
 - accessibility options such as stronger contrast, color-blind-safe cues, larger labels and reduced effects;
 - richer imported-song section/phrase analysis;
 - optional full backup including imported song files with size warnings;
@@ -151,7 +176,6 @@ Ideas are not approved scope merely because they appear here.
 - additional instruments only after the shared foundations justify them;
 - family challenges if they support learning rather than distracting from it;
 - crash/session recovery for long imported-song practice;
-- an internal song-authoring/validation tool for FMQ-authored content;
 - AudioWorklet experiments for measured input/performance problems while retaining safe fallback behavior.
 
 ## Explicitly not planned
