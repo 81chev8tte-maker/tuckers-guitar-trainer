@@ -7,6 +7,8 @@ This roadmap is a planning aid, not a promise. It should be updated when real-wo
 Several later roadmap items now have dedicated planning/source-of-truth documents. Future agents should use these instead of rebuilding requirements from old prompts or chat history:
 
 - Guitar/imported-song performance validation: `CHROMEBOOK_PERFORMANCE_BENCHMARK.md`
+- Monday real-hardware acceptance session: `MONDAY_HARDWARE_TEST_PLAN.md`
+- accessibility/readability direction: `ACCESSIBILITY_READABILITY_SPEC.md`
 - Bass architecture/foundation: `BASS_QUEST_SPEC.md`
 - Bass curriculum/content/Drum Lock: `BASS_CURRICULUM_PLAN.md`
 - input/backing/visual/MIDI timing calibration: `LATENCY_CALIBRATION_SPEC.md`
@@ -15,52 +17,49 @@ Several later roadmap items now have dedicated planning/source-of-truth document
 - PWA/offline/update reliability: `PWA_OFFLINE_UPDATE_SPEC.md`
 - parent/teacher progress reporting: `PARENT_TEACHER_PROGRESS_SPEC.md`
 - built-in music authoring/validation pipeline: `SONG_AUTHORING_PIPELINE_SPEC.md`
+- incremental Guitar/string-player modularization: `INCREMENTAL_MODULARIZATION_PLAN.md`
+- interrupted-session recovery: `SESSION_RECOVERY_SPEC.md`
+- legal deterministic import/player fixtures: `TEST_FIXTURE_STRATEGY.md`
 
 These documents define intended direction and acceptance constraints; they do not move an item into immediate release scope by themselves.
 
 ## NOW
 
-### Validate v2.6.3 musical feel and Guitar Songbook on real hardware
+### Validate v2.6.4 Guitar Player & String Engine Polish on real hardware
 
-The v2.6.3 code pass adds musical-feel polish plus the first Guitar Songbook/public-domain content pass. Remaining acceptance is physical and subjective.
+v2.6.4 is merged to `main` as the technically validated candidate. Automated Node, syntax, Playwright and PWA/offline-shell checks are green, including a synthetic 2,000-event regression that verifies bounded Guitar Highway/Tab rendering.
 
-Important goals include:
+The known real-world blocker is **not considered resolved until physical Dell Chromebook testing confirms it**.
 
-- listen to natural 100% Piano performance tempos and dynamics on the target Chromebook;
-- play the five Guitar arrangements through microphone and USB/direct input;
-- preserving all v2.6.1/v2.6.2 scoring/correctness fixes;
-- verify Songbook fingering, phrase boundaries, tempos and child readability with a real Guitar;
-- keeping rights/source documentation current.
+Primary acceptance goals:
 
-Automated validation cannot approve musical feel or physical-instrument behavior.
+- run the complex local imported Guitar Pro Full Song with backing and normal input analysis at 100%;
+- compare Full Song Highway and Tab View against a short imported section and a built-in Guitar Songbook control;
+- verify that severe scale-dependent audio stutter/lag is gone or materially isolated with the new diagnostics;
+- verify Tab View is musically followable with the stable playhead/time spacing;
+- verify per-string identity, fret numbers, OPEN notes and dense chord cues are readable at normal playing distance;
+- verify microphone/USB Guitar scoring still behaves normally;
+- verify pause/resume, count-in cancellation, loops, backing mute/volume and cleanup remain correct;
+- perform Piano smoke/hardware checks to catch shared regressions;
+- verify profile/current-version progress behavior on the Chromebook.
 
-## NEXT
+Use `CHROMEBOOK_PERFORMANCE_BENCHMARK.md` and `MONDAY_HARDWARE_TEST_PLAN.md` rather than relying on memory or desktop-only testing.
 
-### Guitar Player & String Engine Polish
+Automated validation cannot approve audible stutter, perceived latency, musical followability, child usability or real physical-input behavior.
 
-Real-world Chromebook testing has exposed foundational Guitar-player issues that should be addressed before major expansion.
+## NEXT — choose from hardware evidence
 
-Priority areas:
+### If v2.6.4 has a blocker: focused v2.6.5
 
-- **Tab View usability** — replace or improve the current dense event-cell experience while retaining bounded/virtualized rendering;
-- **Note Highway readability** — make string identity unmistakable on the note itself, not only in lane/label styling;
-- **dense chord readability** — compact and readable next-shape cues;
-- **imported-song playback performance** — investigate audible glitching/stutter under real Guitar Pro playback;
-- **performance diagnostics** — measure frame time/FPS, active/visible event counts, pitch-analysis cost and useful playback-drift indicators;
-- **animation-loop efficiency** — reduce unnecessary repeated whole-song filtering/scanning/allocation in frame-sensitive code where profiling justifies it;
-- **tab focus behavior** — avoid expensive or visually distracting per-note smooth scrolling;
-- **string-engine readiness** — remove obvious hard-coded six-string assumptions only where needed, without changing Guitar behavior;
-- **offline Guitar playback planning** — document/decide how AlphaTab/soundfont assets should be made dependable for installed-PWA use.
+If Monday testing finds a reproducible blocker such as severe Full Song stutter, scoring/input regression, unusable Tab/Highway readability, save/profile failure or serious Piano regression, do a focused v2.6.5 before expansion.
 
-Acceptance should include the actual target Chromebook and both a simple built-in song and a complex imported Guitar Pro song. Use `CHROMEBOOK_PERFORMANCE_BENCHMARK.md` for the repeatable physical benchmark.
+Use the v2.6.4 diagnostics and exact reproduction matrix to isolate the remaining cause. Do not compensate by weakening scoring, disabling normal backing/input, hiding required events or doing a broad architecture rewrite.
 
-## LATER
+### If v2.6.4 clears hardware acceptance: Bass Quest foundation
 
-### Bass Quest — after shared string/audio systems are ready
+If the Guitar player is stable on the target Chromebook and no major regression remains, the next major expansion may begin from `BASS_QUEST_SPEC.md` and `BASS_CURRICULUM_PLAN.md`.
 
-Bass Quest is desired, but should not be implemented as "Guitar with four strings" and should not be added before Guitar/string-player foundations are stable.
-
-The durable architecture and acceptance direction is in `BASS_QUEST_SPEC.md`; curriculum/content direction is in `BASS_CURRICULUM_PLAN.md`.
+Bass Quest must not be implemented as "Guitar with four strings" and should reuse shared string-player mechanics only where musically appropriate.
 
 Preferred direction:
 
@@ -75,7 +74,7 @@ Preferred direction:
 
 #### Known Bass input blocker
 
-Current Guitar pitch detection historically rejects frequencies below roughly **55 Hz**. Standard Bass low E1 is approximately **41.2 Hz**.
+Current Guitar pitch detection intentionally still rejects frequencies below roughly **55 Hz**. Standard Bass low E1 is approximately **41.2 Hz**.
 
 Bass therefore requires deliberate work on:
 
@@ -87,7 +86,7 @@ Bass therefore requires deliberate work on:
 - microphone vs direct USB-interface behavior;
 - real Chromebook performance.
 
-Do not "fix" this by changing one cutoff constant without hardware validation.
+Do not "fix" this by changing one cutoff constant without detector benchmarks and physical hardware validation.
 
 ### Bass release staging
 
@@ -98,7 +97,7 @@ A likely staged approach:
 3. Bass beginner curriculum and Smart Practice integration;
 4. physical hardware validation and polish.
 
-The exact release numbers should be chosen when the prerequisite Guitar work is complete.
+The exact release numbers should be chosen after v2.6.4 hardware acceptance and any required v2.6.5 work.
 
 ## LATER — Reliability and learning-system improvements
 
@@ -137,7 +136,7 @@ rather than requiring a child to manually identify and set A/B points.
 
 ### Performance baselines/budgets
 
-After instrumentation exists, record repeatable baseline measurements on the target Chromebook and turn meaningful ones into real budgets. Do not invent numbers before measurement. Use `CHROMEBOOK_PERFORMANCE_BENCHMARK.md` as the baseline protocol for Guitar/imported-song work.
+Use the v2.6.4 instrumentation to record repeatable baseline measurements on the target Chromebook and turn meaningful ones into real budgets. Do not invent numbers before measurement. Use `CHROMEBOOK_PERFORMANCE_BENCHMARK.md` as the baseline protocol for Guitar/imported-song work.
 
 ### PWA update UX
 
@@ -155,9 +154,13 @@ Provide a concise local-first view of practice consistency, curriculum progress,
 
 Move toward a shared authoring/validation layer with instrument-specific runtime adapters rather than forcing Guitar, Piano and Bass into one identical runtime shape. Follow `SONG_AUTHORING_PIPELINE_SPEC.md`. Migrate content incrementally; do not rewrite all current Songbook/curriculum data at once.
 
+### Session recovery
+
+Add safe local recovery for interrupted practice only when a focused reliability release justifies it. Follow `SESSION_RECOVERY_SPEC.md`; never turn an unfinished recovered run into fake completion/mastery.
+
 ### Modularization
 
-Incrementally reduce oversized-file coupling (especially Guitar `app.js`) when focused releases naturally touch those boundaries. Avoid a rewrite-for-cleanliness project.
+Incrementally reduce oversized-file coupling (especially Guitar `app.js`) when focused releases naturally touch those boundaries. Follow `INCREMENTAL_MODULARIZATION_PLAN.md` and avoid a rewrite-for-cleanliness project.
 
 ## BACKLOG / IDEAS
 
@@ -175,7 +178,6 @@ Ideas are not approved scope merely because they appear here.
 - cloud sync someday if the product actually needs it;
 - additional instruments only after the shared foundations justify them;
 - family challenges if they support learning rather than distracting from it;
-- crash/session recovery for long imported-song practice;
 - AudioWorklet experiments for measured input/performance problems while retaining safe fallback behavior.
 
 ## Explicitly not planned
