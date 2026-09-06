@@ -14,14 +14,61 @@ Read these files first:
 6. `ROADMAP.md`
 7. `TECHNICAL_DEBT.md`
 
-Also inspect any feature-specific documentation such as:
+Also inspect feature-specific documentation relevant to the work. Current durable references include:
+
+### Music, curriculum and rights
 
 - `PUBLIC_DOMAIN_MUSIC.md`
+- `MUSIC_SOURCES.md`
 - `PIANO_CURRICULUM.md`
+- `BASS_CURRICULUM_PLAN.md`
+- `SONG_AUTHORING_PIPELINE_SPEC.md`
+- `MUSICAL_REVIEW_CHECKLIST.md`
+
+### Audio, hardware and timing
+
 - `AUDIO_PIPELINE_REVIEW.md`
 - `HARDWARE_VALIDATION.md`
-- `MUSICAL_REVIEW_CHECKLIST.md`
+- `HARDWARE_SETUP_WIZARD_SPEC.md`
+- `LATENCY_CALIBRATION_SPEC.md`
+
+### Guitar/string-player performance and future Bass
+
+- `CHROMEBOOK_PERFORMANCE_BENCHMARK.md`
+- `BASS_QUEST_SPEC.md`
+
+### Practice intelligence and progress
+
+- `TROUBLE_SPOT_PRACTICE_SPEC.md`
+- `PARENT_TEACHER_PROGRESS_SPEC.md`
+
+### PWA/offline lifecycle
+
+- `PWA_OFFLINE_UPDATE_SPEC.md`
+
+### Research/licensing
+
 - `OPEN_SOURCE_REVIEW.md`
+
+These planning/specification documents define intended direction and acceptance constraints. They do **not** authorize unrelated implementation work or a broad rewrite. Always reconcile them with the current implementation before coding.
+
+## Feature-specific required-reading map
+
+When a task touches one of these areas, read the listed spec before designing the change:
+
+| Area | Required reference |
+| --- | --- |
+| Bass Quest / shared string-instrument work | `BASS_QUEST_SPEC.md` |
+| Bass curriculum, grooves, Drum Lock or built-in Bass content | `BASS_CURRICULUM_PLAN.md` |
+| Guitar Full Song/import/render performance | `CHROMEBOOK_PERFORMANCE_BENCHMARK.md` |
+| Input/backing/visual/MIDI timing compensation | `LATENCY_CALIBRATION_SPEC.md` |
+| Child-facing hardware/input setup | `HARDWARE_SETUP_WIZARD_SPEC.md` |
+| Automatic weak-section/phrase practice | `TROUBLE_SPOT_PRACTICE_SPEC.md` |
+| Installed PWA updates or offline Guitar playback | `PWA_OFFLINE_UPDATE_SPEC.md` |
+| Parent/teacher progress reporting or new practice history | `PARENT_TEACHER_PROGRESS_SPEC.md` |
+| Built-in music authoring format, validation or content tooling | `SONG_AUTHORING_PIPELINE_SPEC.md` |
+
+If a release touches multiple rows, read all applicable references. Do not rely on an old prompt as a substitute.
 
 ## Before coding
 
@@ -78,6 +125,8 @@ For performance-sensitive changes:
 5. avoid unnecessary allocations, whole-list scans, forced layouts or DOM churn inside high-frequency loops;
 6. identify what still requires real Chromebook testing.
 
+For Guitar/imported-song performance work, use `CHROMEBOOK_PERFORMANCE_BENCHMARK.md` as the repeatable real-device protocol.
+
 Do not claim a performance win from code inspection alone.
 
 ## Child UX
@@ -106,6 +155,8 @@ Examples:
 - do not claim full chord recognition for a monophonic microphone detector;
 - do not change instrument octave/range to fit an existing detector;
 - do not relabel a partial classical theme as a complete work.
+
+For new built-in content or content-format work, follow `SONG_AUTHORING_PIPELINE_SPEC.md` plus the rights/source documentation.
 
 ## Scoring invariants to protect
 
@@ -169,7 +220,7 @@ Do not claim lint/typecheck/production build passed unless those commands actual
 
 Keep CI green for applicable releases.
 
-See `TESTING.md` for manual hardware acceptance requirements and test debt.
+See `TESTING.md` for manual hardware acceptance requirements and test debt. Use the feature-specific acceptance/benchmark specs above when a release touches those areas.
 
 ## Completion report
 
@@ -199,5 +250,6 @@ Future project-management agents should:
 - turn real-world findings into observable acceptance criteria;
 - prioritize foundational regressions before new roadmap expansion;
 - keep `ROADMAP.md`, `DECISIONS.md`, and `TECHNICAL_DEBT.md` current;
+- consult and maintain the relevant durable feature specs rather than rebuilding product decisions from chat history;
 - schedule maintenance releases periodically;
 - avoid turning every idea into immediate implementation scope.
