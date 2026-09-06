@@ -31,21 +31,29 @@ Also inspect feature-specific documentation relevant to the work. Current durabl
 - `HARDWARE_VALIDATION.md`
 - `HARDWARE_SETUP_WIZARD_SPEC.md`
 - `LATENCY_CALIBRATION_SPEC.md`
+- `MONDAY_HARDWARE_TEST_PLAN.md`
 
 ### Guitar/string-player performance and future Bass
 
 - `CHROMEBOOK_PERFORMANCE_BENCHMARK.md`
 - `BASS_QUEST_SPEC.md`
 - `INCREMENTAL_MODULARIZATION_PLAN.md`
+- `ACCESSIBILITY_READABILITY_SPEC.md`
 
 ### Practice intelligence and progress
 
 - `TROUBLE_SPOT_PRACTICE_SPEC.md`
 - `PARENT_TEACHER_PROGRESS_SPEC.md`
 
-### PWA/offline lifecycle
+### PWA/offline lifecycle and recovery
 
 - `PWA_OFFLINE_UPDATE_SPEC.md`
+- `SESSION_RECOVERY_SPEC.md`
+
+### Testing strategy
+
+- `TEST_DEBT_AUDIT.md`
+- `TEST_FIXTURE_STRATEGY.md`
 
 ### Research/licensing
 
@@ -62,13 +70,17 @@ When a task touches one of these areas, read the listed spec before designing th
 | Bass Quest / shared string-instrument work | `BASS_QUEST_SPEC.md` |
 | Bass curriculum, grooves, Drum Lock or built-in Bass content | `BASS_CURRICULUM_PLAN.md` |
 | Guitar Full Song/import/render performance | `CHROMEBOOK_PERFORMANCE_BENCHMARK.md` |
+| Monday/child physical hardware acceptance | `MONDAY_HARDWARE_TEST_PLAN.md` |
 | Guitar `app.js` extraction, renderer/input/transport modularization or architecture cleanup | `INCREMENTAL_MODULARIZATION_PLAN.md` |
+| Gameplay readability, contrast, color/label cues or accessibility | `ACCESSIBILITY_READABILITY_SPEC.md` |
 | Input/backing/visual/MIDI timing compensation | `LATENCY_CALIBRATION_SPEC.md` |
 | Child-facing hardware/input setup | `HARDWARE_SETUP_WIZARD_SPEC.md` |
 | Automatic weak-section/phrase practice | `TROUBLE_SPOT_PRACTICE_SPEC.md` |
 | Installed PWA updates or offline Guitar playback | `PWA_OFFLINE_UPDATE_SPEC.md` |
+| Interrupted-run/session recovery | `SESSION_RECOVERY_SPEC.md` |
 | Parent/teacher progress reporting or new practice history | `PARENT_TEACHER_PROGRESS_SPEC.md` |
 | Built-in music authoring format, validation or content tooling | `SONG_AUTHORING_PIPELINE_SPEC.md` |
+| New MIDI/Guitar Pro test fixtures or import-player regression assets | `TEST_FIXTURE_STRATEGY.md` |
 
 If a release touches multiple rows, read all applicable references. Do not rely on an old prompt as a substitute.
 
@@ -144,6 +156,8 @@ Prioritize:
 - forgiving but meaningful feedback;
 - visual clarity over information density.
 
+For gameplay readability/accessibility changes, follow `ACCESSIBILITY_READABILITY_SPEC.md` and validate on the target Chromebook at actual playing distance.
+
 Advanced technical information belongs in dedicated diagnostic/setup areas.
 
 ## Musical correctness
@@ -201,6 +215,12 @@ For built-in music:
 - independently author FMQ arrangements;
 - do not copy modern tabs, MIDI files, commercial arrangements, recordings or tutorial transcriptions;
 - update source/rights documentation.
+
+For repository test fixtures:
+
+- prefer original/generated FMQ material or clearly documented public-domain/compatible material;
+- keep copyrighted commercial-song stress files local/manual only;
+- follow `TEST_FIXTURE_STRATEGY.md`.
 
 For open-source research:
 
