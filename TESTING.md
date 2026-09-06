@@ -49,6 +49,22 @@ GitHub Actions currently:
 
 A focused release should not merge with failing applicable CI unless the failure is explicitly understood and intentionally deferred by the product owner.
 
+## Feature-specific acceptance references
+
+Some product requirements need dedicated acceptance protocols beyond this general testing document. When a release touches these areas, use the corresponding durable spec:
+
+- Guitar/imported-song performance and Full Song scale: `CHROMEBOOK_PERFORMANCE_BENCHMARK.md`
+- latency/timing compensation: `LATENCY_CALIBRATION_SPEC.md`
+- guided hardware/input setup: `HARDWARE_SETUP_WIZARD_SPEC.md`
+- automatic weak-section practice: `TROUBLE_SPOT_PRACTICE_SPEC.md`
+- PWA update/offline Guitar playback: `PWA_OFFLINE_UPDATE_SPEC.md`
+- Bass architecture/input/hardware acceptance: `BASS_QUEST_SPEC.md`
+- Bass curriculum/content behavior: `BASS_CURRICULUM_PLAN.md`
+- parent/teacher progress accuracy/history: `PARENT_TEACHER_PROGRESS_SPEC.md`
+- built-in song/content validation: `SONG_AUTHORING_PIPELINE_SPEC.md`
+
+These documents supplement this file; they do not replace the permanent regression matrix below.
+
 ## Test philosophy
 
 Tests exist to protect product behavior, not to maximize test count.
@@ -168,6 +184,8 @@ Test debt is important behavior that is weakly or not automatically protected. I
 - backup behavior under browser-storage/quota failure;
 - responsive layout across the actual Dell Chromebook screen modes.
 
+The dedicated specs above convert several of these debts into explicit future acceptance protocols even when automation cannot fully cover them.
+
 ### Test-debt rule
 
 When a historical bug is fixed and a stable automated reproduction is practical, add a regression test. Do not fake confidence with a weak test that only searches source code for a CSS property or function name when the actual failure was behavioral.
@@ -200,6 +218,8 @@ Adapt this checklist for releases touching Guitar:
 - [ ] A/B/section loops restart cleanly;
 - [ ] backing mute/volume behaves correctly;
 - [ ] current player progress saves correctly.
+
+For releases changing imported Guitar performance/rendering, run the matrix in `CHROMEBOOK_PERFORMANCE_BENCHMARK.md` rather than relying on this checklist alone.
 
 ### Piano checklist
 
@@ -235,6 +255,8 @@ Adapt for releases touching Piano:
 - [ ] version update does not leave obviously stale core assets;
 - [ ] major navigation fits target Chromebook viewport.
 
+When hardware setup, timing calibration or PWA lifecycle behavior is in scope, also use `HARDWARE_SETUP_WIZARD_SPEC.md`, `LATENCY_CALIBRATION_SPEC.md`, or `PWA_OFFLINE_UPDATE_SPEC.md` as applicable.
+
 ## Performance-sensitive validation process
 
 Do not invent numerical performance budgets without baseline measurements.
@@ -248,6 +270,8 @@ For changes touching animation, audio, imports, pitch detection, MIDI, or large 
 5. test on target Chromebook hardware where practical;
 6. avoid unnecessary allocations/whole-list scans/layout work inside animation/audio loops;
 7. document meaningful regressions or tradeoffs.
+
+For Guitar/imported-song work, `CHROMEBOOK_PERFORMANCE_BENCHMARK.md` is the canonical repeatable baseline protocol.
 
 Once repeatable measurements exist, concrete budgets can be added here.
 
@@ -268,5 +292,7 @@ Good browser-test targets include:
 - one result panel;
 - current-release persistence after reload;
 - offline app-shell behavior where feasible.
+
+Future feature work should also add focused browser coverage where practical for guided hardware flow, update-ready/restart UX, Trouble Spot launch, and progress-summary navigation without pretending browser automation proves physical audio/MIDI quality.
 
 Visual readability and audio quality still require human acceptance.
