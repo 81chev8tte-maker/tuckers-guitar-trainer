@@ -1,0 +1,40 @@
+name: v2.6.6 Highway UI cleanup
+on:
+  push:
+    branches: [fix/guitar-highway-ui-v2.6.6]
+permissions:
+  contents: write
+jobs:
+  upgrade:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Apply v2.6.6 patch
+        run: |
+          node --check scripts/v266-highway-ui.cjs
+          node scripts/v266-highway-ui.cjs
+          git diff --check
+          grep -q "const APP_VERSION = '2.6.6'" app.js
+          grep -q '"version": "2.6.6"' package.json
+          grep -q 'family-music-quest-v2.6.6' sw.js
+          grep -q './sw.js?v=2.6.6' app.js
+      - run: npm ci
+      - run: npm test
+      - run: npm run check
+      - name: Install browser test runtime
+        run: npx playwright install --with-deps chromium
+      - run: npm run test:browser
+      - name: Commit validated implementation
+        run: |
+          rm scripts/v266-highway-ui.cjs .github/workflows/v266-highway-ui.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "fix: center and simplify Guitar Highway UI v2.6.6"
+          git push
