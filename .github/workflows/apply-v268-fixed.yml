@@ -25,8 +25,13 @@ jobs:
           match = re.search(r"echo '([^']+)' \| base64", source)
           if not match:
               raise SystemExit('Could not recover staged v2.6.8 patch payload')
-          payload = gzip.decompress(base64.b64decode(match.group(1)))
-          pathlib.Path('.tmp/apply-v268.py').write_bytes(payload)
+          payload = gzip.decompress(base64.b64decode(match.group(1))).decode()
+          old = "new_text, count = re.subn(pattern, replacement, text, count=1, flags=re.S)"
+          new = "new_text, count = re.subn(pattern, lambda _match: replacement, text, count=1, flags=re.S)"
+          if old not in payload:
+              raise SystemExit('Expected patcher regex helper was not found')
+          payload = payload.replace(old, new, 1)
+          pathlib.Path('.tmp/apply-v268.py').write_text(payload)
           PY
           python .tmp/apply-v268.py
       - run: npm ci
