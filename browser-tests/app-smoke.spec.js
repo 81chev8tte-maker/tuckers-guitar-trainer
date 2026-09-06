@@ -130,7 +130,7 @@ test('Guitar rendering stays bounded with a 2,000-event synthetic run',async({pa
 });
 
 
-test('guided Hardware Acceptance Test records mocked measurements and human observations',async({page})=>{
+test('guided Hardware Acceptance Test records evidence and supports project copy/share/download paths',async({page})=>{
   await page.goto('/');
   await page.getByLabel('Your name').fill('Hardware Guide Test');
   await page.getByRole('button',{name:'Continue'}).click();
@@ -185,13 +185,118 @@ test('guided Hardware Acceptance Test records mocked measurements and human obse
 
   await page.locator('#guidedFinish').click();
   for(const id of ['reaction','delay','smooth','readability','keepPlaying']) await page.locator(`input[name="guided-${id}"][value="good"]`).check();
+  await page.locator('#guidedAdultResult').selectOption('not-decided');
+  await page.locator('#guidedAdultHelp').selectOption('1');
+  await page.locator('#guidedAdultHelpNote').fill('Needed help choosing the test input.');
+  await page.locator('input[name="guided-scoring-trust"][value="mostly"]').check();
+  await page.locator('#guidedChildComment').fill('The open notes are easier now.');
+  await page.locator('#guidedTesterNote').fill('USB guitar cable, Chromebook on charger, moderate room noise.');
+  await page.locator('#guidedEvidenceRefs').fill('highway-open-note.jpg\nfull-song-stutter.mp4');
   await page.getByRole('button',{name:'Save Answers & Finish'}).click();
   await expect(page.locator('#guidedSummary')).toContainText('Hardware test report saved');
+
   const report=await page.evaluate(()=>window.FMQGuidedHardwareTest.reportObject());
-  expect(report.appVersion).toBe('2.6.7');
+  expect(report.appVersion).toBe('2.6.8');
+  expect(report.guidedAcceptance.version).toBe(2);
+  expect(report.guidedAcceptance.sessionId).toMatch(/^FMQ-HW-\d{4}-\d{2}-\d{2}-\d{2,}$/);
   expect(report.guidedAcceptance.humanObservations.source).toBe('human');
+  expect(report.guidedAcceptance.humanEvidence.adultResult).toBe('not-decided');
+  expect(report.guidedAcceptance.humanEvidence.adultHelpRequired).toBe('1');
+  expect(report.guidedAcceptance.humanEvidence.childScoringTrust).toBe('mostly');
+  expect(report.guidedAcceptance.humanEvidence.childComment).toBe('The open notes are easier now.');
+  expect(report.guidedAcceptance.humanEvidence.evidenceReferences).toEqual(['highway-open-note.jpg','full-song-stutter.mp4']);
   expect(report.guidedAcceptance.testsNotPerformed.some(item=>item.includes('USB audio disconnect/reconnect'))).toBe(true);
-  expect(await page.evaluate(()=>window.FMQGuidedHardwareTest.reportText())).toContain('HUMAN OBSERVATIONS');
+  const sessionId=report.guidedAcceptance.sessionId;
+
+  const projectText=await page.evaluate(()=>window.FMQGuidedHardwareTest.reportText());
+  expect(projectText).toContain('Family Music Quest — Project Hardware Report');
+  expect(projectText).toContain('Commit/build: Not available');
+  expect(projectText).toContain('Browser tab');
+  expect(projectText).toContain(`Session: ${sessionId}`);
+  expect(projectText).toContain('Adult result: NOT DECIDED');
+  expect(projectText).toContain('Adult help required: 1');
+  expect(projectText).toContain('Child trusted scoring: Mostly');
+  expect(projectText).toContain('Guitar: COMPLETE · 6/6 open strings passed · retries 1');
+  expect(projectText).toContain('Piano/MIDI: COMPLETE');
+  expect(projectText).toContain('highway-open-note.jpg');
+  expect(projectText).not.toContain('recentEvents');
+
+  const standaloneProjectText=await page.evaluate(()=>{
+    const originalMatchMedia=window.matchMedia;
+    window.matchMedia=query=>({matches:query==='(display-mode: standalone)'});
+    const text=window.FMQGuidedHardwareTest.reportText();
+    window.matchMedia=originalMatchMedia;
+    return text;
+  });
+  expect(standaloneProjectText).toContain('Installed PWA');
+
+  await page.getByRole('button',{name:'View Report'}).click();
+  await expect(page.getByRole('button',{name:'Copy Project Report'})).toBeVisible();
+  await expect(page.getByRole('button',{name:'Share Test Report'})).toBeVisible();
+  await expect(page.getByRole('button',{name:'Download JSON'})).toBeVisible();
+  await expect(page.getByRole('button',{name:'🎸 Microphone'})).toBeVisible();
+
+  await page.evaluate(()=>{
+    window.__copiedProject='';
+    Object.defineProperty(navigator,'clipboard',{configurable:true,value:{writeText:async text=>{window.__copiedProject=text;}}});
+  });
+  await page.getByRole('button',{name:'Copy Project Report'}).click();
+  await expect.poll(()=>page.evaluate(()=>window.__copiedProject)).toContain('Adult result: NOT DECIDED');
+
+  await page.evaluate(()=>{
+    window.__downloadClicks=0;
+    window.__downloadJson='';
+    const originalCreate=URL.createObjectURL.bind(URL);
+    URL.createObjectURL=blob=>{blob.text().then(text=>{window.__downloadJson=text;});return originalCreate(blob);};
+    HTMLAnchorElement.prototype.click=function(){window.__downloadClicks++;};
+    Object.defineProperty(navigator,'canShare',{configurable:true,value:()=>true});
+    Object.defineProperty(navigator,'share',{configurable:true,value:async data=>{window.__sharedFilename=data.files[0].name;window.__sharedJson=await data.files[0].text();}});
+  });
+  await page.getByRole('button',{name:'Share Test Report'}).click();
+  await expect.poll(()=>page.evaluate(()=>window.__sharedJson||'')).toContain(sessionId);
+  const shared=await page.evaluate(()=>JSON.parse(window.__sharedJson));
+  expect(shared.guidedAcceptance.sessionId).toBe(sessionId);
+  expect(shared.guidedAcceptance.humanEvidence.childScoringTrust).toBe('mostly');
+  expect(await page.evaluate(()=>window.__downloadClicks)).toBe(0);
+
+  await page.evaluate(()=>{
+    window.__downloadClicks=0;window.__downloadJson='';
+    Object.defineProperty(navigator,'canShare',{configurable:true,value:()=>false});
+  });
+  await page.getByRole('button',{name:'Share Test Report'}).click();
+  await expect(page.locator('#diagReportActionStatus')).toContainText('downloaded instead');
+  await expect.poll(()=>page.evaluate(()=>window.__downloadClicks)).toBe(1);
+  await expect.poll(()=>page.evaluate(()=>window.__downloadJson||'')).toContain(sessionId);
+  const fallback=await page.evaluate(()=>JSON.parse(window.__downloadJson));
+  expect(fallback.guidedAcceptance).toEqual(shared.guidedAcceptance);
+
+  await page.evaluate(()=>{
+    window.__downloadClicks=0;
+    Object.defineProperty(navigator,'canShare',{configurable:true,value:()=>true});
+    Object.defineProperty(navigator,'share',{configurable:true,value:async()=>{throw new DOMException('cancelled','AbortError');}});
+  });
+  await page.getByRole('button',{name:'Share Test Report'}).click();
+  await expect(page.locator('#diagReportActionStatus')).toContainText('Sharing was canceled');
+  expect(await page.evaluate(()=>window.__downloadClicks)).toBe(0);
+  expect((await page.evaluate(()=>window.FMQGuidedHardwareTest.getSession())).sessionId).toBe(sessionId);
+
+  await page.evaluate(()=>{
+    window.__downloadClicks=0;
+    Object.defineProperty(navigator,'share',{configurable:true,value:async()=>{throw new Error('share failed');}});
+  });
+  await page.getByRole('button',{name:'Share Test Report'}).click();
+  await expect(page.locator('#diagReportActionStatus')).toContainText('still saved');
+  expect(await page.evaluate(()=>window.__downloadClicks)).toBe(0);
+
+  await page.evaluate(()=>{window.__downloadClicks=0;window.__downloadJson='';});
+  await page.getByRole('button',{name:'Download JSON'}).click();
+  await expect.poll(()=>page.evaluate(()=>window.__downloadClicks)).toBe(1);
+  await expect.poll(()=>page.evaluate(()=>window.__downloadJson||'')).toContain(sessionId);
+  const downloaded=await page.evaluate(()=>JSON.parse(window.__downloadJson));
+  expect(downloaded.guidedAcceptance).toEqual(shared.guidedAcceptance);
+
+  await page.reload();
+  await expect.poll(()=>page.evaluate(()=>window.FMQGuidedHardwareTest?.getSession()?.sessionId || null)).toBe(sessionId);
 
   await page.evaluate(()=>{window.FMQGuidedHardwareTest.beginNew();return window.FMQGuidedHardwareTest.beginGuitarSynthetic();});
   await page.evaluate(()=>window.FMQGuidedHardwareTest.cancel('Browser cancellation test'));

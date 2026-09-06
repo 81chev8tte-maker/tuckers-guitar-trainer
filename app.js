@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const APP_VERSION = '2.6.7';
+  const APP_VERSION = '2.6.8';
   const DB_NAME = 'tucker-guitar-trainer';
   const DB_VERSION = 1;
   const STORE_SONGS = 'songs';
@@ -2188,7 +2188,7 @@
   async function registerServiceWorker() {
     if (!('serviceWorker' in navigator)) return;
     try {
-      const reg = await navigator.serviceWorker.register('./sw.js?v=2.6.7');
+      const reg = await navigator.serviceWorker.register('./sw.js?v=2.6.8');
       reg.update().catch(() => null);
     } catch (err) { console.error(err); }
   }

@@ -55,9 +55,9 @@ Current backup excludes imported song blobs. Restore validation is not a transac
 
 A future backup redesign should explicitly distinguish progress/settings backup from optional full imported-library backup.
 
-### Guided hardware validation
+### Full guided hardware setup completeness
 
-Hardware & Backup is useful but still more technical monitor than guided child/parent validation wizard. Future work can add structured expected/detected/pass/fail tests without removing advanced diagnostics.
+v2.6.7/v2.6.8 now provide a child-friendly acceptance test, structured report, human evidence and local report transfer while preserving Advanced Diagnostics. The broader first-use hardware setup wizard remains later scope: connection-method selection, persistent readiness/setup reuse, richer recovery and optional future latency calibration are not implemented yet.
 
 ## Opportunistic
 

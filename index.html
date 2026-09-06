@@ -6,28 +6,28 @@
   <meta name="theme-color" content="#0d1117" />
   <meta name="description" content="A free family music trainer that listens while children learn guitar and piano." />
   <title>Family Music Quest</title>
-  <link rel="manifest" href="./manifest.webmanifest?v=2.6.7" />
+  <link rel="manifest" href="./manifest.webmanifest?v=2.6.8" />
   <link rel="icon" href="./icon.svg" />
-  <link rel="stylesheet" href="./styles.css?v=2.6.7" />
-  <link rel="stylesheet" href="./piano.css?v=2.6.7" />
-  <link rel="stylesheet" href="./profiles.css?v=2.6.7" />
-  <link rel="stylesheet" href="./diagnostics.css?v=2.6.7" />
-  <link rel="stylesheet" href="./diagnostics-layer.css?v=2.6.7" />
-  <link rel="stylesheet" href="./piano-songbook.css?v=2.6.7" />
+  <link rel="stylesheet" href="./styles.css?v=2.6.8" />
+  <link rel="stylesheet" href="./piano.css?v=2.6.8" />
+  <link rel="stylesheet" href="./profiles.css?v=2.6.8" />
+  <link rel="stylesheet" href="./diagnostics.css?v=2.6.8" />
+  <link rel="stylesheet" href="./diagnostics-layer.css?v=2.6.8" />
+  <link rel="stylesheet" href="./piano-songbook.css?v=2.6.8" />
   <script defer src="https://cdn.jsdelivr.net/npm/@coderline/alphatab@1.8.4/dist/alphaTab.min.js"></script>
-  <script defer src="./profiles.js?v=2.6.7"></script>
-  <script defer src="./practice-tools.js?v=2.6.7"></script>
-  <script defer src="./practice-intelligence.js?v=2.6.7"></script>
-  <script defer src="./hardware-services.js?v=2.6.7"></script>
-  <script defer src="./gameplay-rules.js?v=2.6.7"></script>
-  <script defer src="./guitar-songbook.js?v=2.6.7"></script>
-  <script defer src="./app.js?v=2.6.7"></script>
-  <script defer src="./piano-songbook.js?v=2.6.7"></script>
-  <script defer src="./piano-lessons.js?v=2.6.7"></script>
-  <script defer src="./midi-analysis.js?v=2.6.7"></script>
-  <script defer src="./piano.js?v=2.6.7"></script>
-  <script defer src="./diagnostics.js?v=2.6.7"></script>
-  <script defer src="./guided-hardware-acceptance.js?v=2.6.7"></script>
+  <script defer src="./profiles.js?v=2.6.8"></script>
+  <script defer src="./practice-tools.js?v=2.6.8"></script>
+  <script defer src="./practice-intelligence.js?v=2.6.8"></script>
+  <script defer src="./hardware-services.js?v=2.6.8"></script>
+  <script defer src="./gameplay-rules.js?v=2.6.8"></script>
+  <script defer src="./guitar-songbook.js?v=2.6.8"></script>
+  <script defer src="./app.js?v=2.6.8"></script>
+  <script defer src="./piano-songbook.js?v=2.6.8"></script>
+  <script defer src="./piano-lessons.js?v=2.6.8"></script>
+  <script defer src="./midi-analysis.js?v=2.6.8"></script>
+  <script defer src="./piano.js?v=2.6.8"></script>
+  <script defer src="./diagnostics.js?v=2.6.8"></script>
+  <script defer src="./guided-hardware-acceptance.js?v=2.6.8"></script>
 </head>
 <body>
   <section id="profileSetup" class="profile-overlay" hidden aria-label="Player setup"></section>
@@ -51,7 +51,7 @@
       <nav class="diagnostic-tabs"><button data-diag-tab="microphone" class="active">🎸 Microphone</button><button data-diag-tab="midi">🎹 MIDI</button><button data-diag-tab="report">📋 Report</button><button data-diag-tab="backup">💾 Backup</button></nav>
       <section class="diagnostic-view" data-diag-view="microphone"><h2>Production Guitar Input</h2><p id="diagMicDevice">Microphone not started</p><p id="diagMicSettings" class="muted">Permission has not been requested.</p><div class="signal-meter"><i id="diagMicLevel"></i></div><div class="diagnostic-reading"><strong id="diagMicNote">—</strong><span id="diagMicDetails">Start listening, then play one clean note.</span></div><div class="diagnostic-actions"><button id="diagStartMic" class="button">Start Test</button><button id="diagStopMic" class="button secondary">Stop</button><button id="diagCalibrate" class="button secondary">Save Quiet-Room Setup</button></div><p id="diagCalibration" class="muted"></p><details><summary>Guided physical checklist</summary><p>Test six open strings, fretted notes, repeated notes, alternate picking, quiet/loud notes, then silence, talking, body taps, muted strums, pick scrape, a wrong note and a correct note. The live readout shows onset and whether production input would consider the sound scoreable.</p></details></section>
       <section class="diagnostic-view" data-diag-view="midi" hidden><h2>USB / Web MIDI</h2><p id="diagMidiStatus">Connect a keyboard, then choose Connect MIDI Keyboard.</p><strong id="diagMidiDevice">No device selected</strong><div class="diagnostic-reading"><strong id="diagMidiEvent">No MIDI event yet</strong><span id="diagMidiHeld">No keys held</span></div><button id="diagConnectMidi" class="button">Connect MIDI Keyboard</button><p class="muted">Try single notes, note-off, repeated notes, soft/hard velocity, a scale, intervals, chords, rapid notes, sustain, and unplug/reconnect. The report records only events actually received.</p></section>
-      <section class="diagnostic-view" data-diag-view="report" hidden><h2>Hardware Validation Report</h2><pre id="diagReport"></pre><div class="diagnostic-actions"><button id="diagCopyReport" class="button">Copy Report</button><button id="diagExportReport" class="button secondary">Export JSON</button><button id="diagReset" class="button danger">Reset Results</button></div></section>
+      <section class="diagnostic-view" data-diag-view="report" hidden><h2>Hardware Validation Report</h2><p class="muted">Copy the concise Project summary, share the structured JSON through the Chromebook share sheet where supported, or download the same JSON file.</p><pre id="diagReport"></pre><div class="diagnostic-actions"><button id="diagCopyReport" class="button">Copy Project Report</button><button id="diagShareReport" class="button secondary">Share Test Report</button><button id="diagExportReport" class="button secondary">Download JSON</button></div><p id="diagReportActionStatus" class="muted" role="status" aria-live="polite"></p><details><summary>Reset test results</summary><p class="muted">This clears saved hardware-test evidence for the active player on this device.</p><button id="diagReset" class="button danger">Reset Results</button></details></section>
       <section class="diagnostic-view" data-diag-view="backup" hidden><h2>Family Music Quest Backup</h2><p>Exports player profiles, Guitar and Piano progress, skill history, calibration and preferences. Imported song files are not included.</p><div class="diagnostic-actions"><button id="exportBackup" class="button">Export Backup</button><label class="button secondary" for="restoreBackup">Restore Backup</label><input id="restoreBackup" type="file" accept="application/json,.json" hidden></div><p class="muted">A backup is validated before it replaces local player data.</p></section>
     </div>
   </section>
