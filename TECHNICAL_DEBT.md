@@ -101,6 +101,8 @@ Cosmetic work should not displace correctness, audio, hardware, or readability w
 
 # Test Debt
 
+`TEST_DEBT_AUDIT.md` is the detailed current coverage matrix. Use it to distinguish behavior that is actually automated from requirements that are only partially protected or must remain physical/manual acceptance.
+
 ## Audio and timing
 
 - imported Guitar Pro audio stutter/dropout under real Chromebook load;
