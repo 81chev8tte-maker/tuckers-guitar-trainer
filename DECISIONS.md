@@ -2,6 +2,22 @@
 
 This file records durable product/architecture decisions that future agents should not accidentally undo. Add dated entries when a decision materially changes.
 
+## 2026-09 — GitHub is the durable execution record; repository docs remain product truth
+
+**Decision:** Family Music Quest uses GitHub Issues/Project/Pull Requests/CI as the durable execution record for actionable work, while `PROJECT.md`, `DECISIONS.md`, `ROADMAP.md`, `TECHNICAL_DEBT.md`, and feature specifications remain authoritative for durable product/governance truth.
+
+**Implications:**
+
+- GitHub Issues are for actionable work packages, reproducible bugs/findings, hardware findings ready for prioritization, and explicit acceptance tasks; they do not replace roadmap/spec/debt documentation.
+- Do not mass-create Issues for every idea, roadmap entry, or technical-debt item. A topic can remain in durable documentation until it becomes concrete enough to prioritize, implement, reproduce, or accept.
+- Project state should be simple: Backlog → Ready → In Progress → Needs Hardware Test → Done.
+- Ready means the Project Manager has approved that Issue/work package as implementation scope. Backlog does not authorize the Build Agent to begin work.
+- Normal implementation flow is approved Issue/work package → focused branch → implementation/tests → focused PR → CI → any required physical acceptance.
+- PRs should reference the relevant Issue when one exists; do not auto-close a hardware-dependent Issue at merge if physical acceptance remains outstanding.
+- CI completion and hardware acceptance are separate gates. Physical microphone/MIDI/USB/Chromebook performance/latency/readability/musical-feel/child-usability evidence remains authoritative where applicable.
+- Project Manager, Build Agent, Advisor, and Ideas roles keep their existing meanings. Advisor/Ideas proposals do not automatically become Issues or releases.
+- This governance decision does not change the current v2.6.8/Monday hardware-acceptance gate or authorize Bass Quest or any product implementation.
+
 ## 2026-09 — FMQ should evolve toward an adaptive interactive teacher, not only a note-scoring game
 
 **Decision:** Family Music Quest should gradually evolve into a child-friendly interactive music teacher/game that combines motivation, clear teaching, adaptive practice, and real-instrument feedback. The product should increasingly help a learner understand what to learn next, what went wrong, what to practice, how to make that practice easier, and whether improvement is actually happening.
