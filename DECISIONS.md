@@ -14,6 +14,7 @@ This file records durable product/architecture decisions that future agents shou
 - Ready means the Project Manager has approved that Issue/work package as implementation scope. Backlog does not authorize the Build Agent to begin work.
 - Normal implementation flow is approved Issue/work package → focused branch → implementation/tests → focused PR → CI → any required physical acceptance.
 - PRs should reference the relevant Issue when one exists; do not auto-close a hardware-dependent Issue at merge if physical acceptance remains outstanding.
+- Main should receive normal changes through PRs with applicable FMQ CI required before merge where repository settings permit. Do not add a mandatory second human-review requirement solely for formality on this one-person, agent-assisted product.
 - CI completion and hardware acceptance are separate gates. Physical microphone/MIDI/USB/Chromebook performance/latency/readability/musical-feel/child-usability evidence remains authoritative where applicable.
 - Project Manager, Build Agent, Advisor, and Ideas roles keep their existing meanings. Advisor/Ideas proposals do not automatically become Issues or releases.
 - This governance decision does not change the current v2.6.8/Monday hardware-acceptance gate or authorize Bass Quest or any product implementation.
