@@ -154,8 +154,7 @@
   window.addEventListener('family-music:profile-changing',()=>{if(currentGame)currentGame.destroy();microphoneInput.stop();});
   window.addEventListener('family-music:profile-changed',()=>{progress=loadProgress();renderLessons();renderSongs();renderProgress();showPianoView('home');});
   window.addEventListener('family-music:show-home',()=>{if(currentGame)currentGame.destroy();microphoneInput.stop();});
-  const remembered=localStorage.getItem(INSTRUMENT_KEY);
-  if(window.FMQProfiles?.hasActiveProfile()){if(remembered)chooseInstrument(remembered);else showChooser();}
+  if(window.FMQProfiles?.hasActiveProfile())showChooser();
 
   function showPianoView(name){
     document.querySelectorAll('.piano-view').forEach(v=>v.classList.toggle('active',v.id===`piano-view-${name}`));

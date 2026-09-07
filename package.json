@@ -1,7 +1,7 @@
 {
   "name": "family-music-quest",
   "private": true,
-  "version": "2.6.9",
+  "version": "2.6.10",
   "scripts": {
     "test": "node practice-tools.test.js && node midi-analysis.test.js && node midi-validation.test.js && node practice-intelligence.test.js && node piano-songbook.test.js && node guitar-songbook.test.js && node piano-curriculum.test.js && node gameplay-rules.test.js && node ui-layering.test.js && node pwa-assets.test.js && node guided-hardware-acceptance.test.js",
     "check": "node --check gameplay-rules.js && node --check guitar-songbook.js && node --check app.js && node --check piano.js && node --check piano-songbook.js && node --check piano-lessons.js && node --check profiles.js && node --check diagnostics.js && node --check hardware-services.js && node --check practice-intelligence.js && node --check guided-hardware-acceptance.js",

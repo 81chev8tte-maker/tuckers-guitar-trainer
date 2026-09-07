@@ -1,7 +1,7 @@
 const assert = require('assert');
 const rules = require('./guided-hardware-acceptance.js');
 
-assert.equal(rules.APP_VERSION, '2.6.9');
+assert.equal(rules.APP_VERSION, '2.6.10');
 assert.equal(rules.GUITAR_STRINGS.length, 6);
 assert.deepEqual(rules.GUITAR_STRINGS.map(s=>s.midi), [40,45,50,55,59,64]);
 
