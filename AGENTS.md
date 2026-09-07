@@ -116,6 +116,8 @@ Do not create an Issue for every test observation. The Project Manager should co
 
 CI completion and hardware acceptance are separate gates. An Issue may remain **Needs Hardware Test** after a PR is merged or implementation is otherwise technically complete. Automated tests must never be treated as proof of microphone/MIDI/USB behavior, Chromebook performance, perceived latency, readability, musical feel, audio quality, or child usability.
 
+The current v2.6.8 Monday hardware-acceptance gate remains the active product gate. Do not pre-create speculative bug Issues for failures not actually observed, and do not mark Bass Quest Ready merely because it is NEXT in the roadmap.
+
 ### Minimal label convention
 
 Use labels sparingly for useful category/risk filtering rather than duplicating Project status. Preferred labels are:
