@@ -12,7 +12,7 @@ permissions:
 
 jobs:
   implement:
-    if: "github.event.head_commit.message == 'chore: trigger v2.6.11 maintenance validation'"
+    if: "github.event.head_commit.message == 'chore: rerun v2.6.11 maintenance validation'"
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -22,6 +22,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+      - name: Align temporary maintenance script with current testing debt wording
+        run: sed -i '/^old2 = "- acoustic-piano microphone detection\."$/,+4c\p.write_text(text)' .github/scripts/v2.6.11-maintenance.py
       - name: Apply focused implementation
         run: python3 .github/scripts/v2.6.11-maintenance.py
       - name: Check diff whitespace
