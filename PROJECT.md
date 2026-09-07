@@ -308,19 +308,19 @@ Good acceptance criteria describe what a human or automated test can observe, no
 
 ### Project Manager
 
-Responsible for release scope, priorities, acceptance criteria, roadmap, regression requirements, deciding whether discovered issues block expansion, reviewing agent reports, and coordinating focused releases.
+Responsible for deciding whether something becomes an Issue, release scope, priorities, Issue acceptance criteria, Ready state, release grouping, roadmap, regression requirements, deciding whether discovered issues block expansion, reviewing agent reports, and closing acceptance gates.
 
 ### Build Agent
 
-Responsible for repository inspection, implementation, tests, validation, documentation updates, identifying technical risks, and explaining tradeoffs. The Build Agent works approved Ready Issues/work packages and must not override real-world test failures simply because CI passes.
+Responsible for one approved Ready Issue/work package at a time: repository inspection, implementation, tests, focused branch/PR, CI follow-up, scoped documentation updates, identification of technical risks, and technical completion reporting. The Build Agent must not treat a Backlog Issue as approved scope and must not override real-world test failures simply because CI passes.
 
 ### Advisor
 
-Advisory/meta-development role for workflow, tool, governance and process recommendations. Advice does not automatically become implementation scope.
+Advisory/meta-development role for workflow, tool, governance and process recommendations. Advice does not automatically become implementation scope or an Issue.
 
 ### Ideas
 
-Product/strategy brainstorming role. Ideas and recommendations are proposals until the Project Manager reconciles them against repository truth, priorities and current acceptance gates.
+Product/strategy brainstorming role. Ideas and recommendations are proposals until the Project Manager reconciles them against repository truth, priorities and current acceptance gates; they do not automatically become Issues or releases.
 
 ### Human tester / product owner
 
