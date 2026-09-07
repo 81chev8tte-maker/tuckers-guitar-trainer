@@ -112,6 +112,8 @@ Permanent repository documentation remains authoritative for product identity, d
 
 An Issue does not override `PROJECT.md`, `DECISIONS.md`, `ROADMAP.md`, `TECHNICAL_DEBT.md`, or feature specifications, and an Issue's existence does not authorize implementation unless the Project Manager has moved/approved it as Ready. `AGENTS.md` and `RELEASE_PROCESS.md` define the detailed execution workflow.
 
+This execution model is a governance/process layer only. It does not itself authorize any product release, change the active roadmap gate, or turn future roadmap items such as Bass Quest into approved work.
+
 ## Durable feature specifications
 
 The repository contains focused planning/source-of-truth documents for major future systems. These capture product decisions and acceptance constraints so future agents do not have to reconstruct them from chat history.
