@@ -56,7 +56,7 @@ Do not repeat the entire repository history in an Issue. The Build Agent still r
 
 A normal handoff is deliberately compact:
 
-> Work GitHub Issue #XX. Read `AGENTS.md` and all required/relevant repository documentation first. Treat the Issue acceptance criteria as the approved implementation boundary. Open a PR after implementation and automated validation. Do not expand scope.
+> Work GitHub Issue #XX. Read `AGENTS.md` and all required/relevant repository documentation first. Treat the Issue acceptance criteria as the approved implementation boundary. Open a focused PR after implementation and automated validation. Do not expand scope.
 
 An Issue in Backlog is **not** approved scope merely because it exists. Ready means approved.
 
@@ -168,6 +168,8 @@ PR descriptions should summarize:
 - known limitations.
 
 Avoid unrelated changes in the PR.
+
+Normal main-branch policy should be PR-first with applicable FMQ CI green before merge. Repository protection/ruleset settings should enforce this where the account/repository supports it, without requiring a second human reviewer solely for formality.
 
 Run the repository's applicable current checks.
 
