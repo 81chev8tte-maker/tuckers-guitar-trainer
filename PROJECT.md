@@ -105,12 +105,15 @@ FMQ should preserve and build on its own differentiators, including one family-f
 Permanent repository documentation remains authoritative for product identity, durable decisions, roadmap direction, technical debt, and feature specifications. GitHub provides the durable execution record for actionable work:
 
 - Issues — concrete work packages, bugs/findings and acceptance tasks;
-- a simple Project board — execution state;
+- exactly one `status:*` label on each actionable Issue — the current agent-manageable operational execution state;
+- a simple Project board — the visual planning view that should mirror Issue status when practical;
 - Pull Requests — focused implementation/change records;
 - CI — automated validation;
 - hardware reports/manual testing — physical acceptance evidence.
 
-An Issue does not override `PROJECT.md`, `DECISIONS.md`, `ROADMAP.md`, `TECHNICAL_DEBT.md`, or feature specifications, and an Issue's existence does not authorize implementation unless the Project Manager has moved/approved it as Ready. `AGENTS.md` and `RELEASE_PROCESS.md` define the detailed execution workflow.
+The operational status sequence is `status:backlog` → `status:ready` → `status:in-progress` → `status:needs-hardware-test` → `status:done`. Category/risk labels remain separate. The Project board is retained as a useful visual view, but temporary board drift does not override the Issue's operational status label.
+
+An Issue does not override `PROJECT.md`, `DECISIONS.md`, `ROADMAP.md`, `TECHNICAL_DEBT.md`, or feature specifications, and an Issue's existence does not authorize implementation unless the Project Manager has approved it as `status:ready`. `AGENTS.md` and `RELEASE_PROCESS.md` define the detailed execution workflow.
 
 This execution model is a governance/process layer only. It does not itself authorize any product release, change the active roadmap gate, or turn future roadmap items such as Bass Quest into approved work.
 
@@ -310,11 +313,11 @@ Good acceptance criteria describe what a human or automated test can observe, no
 
 ### Project Manager
 
-Responsible for deciding whether something becomes an Issue, release scope, priorities, Issue acceptance criteria, Ready state, release grouping, roadmap, regression requirements, deciding whether discovered issues block expansion, reviewing agent reports, and closing acceptance gates.
+Responsible for deciding whether something becomes an Issue, release scope, priorities, Issue acceptance criteria, `status:ready` authorization, release grouping, roadmap, regression requirements, deciding whether discovered issues block expansion, reviewing agent reports, and closing acceptance gates.
 
 ### Build Agent
 
-Responsible for one approved Ready Issue/work package at a time: repository inspection, implementation, tests, focused branch/PR, CI follow-up, scoped documentation updates, identification of technical risks, and technical completion reporting. The Build Agent must not treat a Backlog Issue as approved scope and must not override real-world test failures simply because CI passes.
+Responsible for one approved `status:ready` Issue/work package at a time: repository inspection, implementation, tests, focused branch/PR, CI follow-up, scoped documentation updates, identification of technical risks, and technical completion reporting. The Build Agent must not treat a `status:backlog` Issue as approved scope and must not override real-world test failures simply because CI passes.
 
 ### Advisor
 
