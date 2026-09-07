@@ -1,0 +1,204 @@
+name: v2.6.10 branch maintenance
+
+on:
+  push:
+    branches:
+      - fix/v2.6.10-startup-home-player-safety
+
+permissions:
+  contents: write
+
+jobs:
+  apply-and-validate:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/v2.6.10-startup-home-player-safety
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Apply focused v2.6.10 edits
+        shell: bash
+        run: |
+          node <<'NODE'
+          const fs = require('fs');
+
+          function read(file) { return fs.readFileSync(file, 'utf8'); }
+          function write(file, text) { fs.writeFileSync(file, text); }
+          function replaceOnce(text, from, to, label) {
+            const first = text.indexOf(from);
+            if (first < 0) throw new Error(`Missing expected text for ${label}`);
+            if (text.indexOf(from, first + from.length) >= 0) throw new Error(`Expected one match for ${label}`);
+            return text.slice(0, first) + to + text.slice(first + from.length);
+          }
+          function replaceAllVersion(file) {
+            const before = read(file);
+            if (!before.includes('2.6.9')) throw new Error(`${file} has no v2.6.9 reference to advance`);
+            write(file, before.replaceAll('2.6.9', '2.6.10'));
+          }
+
+          let app = read('app.js');
+          app = replaceOnce(app, "const APP_VERSION = '2.6.9';", "const APP_VERSION = '2.6.10';", 'app version');
+          app = replaceOnce(
+            app,
+            "window.addEventListener('family-music:profile-changing', stopForProfileChange);\n  window.addEventListener('family-music:profile-changed', reloadActiveProfile);",
+            "window.addEventListener('family-music:profile-changing', stopForProfileChange);\n  window.addEventListener('family-music:show-home', stopForProfileChange);\n  window.addEventListener('family-music:profile-changed', reloadActiveProfile);",
+            'home cleanup listener'
+          );
+          app = replaceOnce(app, "navigator.serviceWorker.register('./sw.js?v=2.6.9')", "navigator.serviceWorker.register('./sw.js?v=2.6.10')", 'service worker registration');
+          write('app.js', app);
+
+          for (const file of [
+            'index.html',
+            'sw.js',
+            'pwa-assets.test.js',
+            'guided-hardware-acceptance.js',
+            'guided-hardware-acceptance.test.js',
+            'package.json',
+            'package-lock.json'
+          ]) replaceAllVersion(file);
+
+          let smoke = read('browser-tests/app-smoke.spec.js');
+          smoke = replaceOnce(
+            smoke,
+            "  await page.reload();\n  await expect(page.getByText('Ready, Browser Test?')).toBeVisible();",
+            "  await page.reload();\n  await expect(page.getByRole('heading',{name:'What are we playing today?'})).toBeVisible();\n  await expect(page.locator('#instrumentChooser [data-player-name]').first()).toHaveText('Browser Test');\n  await expect(page.locator('#pianoApp')).toBeHidden();\n  await expect(page.locator('body')).not.toHaveClass(/piano-active/);",
+            'app smoke reload expectation'
+          );
+          smoke = smoke.replaceAll("expect(report.appVersion).toBe('2.6.9');", "expect(report.appVersion).toBe('2.6.10');");
+          write('browser-tests/app-smoke.spec.js', smoke);
+
+          const startupTest = `const {test,expect}=require('@playwright/test');
+
+async function expectChooser(page,name){
+  await expect(page.getByRole('heading',{name:'What are we playing today?'})).toBeVisible();
+  await expect(page.locator('#instrumentChooser [data-player-name]').first()).toHaveText(name);
+  await expect(page.locator('#pianoApp')).toBeHidden();
+  await expect(page.locator('#gameScreen')).toBeHidden();
+  await expect(page.locator('#resultScreen')).toBeHidden();
+  await expect(page.locator('body')).not.toHaveClass(/piano-active/);
+  const box=await page.locator('#instrumentChooser').boundingBox();
+  const viewport=page.viewportSize();
+  expect(box).not.toBeNull();
+  expect(box.width).toBeGreaterThan(viewport.width*.9);
+  expect(box.height).toBeGreaterThan(viewport.height*.9);
+}
+
+test('fresh setup and persisted startups stay profile-safe at the instrument chooser',async({page,context})=>{
+  await page.goto('/');
+  await expect(page.getByRole('heading',{name:"Who's playing?"})).toBeVisible();
+  await expect(page.locator('#instrumentChooser')).toBeHidden();
+  await expect(page.locator('#pianoApp')).toBeHidden();
+
+  await page.getByLabel('Your name').fill('Startup One');
+  await page.getByRole('button',{name:'Continue'}).click();
+  await page.getByRole('button',{name:'Start Playing'}).click();
+  await expectChooser(page,'Startup One');
+  await expect(page.locator('#instrumentChooser [data-player-avatar]').first()).not.toHaveText('');
+
+  await page.evaluate(()=>window.FMQProfiles.saveInstrumentProgress('guitar',{startupMarker:'profile-one'}));
+
+  await page.locator('#profileMenuButton').click();
+  await page.getByRole('button',{name:/Add Player/}).click();
+  await page.getByLabel('Your name').fill('Startup Two');
+  await page.getByRole('button',{name:'Continue'}).click();
+  await page.getByRole('button',{name:'Start Playing'}).click();
+  await expectChooser(page,'Startup Two');
+  expect(await page.evaluate(()=>window.FMQProfiles.getInstrumentProgress('guitar'))).toBe(null);
+
+  await page.locator('#profileMenuButton').click();
+  await page.getByRole('button',{name:/Startup One/}).click();
+  await expectChooser(page,'Startup One');
+  expect(await page.evaluate(()=>window.FMQProfiles.getInstrumentProgress('guitar')?.startupMarker)).toBe('profile-one');
+
+  await page.getByRole('button',{name:/Guitar Quest Learn guitar/}).click();
+  await expect(page.getByRole('heading',{name:'Learn guitar by actually playing guitar.'})).toBeVisible();
+  await page.evaluate(()=>{window.FMQGuitarTest.startTestCountdown(60,1);return true;});
+  await expect.poll(()=>page.evaluate(()=>window.FMQGuitarTest.isCountdownActive())).toBe(true);
+  await page.getByRole('button',{name:'🎵 Instruments'}).first().click();
+  await expectChooser(page,'Startup One');
+  await expect.poll(()=>page.evaluate(()=>window.FMQGuitarTest.isCountdownActive())).toBe(false);
+  expect(await page.evaluate(()=>localStorage.getItem('family-music-instrument-v1'))).toBe('guitar');
+
+  await page.reload();
+  await expectChooser(page,'Startup One');
+
+  await page.getByRole('button',{name:/Piano Quest Learn piano/}).click();
+  await expect(page.getByRole('heading',{name:'Learn piano one note at a time.'})).toBeVisible();
+  expect(await page.evaluate(()=>localStorage.getItem('family-music-instrument-v1'))).toBe('piano');
+  await page.locator('#pianoSwitchInstrument').click();
+  await expectChooser(page,'Startup One');
+
+  await page.getByRole('button',{name:/Piano Quest Learn piano/}).click();
+  await expect(page.getByRole('heading',{name:'Learn piano one note at a time.'})).toBeVisible();
+  await page.reload();
+  await expectChooser(page,'Startup One');
+
+  const reopened=await context.newPage();
+  await reopened.goto('/');
+  await expectChooser(reopened,'Startup One');
+  await reopened.close();
+});
+`;
+          write('browser-tests/startup-navigation.spec.js', startupTest);
+
+          let changelog = read('CHANGELOG.md');
+          const heading = '# Changelog\n\n';
+          if (!changelog.startsWith(heading)) throw new Error('Unexpected CHANGELOG heading');
+          const entry = `## v2.6.10 — Startup Home & Player Safety Fix
+
+- Fixed startup navigation so an existing active profile cold-launches/reloads at the Family Music Quest instrument chooser instead of automatically reopening the last Guitar or Piano destination.
+- Kept first-run Who's Playing? setup intact and made the chooser the explicit startup home with the active player identity and player-switch control visible before instrument selection.
+- Reused the existing Guitar/Piano Home lifecycle cleanup when returning to Instruments; no scoring, input, timing, import, Songbook or profile-save schema behavior changed.
+- Added Playwright coverage for fresh setup, two-profile switching, persisted progress isolation, Guitar/Piano entry, Home cleanup, reload/new-page startup and rejection of last-instrument auto-resume.
+- Advanced package/app/PWA asset and service-worker versioning to v2.6.10. Physical installed-PWA relaunch acceptance on the Dell Chromebook remains required before Issue #26 is closed.
+
+`;
+          changelog = heading + entry + changelog.slice(heading.length);
+          write('CHANGELOG.md', changelog);
+          NODE
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Unit and deterministic tests
+        run: npm test
+
+      - name: Syntax checks
+        run: npm run check
+
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Browser tests
+        run: npm run test:browser
+
+      - name: Verify version alignment and focused diff
+        shell: bash
+        run: |
+          node <<'NODE'
+          const fs=require('fs');
+          const required=['package.json','package-lock.json','index.html','sw.js','app.js','pwa-assets.test.js','guided-hardware-acceptance.js','guided-hardware-acceptance.test.js'];
+          for(const file of required){
+            const text=fs.readFileSync(file,'utf8');
+            if(text.includes('2.6.9')) throw new Error(`${file} still contains active v2.6.9 release references`);
+          }
+          if(JSON.parse(fs.readFileSync('package.json','utf8')).version!=='2.6.10') throw new Error('package version mismatch');
+          NODE
+          git diff --check
+          git status --short
+
+      - name: Commit validated release edits
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app.js browser-tests/app-smoke.spec.js browser-tests/startup-navigation.spec.js CHANGELOG.md guided-hardware-acceptance.js guided-hardware-acceptance.test.js index.html package.json package-lock.json pwa-assets.test.js sw.js
+          git commit -m "v2.6.10 — Startup Home & Player Safety Fix"
+          git push origin HEAD:fix/v2.6.10-startup-home-player-safety
