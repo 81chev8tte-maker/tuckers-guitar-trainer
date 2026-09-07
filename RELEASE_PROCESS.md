@@ -79,6 +79,8 @@ Automated completion and physical acceptance remain separate gates. If implement
 
 CI does not prove microphone, MIDI, USB-audio behavior, target-Chromebook performance, perceived latency, readability, musical feel, audio quality, or child usability.
 
+The current **v2.6.8 Monday hardware-acceptance gate remains the active product gate**. This GitHub workflow does not pre-create speculative bug Issues or make Bass Quest Ready. Monday evidence should be recorded first; actionable findings can then become/refine Issues, while a clean acceptance result closes the gate through normal Project Manager judgment.
+
 ## Minimal labels
 
 Labels are for useful category/risk filtering, not workflow status. Prefer a small convention and reuse existing equivalents:
