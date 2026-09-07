@@ -44,7 +44,10 @@ test('Piano readability isolation preserves Guitar Highway fret presentation',as
   const result=await page.evaluate(()=>window.FMQGuitarTest.launchSyntheticStressLevel(48));
   expect(result.totalEvents).toBe(48);
 
-  const note=page.locator('#noteLayer .falling-note').first();
+  // Match the established v2.6.6 numeric-fret readability guard. OPEN has its
+  // own intentionally smaller presentation and is protected separately by the
+  // existing 2,000-event browser test.
+  const note=page.locator('#noteLayer .falling-note:not(.open-note)').first();
   const fret=note.locator('.fret-value');
   await expect(note).toBeVisible();
   await expect(fret).toBeVisible();
