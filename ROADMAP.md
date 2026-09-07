@@ -2,6 +2,16 @@
 
 This roadmap is a planning aid, not a promise. It should be updated when real-world testing changes priorities. Do not invent release dates.
 
+## Roadmap vs GitHub execution
+
+This file remains the durable roadmap and priority source of truth. GitHub Issues/Project track concrete execution work; they do not replace this roadmap.
+
+- Keep ideas, later directions, and staged product plans here or in the relevant durable specification until they become actionable.
+- Create Issues for concrete work packages, reproducible findings, or explicit acceptance tasks when they are ready for prioritization.
+- Do not mirror every roadmap/backlog item into Issues.
+- An Issue in Backlog is not approved implementation scope. Ready means the Project Manager has approved that work package.
+- Hardware-dependent work may remain in Needs Hardware Test after implementation/CI until physical acceptance evidence clears the gate.
+
 ## Durable roadmap specifications
 
 Several later roadmap items now have dedicated planning/source-of-truth documents. Future agents should use these instead of rebuilding requirements from old prompts or chat history:

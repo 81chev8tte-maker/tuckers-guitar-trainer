@@ -61,6 +61,82 @@ Also inspect feature-specific documentation relevant to the work. Current durabl
 
 These planning/specification documents define intended direction and acceptance constraints. They do **not** authorize unrelated implementation work or a broad rewrite. Always reconcile them with the current implementation before coding.
 
+## GitHub execution hierarchy
+
+Family Music Quest uses GitHub as the durable execution record for actionable work, without replacing the permanent repository documentation.
+
+Use this hierarchy:
+
+1. **Permanent documentation** (`PROJECT.md`, `DECISIONS.md`, `ROADMAP.md`, `TECHNICAL_DEBT.md`, feature specs) — durable product truth, architecture direction, roadmap, debt and long-lived decisions.
+2. **GitHub Issues** — actionable work packages, reproducible bugs/findings, hardware findings ready for prioritization, or explicit acceptance tasks.
+3. **GitHub Project** — execution state only. Preferred states: Backlog → Ready → In Progress → Needs Hardware Test → Done.
+4. **Pull Requests** — focused implementation/change record tied to an Issue when one exists.
+5. **CI** — automated validation gate.
+6. **Hardware reports/manual testing** — physical acceptance evidence.
+7. **Project Manager** — final scope, priority, release grouping and pass/fail authority.
+
+Issues must not replace or become a duplicate copy of `ROADMAP.md`, `TECHNICAL_DEBT.md`, feature specifications, or product decisions. Do not mass-create Issues from every idea/debt/spec item. Create an Issue when work is concrete enough to prioritize, implement, reproduce, or accept.
+
+### Issue readiness and Build Agent handoff
+
+An Issue existing does **not** mean it is approved implementation scope.
+
+- **Backlog** — actionable, but not approved for immediate implementation.
+- **Ready** — the Project Manager has approved the Issue as the current work package/release boundary.
+- **In Progress** — an agent is actively working it.
+- **Needs Hardware Test** — implementation/CI is complete, but physical acceptance remains outstanding.
+- **Done** — all required implementation and acceptance gates are complete.
+
+A Build Agent should normally receive a compact handoff such as:
+
+> Work GitHub Issue #XX. Read `AGENTS.md` and all required/relevant repository documentation first. Treat the Issue acceptance criteria as the approved implementation boundary. Open a focused PR after implementation and automated validation. Do not expand scope.
+
+Before coding an Issue, the Build Agent must still inspect current implementation, tests, recent fixes, and relevant permanent documentation. The Issue is the approved work package, not a substitute for repository context.
+
+An implementation-ready Issue should normally contain:
+
+- concise problem/goal;
+- why it matters;
+- current evidence/reproduction where applicable;
+- approved scope;
+- explicitly out-of-scope behavior;
+- observable acceptance criteria;
+- regression requirements;
+- automated tests expected;
+- physical hardware testing still required;
+- relevant permanent docs/specs to read.
+
+Keep Issues focused. Do not repeat the entire repository history.
+
+### Hardware findings
+
+Real Chromebook/instrument findings should become Issues when they expose a reproducible/actionable problem or a defined acceptance task. Useful evidence can include FMQ version, hardware-report session ID, expected/observed behavior, reproduction frequency, device/input, screenshot/video filenames, and blocker status.
+
+Do not create an Issue for every test observation. The Project Manager should consolidate related evidence when that creates a clearer work package.
+
+CI completion and hardware acceptance are separate gates. An Issue may remain **Needs Hardware Test** after a PR is merged or implementation is otherwise technically complete. Automated tests must never be treated as proof of microphone/MIDI/USB behavior, Chromebook performance, perceived latency, readability, musical feel, audio quality, or child usability.
+
+The current v2.6.8 Monday hardware-acceptance gate remains the active product gate. Do not pre-create speculative bug Issues for failures not actually observed, and do not mark Bass Quest Ready merely because it is NEXT in the roadmap.
+
+### Minimal label convention
+
+Use labels sparingly for useful category/risk filtering rather than duplicating Project status. Preferred labels are:
+
+- `bug`
+- `hardware-test`
+- `guitar`
+- `piano`
+- `bass`
+- `pwa`
+- `performance`
+- `testing`
+- `documentation`
+- `maintenance`
+- `future`
+- `blocker`
+
+Reuse existing equivalent labels rather than creating duplicates. Status belongs primarily in the GitHub Project, not in Ready/In Progress/etc. labels.
+
 ## Feature-specific required-reading map
 
 When a task touches one of these areas, read the listed spec before designing the change:
@@ -269,9 +345,13 @@ Never claim subjective audio quality, musical feel, child usability or physical-
 Future project-management agents should:
 
 - keep release scope focused;
-- turn real-world findings into observable acceptance criteria;
+- decide whether a proposal/finding is durable documentation, an actionable Issue, or neither;
+- use GitHub Issues as the normal execution handoff for approved actionable work;
+- mark work Ready only when the Project Manager has approved the Issue/work package;
+- keep GitHub Project state aligned with actual execution and hardware-acceptance status;
+- turn real-world findings into observable acceptance criteria and consolidate related evidence when useful;
 - prioritize foundational regressions before new roadmap expansion;
 - keep `ROADMAP.md`, `DECISIONS.md`, and `TECHNICAL_DEBT.md` current;
 - consult and maintain the relevant durable feature specs rather than rebuilding product decisions from chat history;
 - schedule maintenance releases periodically;
-- avoid turning every idea into immediate implementation scope.
+- avoid turning every idea into an Issue or immediate implementation scope.

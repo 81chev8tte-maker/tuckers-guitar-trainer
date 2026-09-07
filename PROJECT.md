@@ -100,6 +100,20 @@ FMQ should preserve and build on its own differentiators, including one family-f
 
 **Core learning should not require a subscription or cloud service.** Optional future cloud features may be considered separately when they clearly improve the product, but they must not become a dependency for core learning unless the product owner explicitly changes that direction.
 
+## Repository governance and execution records
+
+Permanent repository documentation remains authoritative for product identity, durable decisions, roadmap direction, technical debt, and feature specifications. GitHub provides the durable execution record for actionable work:
+
+- Issues — concrete work packages, bugs/findings and acceptance tasks;
+- a simple Project board — execution state;
+- Pull Requests — focused implementation/change records;
+- CI — automated validation;
+- hardware reports/manual testing — physical acceptance evidence.
+
+An Issue does not override `PROJECT.md`, `DECISIONS.md`, `ROADMAP.md`, `TECHNICAL_DEBT.md`, or feature specifications, and an Issue's existence does not authorize implementation unless the Project Manager has moved/approved it as Ready. `AGENTS.md` and `RELEASE_PROCESS.md` define the detailed execution workflow.
+
+This execution model is a governance/process layer only. It does not itself authorize any product release, change the active roadmap gate, or turn future roadmap items such as Bass Quest into approved work.
+
 ## Durable feature specifications
 
 The repository contains focused planning/source-of-truth documents for major future systems. These capture product decisions and acceptance constraints so future agents do not have to reconstruct them from chat history.
@@ -296,11 +310,19 @@ Good acceptance criteria describe what a human or automated test can observe, no
 
 ### Project Manager
 
-Responsible for release scope, priorities, acceptance criteria, roadmap, regression requirements, deciding whether discovered issues block expansion, reviewing agent reports, and coordinating focused releases.
+Responsible for deciding whether something becomes an Issue, release scope, priorities, Issue acceptance criteria, Ready state, release grouping, roadmap, regression requirements, deciding whether discovered issues block expansion, reviewing agent reports, and closing acceptance gates.
 
-### Coding Agent
+### Build Agent
 
-Responsible for repository inspection, implementation, tests, validation, documentation updates, identifying technical risks, and explaining tradeoffs. The coding agent must not override real-world test failures simply because CI passes.
+Responsible for one approved Ready Issue/work package at a time: repository inspection, implementation, tests, focused branch/PR, CI follow-up, scoped documentation updates, identification of technical risks, and technical completion reporting. The Build Agent must not treat a Backlog Issue as approved scope and must not override real-world test failures simply because CI passes.
+
+### Advisor
+
+Advisory/meta-development role for workflow, tool, governance and process recommendations. Advice does not automatically become implementation scope or an Issue.
+
+### Ideas
+
+Product/strategy brainstorming role. Ideas and recommendations are proposals until the Project Manager reconciles them against repository truth, priorities and current acceptance gates; they do not automatically become Issues or releases.
 
 ### Human tester / product owner
 

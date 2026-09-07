@@ -9,6 +9,12 @@ Use these approximate priorities:
 - **Opportunistic** — worth improving when a focused release naturally touches the area.
 - **Cosmetic** — harmless naming/style/cleanup with little user impact.
 
+## Debt register vs GitHub Issues
+
+This file remains the durable debt register. Do **not** mirror every entry into a GitHub Issue.
+
+Create or refine an Issue when debt becomes a concrete actionable work package, a reproducible blocker, or an acceptance task ready for prioritization. The Issue should reference the relevant debt/spec entry instead of replacing it. Closing an Issue does not automatically erase a broader debt category; update this register only when the durable debt status materially changes.
+
 ## Critical
 
 No repository-wide critical issue is currently recorded by this documentation pass.
