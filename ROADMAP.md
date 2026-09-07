@@ -54,9 +54,9 @@ Shared infrastructure should support distinct Guitar, Piano, and future Bass lea
 
 The guided hardware/report-sharing foundation originated in v2.6.7/v2.6.8. Subsequent focused maintenance releases corrected two physical-test blockers: v2.6.9 fixed Piano falling-note readability (#23), and v2.6.10 fixed startup/player-safety behavior (#26). Both have now been physically accepted and are Done.
 
-Issue #22 remains the broader acceptance gate. Physical testing should use the latest deployed maintenance baseline rather than an older historical release number. At this documentation pass the deployed baseline is v2.6.10.
+Issue #22 remains the broader acceptance gate. Physical testing should use the latest deployed maintenance baseline rather than an older historical release number. v2.6.11 addresses the newly observed Piano microphone input-state/response blocker in Issue #29, but remains subject to real Dell Chromebook microphone acceptance before that blocker is considered cleared.
 
-Issue #24 remains a separate, non-blocking Backlog reporting issue about distinguishing an enumerated virtual/system MIDI endpoint from a verified playable keyboard. It does not by itself invalidate microphone-based Piano testing or the broader #22 gate.
+Issue #30 tracks the separate confirmed active-practice screen wake-lock blocker and remains Backlog until v2.6.11 reaches its acceptance boundary. Issue #24 remains a separate, non-blocking Backlog reporting issue about distinguishing an enumerated virtual/system MIDI endpoint from a verified playable keyboard. Issue #31 tracks later child-friendly report transfer/evidence-fidelity work. None of #24/#30/#31 is implemented as part of v2.6.11.
 
 Primary acceptance goals remain:
 

@@ -156,7 +156,9 @@ Piano uses an input-hub contract so on-screen, microphone, and MIDI input can fe
 
 ### Microphone
 
-Piano microphone detection uses a larger 4,096-sample analyser buffer and main-thread autocorrelation with confidence/stability/debounce logic. It is intentionally treated as monophonic.
+Piano microphone detection uses a larger 4,096-sample analyser buffer and main-thread autocorrelation with confidence/stability/debounce logic. It is intentionally treated as monophonic. The production thresholds remain conservative; candidate-pitch history is reset when a clean rounded pitch changes or the signal becomes invalid so stale readings from the previous note do not unnecessarily delay the next stable note.
+
+A successful Piano microphone test/selection establishes a session-scoped microphone intent. Actual capture is still released on Mic Test/game/navigation cleanup boundaries; compatible scored single-note practice reacquires the microphone before count-in/restart and shows the active input explicitly. This intent is not a profile/save-schema field, is cleared on profile change, and Listen First/polyphonic material does not auto-start microphone capture.
 
 ### Web MIDI
 

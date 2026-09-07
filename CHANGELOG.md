@@ -1,5 +1,14 @@
 # Changelog
 
+## v2.6.11 — Piano Microphone Practice Reliability
+
+- Preserved a deliberate/validated Piano microphone choice as a session-scoped input intent and reacquired microphone capture before compatible scored single-note runs, Restart and Play Again instead of silently reverting to screen-key-only input.
+- Kept capture lifecycle-safe: leaving Mic Test/gameplay stops the actual microphone stream, profile change clears the intent, and Listen First/polyphonic material does not auto-start microphone capture.
+- Made the active/fallback input explicit before count-in and on microphone acquisition failure while retaining screen-key and Web MIDI paths.
+- Corrected detector transition smoothing by resetting candidate history when a clean rounded pitch changes or the signal becomes invalid, while retaining the existing 85 ms analysis cadence, RMS/confidence/cents gates, three-frame stability requirement and duplicate debounce.
+- Added browser regressions for microphone intent/reacquisition/cleanup/fallback, detector transition gating, quiet/low-confidence non-emission, wrong-note rejection, screen input and MIDI provider behavior.
+- Advanced package/app/PWA asset and service-worker versioning to v2.6.11. Real Dell Chromebook microphone responsiveness and child usability remain physical acceptance requirements for Issue #29.
+
 ## v2.6.10 — Startup Home & Player Safety Fix
 
 - Fixed startup navigation so an existing active profile cold-launches/reloads at the Family Music Quest instrument chooser instead of automatically reopening the last Guitar or Piano destination.
