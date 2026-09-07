@@ -13,3 +13,19 @@ body.piano-active>.topbar,body.piano-active>main,body.piano-active>.bottom-nav{d
 .accompaniment-control input[type="range"]{width:72px}
 .piano-list-card.checkpoint{border-color:#f7c948;box-shadow:0 0 0 1px #f7c94833}.piano-list-card.fullSong{border-color:#8b7cf6}.falling-note small{display:block;font-size:.62em;line-height:1;opacity:.9}.piano-toolbar select{min-height:42px}
 .piano-effective-bpm{font-size:.7rem;color:var(--muted);font-weight:800;white-space:nowrap}
+
+
+/* v2.6.9 — Piano falling-note readability isolation.
+   Piano and Guitar currently share the legacy .falling-note class. Keep Piano
+   presentation explicitly scoped so Guitar Highway rules cannot erase the
+   Piano target fill or darken its primary pitch label. */
+.piano-game .falling-note{
+  --string-color:#725cff;
+  color:#fff;
+  font-size:clamp(1.2rem,2.6vw,1.55rem);
+  text-shadow:0 2px 4px rgba(0,0,0,.9);
+}
+.piano-game .falling-note.left{--string-color:#267cdd}
+.piano-game .falling-note.right{--string-color:#995de8}
+.piano-game .falling-note.hit{--string-color:#5ee38a}
+.piano-game .falling-note.missed{--string-color:#ff6b78}
