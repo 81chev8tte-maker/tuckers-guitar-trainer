@@ -71,6 +71,7 @@ test('Piano microphone intent survives safe cleanup and reactivates for compatib
   await page.locator('#pianoSwitchInstrument').click();
   expect(await page.evaluate(()=>window.NovaPianoTest.getMicrophoneState().active)).toBe(false);
   await page.getByRole('button',{name:/Piano Quest Learn piano/}).click();
+  await page.locator('.piano-nav-button[data-piano-view="home"]').click();
   await page.locator('[data-song="nova-first-tune"][data-mode="wait"]').first().click();
   await expect(page.locator('#pianoInputPill')).toContainText('Input: microphone');
   expect(await page.evaluate(()=>window.NovaPianoTest.getMicrophoneState().active)).toBe(true);
