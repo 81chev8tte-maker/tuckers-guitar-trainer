@@ -12,7 +12,7 @@ permissions:
 
 jobs:
   implement:
-    if: "github.event.head_commit.message == 'chore: rerun v2.6.11 maintenance validation'"
+    if: "github.event.head_commit.message == 'chore: validate v2.6.11 after test navigation fix'"
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
