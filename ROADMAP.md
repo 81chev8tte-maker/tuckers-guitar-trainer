@@ -9,8 +9,9 @@ This file remains the durable roadmap and priority source of truth. GitHub Issue
 - Keep ideas, later directions, and staged product plans here or in the relevant durable specification until they become actionable.
 - Create Issues for concrete work packages, reproducible findings, or explicit acceptance tasks when they are ready for prioritization.
 - Do not mirror every roadmap/backlog item into Issues.
-- An Issue in Backlog is not approved implementation scope. Ready means the Project Manager has approved that work package.
-- Hardware-dependent work may remain in Needs Hardware Test after implementation/CI until physical acceptance evidence clears the gate.
+- An Issue with `status:backlog` is not approved implementation scope. `status:ready` means the Project Manager has approved that work package.
+- Hardware-dependent work may remain `status:needs-hardware-test` after implementation/CI until physical acceptance evidence clears the gate.
+- The GitHub Project remains the visual planning view and should mirror the Issue's operational `status:*` label when practical.
 
 ## Durable roadmap specifications
 
@@ -45,42 +46,45 @@ This filter should help prioritize later work such as Guided Hardware Setup, lat
 
 Shared infrastructure should support distinct Guitar, Piano, and future Bass learning identities rather than flattening them into one identical experience. Competitor products may be studied for useful concepts, but feature parity is not a roadmap objective.
 
-**This long-term direction does not change the current NOW/NEXT sequence.** v2.6.8 real-hardware acceptance remains the active gate; foundational blockers still outrank expansion; Bass staging remains contingent on that gate clearing.
+**This long-term direction does not change the current NOW/NEXT sequence.** The Chromebook hardware/child-usability acceptance gate tracked by Issue #22 remains the active product gate; foundational blockers still outrank expansion; Bass staging remains contingent on that gate clearing.
 
 ## NOW
 
-### Run v2.6.8 Guided Hardware Acceptance and report transfer on real hardware
+### Complete Chromebook hardware & child-usability acceptance on the current deployed baseline
 
-v2.6.4 removed the severe imported Full Song stutter on the known Chromebook stress song. v2.6.5/v2.6.6 corrected and polished Highway readability. v2.6.7 added the Guided Hardware Acceptance Test. v2.6.8 adds local session/human-evidence metadata plus Copy Project Report, native file sharing and Download JSON so Monday evidence can move cleanly from Chromebook to the Android phone without a backend.
+The guided hardware/report-sharing foundation originated in v2.6.7/v2.6.8. Subsequent focused maintenance releases corrected two physical-test blockers: v2.6.9 fixed Piano falling-note readability (#23), and v2.6.10 fixed startup/player-safety behavior (#26). Both have now been physically accepted and are Done.
 
-The underlying v2.6.6 gameplay/hardware gate is **not considered fully accepted until Monday physical Dell Chromebook/instrument testing confirms it**. The v2.6.8 report/sharing workflow helps collect and transfer that evidence but does not replace it.
+Issue #22 remains the broader acceptance gate. Physical testing should use the latest deployed maintenance baseline rather than an older historical release number. At this documentation pass the deployed baseline is v2.6.10.
 
-Primary acceptance goals:
+Issue #24 remains a separate, non-blocking Backlog reporting issue about distinguishing an enumerated virtual/system MIDI endpoint from a verified playable keyboard. It does not by itself invalidate microphone-based Piano testing or the broader #22 gate.
 
-- run Hardware & Backup → Run Hardware Test, record human evidence, Copy Project Report, and transfer the JSON by native share or download fallback;
+Primary acceptance goals remain:
+
+- run Hardware & Backup → Run Hardware Test where practical, record human evidence, Copy Project Report, and transfer the JSON by native share or download fallback;
 - run the complex local imported Guitar Pro Full Song with backing and normal input analysis at 100%;
 - compare Full Song Highway and Tab View against a short imported section and a built-in Guitar Songbook control;
-- verify that severe scale-dependent audio stutter/lag is gone or materially isolated with the new diagnostics;
+- verify that severe scale-dependent audio stutter/lag is gone or materially isolated with the existing diagnostics;
 - verify Tab View is musically followable with the stable playhead/time spacing;
 - verify per-string identity, fret numbers, OPEN notes and dense chord cues are readable at normal playing distance;
 - verify microphone/USB Guitar scoring still behaves normally;
 - verify pause/resume, count-in cancellation, loops, backing mute/volume and cleanup remain correct;
-- perform Piano smoke/hardware checks to catch shared regressions;
-- verify profile/current-version progress behavior on the Chromebook.
+- complete Piano smoke/hardware and child-usability checks on the current deployed baseline;
+- verify profile/current-version progress and installed-PWA behavior on the Chromebook;
+- collect the remaining child/hardware evidence and let the Project Manager record final PASS/BLOCKER for #22.
 
-Use `CHROMEBOOK_PERFORMANCE_BENCHMARK.md` and `MONDAY_HARDWARE_TEST_PLAN.md` rather than relying on memory or desktop-only testing.
+Use `CHROMEBOOK_PERFORMANCE_BENCHMARK.md` and `MONDAY_HARDWARE_TEST_PLAN.md` for the underlying physical protocols rather than relying on memory or desktop-only testing. Historical v2.6.8 wording in those documents may describe the release that introduced the guided reporting flow; current acceptance should still run against the latest deployed maintenance baseline.
 
 Automated validation cannot approve audible stutter, perceived latency, musical followability, child usability or real physical-input behavior.
 
 ## NEXT — choose from hardware evidence
 
-### If Monday v2.6.8 acceptance still has a blocker: focused follow-up
+### If Issue #22 still has a blocker: focused follow-up
 
-If hardware testing still finds a reproducible blocker such as scoring/input regression, unusable Tab/Highway readability, save/profile failure, renewed Full Song stutter or serious Piano regression, do another focused maintenance release before expansion.
+If current hardware/child-usability testing finds a reproducible blocker such as scoring/input regression, unusable Tab/Highway readability, save/profile failure, renewed Full Song stutter or serious Piano regression, do another focused maintenance release before expansion.
 
-Use the v2.6.4 diagnostics and exact reproduction matrix to isolate the remaining cause. Do not compensate by weakening scoring, disabling normal backing/input, hiding required events or doing a broad architecture rewrite.
+Use the existing diagnostics and exact reproduction matrix to isolate the remaining cause. Do not compensate by weakening scoring, disabling normal backing/input, hiding required events or doing a broad architecture rewrite.
 
-### If Monday v2.6.8 acceptance clears the v2.6.6 gameplay/hardware gate: Bass Quest foundation
+### If Issue #22 clears the current gameplay/hardware gate: Bass Quest foundation
 
 If the Guitar/Piano player and real hardware are stable on the target Chromebook and no major regression remains, the next major expansion may begin from `BASS_QUEST_SPEC.md` and `BASS_CURRICULUM_PLAN.md`.
 
@@ -122,7 +126,7 @@ A likely staged approach:
 3. Bass beginner curriculum and Smart Practice integration;
 4. physical hardware validation and polish.
 
-The exact Bass release numbers should be chosen only after Monday v2.6.8 acceptance closes the current v2.6.6 gameplay/hardware gate.
+The exact Bass release numbers should be chosen only after Issue #22 closes the current Chromebook hardware/child-usability gate.
 
 ## LATER — Reliability and learning-system improvements
 

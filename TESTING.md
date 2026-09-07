@@ -51,7 +51,7 @@ GitHub Actions currently:
 
 A focused release should not merge with failing applicable CI unless the failure is explicitly understood and intentionally deferred by the product owner.
 
-CI is an automated validation gate, not the physical-acceptance gate. When an approved GitHub Issue/work package requires real hardware acceptance, its Project state should remain **Needs Hardware Test** after implementation/CI until the required physical evidence is recorded and the Project Manager decides pass/fail.
+CI is an automated validation gate, not the physical-acceptance gate. When an approved GitHub Issue/work package requires real hardware acceptance, its operational Issue status should remain **`status:needs-hardware-test`** after implementation/CI until the required physical evidence is recorded and the Project Manager decides pass/fail. The GitHub Project should mirror Needs Hardware Test when practical.
 
 A merged PR or green CI must not auto-close a hardware-dependent Issue when real-hardware acceptance is still outstanding.
 
@@ -203,7 +203,7 @@ Use `TEST_DEBT_AUDIT.md` to distinguish high-value automatable gaps from require
 
 Automated tests cannot replace real hardware and child usability checks.
 
-When a GitHub Issue exists for a hardware-dependent change, attach/comment/reference the relevant report/session/evidence there and keep the Project item in **Needs Hardware Test** until the Project Manager closes the gate. Do not auto-close such an Issue solely from a merged PR or green CI.
+When a GitHub Issue exists for a hardware-dependent change, attach/comment/reference the relevant report/session/evidence there and keep the Issue at **`status:needs-hardware-test`** until the Project Manager closes the gate. Keep the Project board mirror in Needs Hardware Test when practical. Do not auto-close such an Issue solely from a merged PR or green CI.
 
 ### Guitar checklist
 

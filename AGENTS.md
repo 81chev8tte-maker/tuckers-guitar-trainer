@@ -69,11 +69,12 @@ Use this hierarchy:
 
 1. **Permanent documentation** (`PROJECT.md`, `DECISIONS.md`, `ROADMAP.md`, `TECHNICAL_DEBT.md`, feature specs) — durable product truth, architecture direction, roadmap, debt and long-lived decisions.
 2. **GitHub Issues** — actionable work packages, reproducible bugs/findings, hardware findings ready for prioritization, or explicit acceptance tasks.
-3. **GitHub Project** — execution state only. Preferred states: Backlog → Ready → In Progress → Needs Hardware Test → Done.
-4. **Pull Requests** — focused implementation/change record tied to an Issue when one exists.
-5. **CI** — automated validation gate.
-6. **Hardware reports/manual testing** — physical acceptance evidence.
-7. **Project Manager** — final scope, priority, release grouping and pass/fail authority.
+3. **Issue execution status** — exactly one agent-manageable `status:*` label on each actionable Issue: `status:backlog` → `status:ready` → `status:in-progress` → `status:needs-hardware-test` → `status:done`.
+4. **GitHub Project** — visual planning view. Its Backlog → Ready → In Progress → Needs Hardware Test → Done state should mirror the Issue status label when practical.
+5. **Pull Requests** — focused implementation/change record tied to an Issue when one exists.
+6. **CI** — automated validation gate.
+7. **Hardware reports/manual testing** — physical acceptance evidence.
+8. **Project Manager** — final scope, priority, release grouping and pass/fail authority.
 
 Issues must not replace or become a duplicate copy of `ROADMAP.md`, `TECHNICAL_DEBT.md`, feature specifications, or product decisions. Do not mass-create Issues from every idea/debt/spec item. Create an Issue when work is concrete enough to prioritize, implement, reproduce, or accept.
 
@@ -81,11 +82,15 @@ Issues must not replace or become a duplicate copy of `ROADMAP.md`, `TECHNICAL_D
 
 An Issue existing does **not** mean it is approved implementation scope.
 
-- **Backlog** — actionable, but not approved for immediate implementation.
-- **Ready** — the Project Manager has approved the Issue as the current work package/release boundary.
-- **In Progress** — an agent is actively working it.
-- **Needs Hardware Test** — implementation/CI is complete, but physical acceptance remains outstanding.
-- **Done** — all required implementation and acceptance gates are complete.
+Use exactly one execution-status label on each actionable Issue:
+
+- **`status:backlog`** — actionable, but not approved for immediate implementation.
+- **`status:ready`** — the Project Manager has approved the Issue as the current work package/release boundary.
+- **`status:in-progress`** — an agent is actively working it.
+- **`status:needs-hardware-test`** — implementation/CI is complete, but physical acceptance remains outstanding.
+- **`status:done`** — all required implementation and acceptance gates are complete.
+
+The `status:*` label is the current agent-manageable operational source of execution state. The GitHub Project remains the visual planning view and should be kept aligned when practical; lack of immediate Project-board synchronization must not prevent agents from recording the true operational state on the Issue.
 
 A Build Agent should normally receive a compact handoff such as:
 
@@ -114,13 +119,13 @@ Real Chromebook/instrument findings should become Issues when they expose a repr
 
 Do not create an Issue for every test observation. The Project Manager should consolidate related evidence when that creates a clearer work package.
 
-CI completion and hardware acceptance are separate gates. An Issue may remain **Needs Hardware Test** after a PR is merged or implementation is otherwise technically complete. Automated tests must never be treated as proof of microphone/MIDI/USB behavior, Chromebook performance, perceived latency, readability, musical feel, audio quality, or child usability.
+CI completion and hardware acceptance are separate gates. An Issue may remain **`status:needs-hardware-test`** after a PR is merged or implementation is otherwise technically complete. Automated tests must never be treated as proof of microphone/MIDI/USB behavior, Chromebook performance, perceived latency, readability, musical feel, audio quality, or child usability.
 
-The current v2.6.8 Monday hardware-acceptance gate remains the active product gate. Do not pre-create speculative bug Issues for failures not actually observed, and do not mark Bass Quest Ready merely because it is NEXT in the roadmap.
+The current Chromebook hardware/child-usability acceptance gate tracked by Issue #22 remains the active product gate. Testing should use the current deployed release baseline. Do not pre-create speculative bug Issues for failures not actually observed, and do not mark Bass Quest Ready merely because it is NEXT in the roadmap.
 
-### Minimal label convention
+### Label convention
 
-Use labels sparingly for useful category/risk filtering rather than duplicating Project status. Preferred labels are:
+Use category/risk labels sparingly for useful filtering. Preferred category/risk labels are:
 
 - `bug`
 - `hardware-test`
@@ -135,7 +140,15 @@ Use labels sparingly for useful category/risk filtering rather than duplicating 
 - `future`
 - `blocker`
 
-Reuse existing equivalent labels rather than creating duplicates. Status belongs primarily in the GitHub Project, not in Ready/In Progress/etc. labels.
+Execution status is separate from category/risk labels. Use exactly one of:
+
+- `status:backlog`
+- `status:ready`
+- `status:in-progress`
+- `status:needs-hardware-test`
+- `status:done`
+
+Reuse existing equivalent category/risk labels rather than creating duplicates. The Project board should mirror the operational `status:*` label when practical rather than competing with it as a second source of truth.
 
 ## Feature-specific required-reading map
 
@@ -347,8 +360,8 @@ Future project-management agents should:
 - keep release scope focused;
 - decide whether a proposal/finding is durable documentation, an actionable Issue, or neither;
 - use GitHub Issues as the normal execution handoff for approved actionable work;
-- mark work Ready only when the Project Manager has approved the Issue/work package;
-- keep GitHub Project state aligned with actual execution and hardware-acceptance status;
+- mark work `status:ready` only when the Project Manager has approved the Issue/work package;
+- keep exactly one `status:*` execution label on each actionable Issue and keep the GitHub Project mirror aligned when practical;
 - turn real-world findings into observable acceptance criteria and consolidate related evidence when useful;
 - prioritize foundational regressions before new roadmap expansion;
 - keep `ROADMAP.md`, `DECISIONS.md`, and `TECHNICAL_DEBT.md` current;

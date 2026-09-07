@@ -18,27 +18,30 @@ Repository documentation and GitHub have different jobs:
 
 - `PROJECT.md`, `DECISIONS.md`, `ROADMAP.md`, `TECHNICAL_DEBT.md`, and feature specifications remain the durable product/governance source of truth.
 - GitHub Issues are the normal actionable execution record for approved work packages, reproducible bugs/findings, and explicit acceptance tasks.
-- A simple GitHub Project tracks execution state.
-- Pull Requests record focused implementation/change sets.
-- CI records automated validation.
-- hardware reports and manual testing record physical acceptance evidence.
+- each actionable Issue carries exactly one agent-manageable `status:*` execution label;
+- the GitHub Project remains the visual planning view and should mirror Issue status when practical;
+- Pull Requests record focused implementation/change sets;
+- CI records automated validation;
+- hardware reports and manual testing record physical acceptance evidence;
 - the Project Manager decides scope, priority, release grouping, blocker status, and final pass/fail.
 
 Do not convert every roadmap idea, specification item, or debt entry into an Issue. Create an Issue when a topic becomes concrete enough to reproduce, prioritize, implement, or accept.
 
 ## Issue workflow
 
-Preferred Project states:
+Operational Issue status uses exactly one label from this sequence:
 
-**Backlog → Ready → In Progress → Needs Hardware Test → Done**
+**`status:backlog` → `status:ready` → `status:in-progress` → `status:needs-hardware-test` → `status:done`**
 
-- **Backlog** — actionable, but not approved for immediate implementation.
-- **Ready** — Project Manager-approved work package. This is the implementation authorization boundary for the Build Agent.
-- **In Progress** — an agent is actively working the approved Issue.
-- **Needs Hardware Test** — implementation/CI is complete, but required physical acceptance remains outstanding.
-- **Done** — all required implementation and acceptance gates are complete.
+- **`status:backlog`** — actionable, but not approved for immediate implementation.
+- **`status:ready`** — Project Manager-approved work package. This is the implementation authorization boundary for the Build Agent.
+- **`status:in-progress`** — an agent is actively working the approved Issue.
+- **`status:needs-hardware-test`** — implementation/CI is complete, but required physical acceptance remains outstanding.
+- **`status:done`** — all required implementation and acceptance gates are complete.
 
-For work that genuinely does not require hardware acceptance, In Progress may move directly to Done after normal completion gates.
+The `status:*` label is the current agent-manageable operational source of execution state. The GitHub Project remains the visual planning view with matching Backlog → Ready → In Progress → Needs Hardware Test → Done columns and should mirror the Issue status when practical. Until automated synchronization exists, temporary Project-board drift does not override the Issue's operational status label.
+
+For work that genuinely does not require hardware acceptance, `status:in-progress` may move directly to `status:done` after normal completion gates.
 
 An implementation-ready Issue should normally contain:
 
@@ -58,7 +61,7 @@ A normal handoff is deliberately compact:
 
 > Work GitHub Issue #XX. Read `AGENTS.md` and all required/relevant repository documentation first. Treat the Issue acceptance criteria as the approved implementation boundary. Open a focused PR after implementation and automated validation. Do not expand scope.
 
-An Issue in Backlog is **not** approved scope merely because it exists. Ready means approved.
+An Issue with `status:backlog` is **not** approved scope merely because it exists. `status:ready` means approved.
 
 ## Hardware findings and acceptance
 
@@ -75,15 +78,15 @@ Real Chromebook/instrument findings should become Issues when they expose a conc
 
 Do not create one Issue per observation automatically. Consolidate related findings when that produces a clearer work package.
 
-Automated completion and physical acceptance remain separate gates. If implementation is complete but hardware testing is still required, the PR may be merged when appropriate while the Issue/Project item remains **Needs Hardware Test**. Add or reference the physical evidence on the Issue, then let the Project Manager decide PASS/BLOCKER and move it to Done or back into focused follow-up work.
+Automated completion and physical acceptance remain separate gates. If implementation is complete but hardware testing is still required, the PR may be merged when appropriate while the Issue remains **`status:needs-hardware-test`**. Keep the Project mirror in Needs Hardware Test when practical. Add or reference the physical evidence on the Issue, then let the Project Manager decide PASS/BLOCKER and move it to `status:done` or back into focused follow-up work.
 
 CI does not prove microphone, MIDI, USB-audio behavior, target-Chromebook performance, perceived latency, readability, musical feel, audio quality, or child usability.
 
-The current **v2.6.8 Monday hardware-acceptance gate remains the active product gate**. This GitHub workflow does not pre-create speculative bug Issues or make Bass Quest Ready. Monday evidence should be recorded first; actionable findings can then become/refine Issues, while a clean acceptance result closes the gate through normal Project Manager judgment.
+The current Chromebook hardware/child-usability acceptance gate tracked by Issue #22 remains the active product gate. Physical acceptance should use the current deployed release baseline. This GitHub workflow does not pre-create speculative bug Issues or make Bass Quest Ready; actionable findings can become/refine focused Issues, while a clean acceptance result closes the gate through normal Project Manager judgment.
 
-## Minimal labels
+## Labels
 
-Labels are for useful category/risk filtering, not workflow status. Prefer a small convention and reuse existing equivalents:
+Category/risk labels are separate from execution status. Prefer a small convention and reuse existing equivalents:
 
 - `bug`
 - `hardware-test`
@@ -98,7 +101,15 @@ Labels are for useful category/risk filtering, not workflow status. Prefer a sma
 - `future`
 - `blocker`
 
-Do not add Ready/In Progress/etc. labels when the Project board already represents state.
+Every actionable Issue should also carry exactly one execution-status label:
+
+- `status:backlog`
+- `status:ready`
+- `status:in-progress`
+- `status:needs-hardware-test`
+- `status:done`
+
+Do not use category/risk labels as substitutes for workflow state. The GitHub Project should mirror the `status:*` label when practical rather than competing with it as an independent operational source.
 
 ## Phase 1 — Inspect
 
@@ -156,7 +167,7 @@ Rules:
 
 ## Phase 4 — Pull Request and automated validation
 
-When an Issue exists, the PR should reference it. Prefer GitHub closing syntax (`Closes #XX`) only when merging the PR really completes the Issue; if physical acceptance remains, use a non-closing reference such as `Refs #XX` so the Issue can remain in Needs Hardware Test.
+When an Issue exists, the PR should reference it. Prefer GitHub closing syntax (`Closes #XX`) only when merging the PR really completes the Issue; if physical acceptance remains, use a non-closing reference such as `Refs #XX` so the Issue can remain `status:needs-hardware-test`.
 
 PR descriptions should summarize:
 
@@ -212,7 +223,7 @@ A release touching these areas should include a short human acceptance checklist
 
 Real-world test results outrank an automated test that does not actually reproduce the problem.
 
-When a hardware-dependent Issue is implemented, keep it in **Needs Hardware Test** until the required evidence is recorded and the Project Manager closes the gate.
+When a hardware-dependent Issue is implemented, keep it **`status:needs-hardware-test`** until the required evidence is recorded and the Project Manager closes the gate. Keep the Project mirror aligned when practical.
 
 ## Phase 6 — Release notes and Issue closure
 
@@ -236,7 +247,7 @@ Every release report should include:
 
 Do not claim subjective musical/audio quality was verified if no human actually listened/tested it.
 
-Move the Issue to Done only after all required acceptance gates are satisfied. If physical evidence exposes a blocker, keep/reopen the actionable work rather than treating a green PR as product acceptance.
+Move an actionable Issue to `status:done` only after all required acceptance gates are satisfied. If physical evidence exposes a blocker, keep/reopen the actionable work rather than treating a green PR as product acceptance.
 
 ## Definition of Done
 
@@ -290,17 +301,17 @@ Owns:
 - release scope and grouping;
 - priorities;
 - Issue acceptance criteria;
-- moving actionable work to Ready;
+- moving actionable work to `status:ready`;
 - regression requirements;
 - roadmap;
 - whether hardware evidence is a blocker;
-- closing physical acceptance gates and deciding Done.
+- closing physical acceptance gates and deciding `status:done`.
 
 ### Build Agent
 
 Owns:
 
-- one approved Ready Issue/work package at a time;
+- one approved `status:ready` Issue/work package at a time;
 - repository inspection;
 - implementation;
 - automated tests;
@@ -310,7 +321,7 @@ Owns:
 - identification of technical risks;
 - technical completion report.
 
-The Build Agent must not treat a Backlog Issue as approved scope and does not get to dismiss real-world failures because tests pass.
+The Build Agent must not treat a `status:backlog` Issue as approved scope and does not get to dismiss real-world failures because tests pass.
 
 ### Advisor
 
