@@ -3,14 +3,14 @@ name: v2.6.10 branch maintenance
 on:
   push:
     branches:
-      - fix/v2.6.10-startup-home-player-safety
+      - "fix/v2.6.10-startup-home-player-safety"
 
 permissions:
   contents: write
 
 jobs:
   apply-and-validate:
-    if: github.actor != 'github-actions[bot]'
+    if: ${{ github.actor != 'github-actions[bot]' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -28,7 +28,8 @@ jobs:
         run: |
           node <<'NODE'
           const fs = require('fs');
-
+          const startupTestB64 = 'Y29uc3Qge3Rlc3QsZXhwZWN0fT1yZXF1aXJlKCdAcGxheXdyaWdodC90ZXN0Jyk7Cgphc3luYyBmdW5jdGlvbiBleHBlY3RDaG9vc2VyKHBhZ2UsbmFtZSl7CiAgYXdhaXQgZXhwZWN0KHBhZ2UuZ2V0QnlSb2xlKCdoZWFkaW5nJyx7bmFtZTonV2hhdCBhcmUgd2UgcGxheWluZyB0b2RheT8nfSkpLnRvQmVWaXNpYmxlKCk7CiAgYXdhaXQgZXhwZWN0KHBhZ2UubG9jYXRvcignI2luc3RydW1lbnRDaG9vc2VyIFtkYXRhLXBsYXllci1uYW1lXScpLmZpcnN0KCkpLnRvSGF2ZVRleHQobmFtZSk7CiAgYXdhaXQgZXhwZWN0KHBhZ2UubG9jYXRvcignI3BpYW5vQXBwJykpLnRvQmVIaWRkZW4oKTsKICBhd2FpdCBleHBlY3QocGFnZS5sb2NhdG9yKCcjZ2FtZVNjcmVlbicpKS50b0JlSGlkZGVuKCk7CiAgYXdhaXQgZXhwZWN0KHBhZ2UubG9jYXRvcignI3Jlc3VsdFNjcmVlbicpKS50b0JlSGlkZGVuKCk7CiAgYXdhaXQgZXhwZWN0KHBhZ2UubG9jYXRvcignYm9keScpKS5ub3QudG9IYXZlQ2xhc3MoL3BpYW5vLWFjdGl2ZS8pOwogIGNvbnN0IGJveD1hd2FpdCBwYWdlLmxvY2F0b3IoJyNpbnN0cnVtZW50Q2hvb3NlcicpLmJvdW5kaW5nQm94KCk7CiAgY29uc3Qgdmlld3BvcnQ9cGFnZS52aWV3cG9ydFNpemUoKTsKICBleHBlY3QoYm94KS5ub3QudG9CZU51bGwoKTsKICBleHBlY3QoYm94LndpZHRoKS50b0JlR3JlYXRlclRoYW4odmlld3BvcnQud2lkdGgqLjkpOwogIGV4cGVjdChib3guaGVpZ2h0KS50b0JlR3JlYXRlclRoYW4odmlld3BvcnQuaGVpZ2h0Ki45KTsKfQoKdGVzdCgnZnJlc2ggc2V0dXAgYW5kIHBlcnNpc3RlZCBzdGFydHVwcyBzdGF5IHByb2ZpbGUtc2FmZSBhdCB0aGUgaW5zdHJ1bWVudCBjaG9vc2VyJyxhc3luYyh7cGFnZSxjb250ZXh0fSk9PnsKICBhd2FpdCBwYWdlLmdvdG8oJy8nKTsKICBhd2FpdCBleHBlY3QocGFnZS5nZXRCeVJvbGUoJ2hlYWRpbmcnLHtuYW1lOiJXaG8ncyBwbGF5aW5nPyJ9KSkudG9CZVZpc2libGUoKTsKICBhd2FpdCBleHBlY3QocGFnZS5sb2NhdG9yKCcjaW5zdHJ1bWVudENob29zZXInKSkudG9CZUhpZGRlbigpOwogIGF3YWl0IGV4cGVjdChwYWdlLmxvY2F0b3IoJyNwaWFub0FwcCcpKS50b0JlSGlkZGVuKCk7CgogIGF3YWl0IHBhZ2UuZ2V0QnlMYWJlbCgnWW91ciBuYW1lJykuZmlsbCgnU3RhcnR1cCBPbmUnKTsKICBhd2FpdCBwYWdlLmdldEJ5Um9sZSgnYnV0dG9uJyx7bmFtZTonQ29udGludWUnfSkuY2xpY2soKTsKICBhd2FpdCBwYWdlLmdldEJ5Um9sZSgnYnV0dG9uJyx7bmFtZTonU3RhcnQgUGxheWluZyd9KS5jbGljaygpOwogIGF3YWl0IGV4cGVjdENob29zZXIocGFnZSwnU3RhcnR1cCBPbmUnKTsKICBhd2FpdCBleHBlY3QocGFnZS5sb2NhdG9yKCcjaW5zdHJ1bWVudENob29zZXIgW2RhdGEtcGxheWVyLWF2YXRhcl0nKS5maXJzdCgpKS5ub3QudG9IYXZlVGV4dCgnJyk7CgogIGF3YWl0IHBhZ2UuZXZhbHVhdGUoKCk9PndpbmRvdy5GTVFQcm9maWxlcy5zYXZlSW5zdHJ1bWVudFByb2dyZXNzKCdndWl0YXInLHtzdGFydHVwTWFya2VyOidwcm9maWxlLW9uZSd9KSk7CgogIGF3YWl0IHBhZ2UubG9jYXRvcignI3Byb2ZpbGVNZW51QnV0dG9uJykuY2xpY2soKTsKICBhd2FpdCBwYWdlLmdldEJ5Um9sZSgnYnV0dG9uJyx7bmFtZTovQWRkIFBsYXllci99KS5jbGljaygpOwogIGF3YWl0IHBhZ2UuZ2V0QnlMYWJlbCgnWW91ciBuYW1lJykuZmlsbCgnU3RhcnR1cCBUd28nKTsKICBhd2FpdCBwYWdlLmdldEJ5Um9sZSgnYnV0dG9uJyx7bmFtZTonQ29udGludWUnfSkuY2xpY2soKTsKICBhd2FpdCBwYWdlLmdldEJ5Um9sZSgnYnV0dG9uJyx7bmFtZTonU3RhcnQgUGxheWluZyd9KS5jbGljaygpOwogIGF3YWl0IGV4cGVjdENob29zZXIocGFnZSwnU3RhcnR1cCBUd28nKTsKICBleHBlY3QoYXdhaXQgcGFnZS5ldmFsdWF0ZSgoKT0+d2luZG93LkZNUVByb2ZpbGVzLmdldEluc3RydW1lbnRQcm9ncmVzcygnZ3VpdGFyJykpKS50b0JlKG51bGwpOwoKICBhd2FpdCBwYWdlLmxvY2F0b3IoJyNwcm9maWxlTWVudUJ1dHRvbicpLmNsaWNrKCk7CiAgYXdhaXQgcGFnZS5nZXRCeVJvbGUoJ2J1dHRvbicse25hbWU6L1N0YXJ0dXAgT25lL30pLmNsaWNrKCk7CiAgYXdhaXQgZXhwZWN0Q2hvb3NlcihwYWdlLCdTdGFydHVwIE9uZScpOwogIGV4cGVjdChhd2FpdCBwYWdlLmV2YWx1YXRlKCgpPT53aW5kb3cuRk1RUHJvZmlsZXMuZ2V0SW5zdHJ1bWVudFByb2dyZXNzKCdndWl0YXInKT8uc3RhcnR1cE1hcmtlcikpLnRvQmUoJ3Byb2ZpbGUtb25lJyk7CgogIGF3YWl0IHBhZ2UuZ2V0QnlSb2xlKCdidXR0b24nLHtuYW1lOi9HdWl0YXIgUXVlc3QgTGVhcm4gZ3VpdGFyL30pLmNsaWNrKCk7CiAgYXdhaXQgZXhwZWN0KHBhZ2UuZ2V0QnlSb2xlKCdoZWFkaW5nJyx7bmFtZTonTGVhcm4gZ3VpdGFyIGJ5IGFjdHVhbGx5IHBsYXlpbmcgZ3VpdGFyLid9KSkudG9CZVZpc2libGUoKTsKICBhd2FpdCBwYWdlLmV2YWx1YXRlKCgpPT57d2luZG93LkZNUUd1aXRhclRlc3Quc3RhcnRUZXN0Q291bnRkb3duKDYwLDEpO3JldHVybiB0cnVlO30pOwogIGF3YWl0IGV4cGVjdC5wb2xsKCgpPT5wYWdlLmV2YWx1YXRlKCgpPT53aW5kb3cuRk1RR3VpdGFyVGVzdC5pc0NvdW50ZG93bkFjdGl2ZSgpKSkudG9CZSh0cnVlKTsKICBhd2FpdCBwYWdlLmdldEJ5Um9sZSgnYnV0dG9uJyx7bmFtZTon8J+OtSBJbnN0cnVtZW50cyd9KS5maXJzdCgpLmNsaWNrKCk7CiAgYXdhaXQgZXhwZWN0Q2hvb3NlcihwYWdlLCdTdGFydHVwIE9uZScpOwogIGF3YWl0IGV4cGVjdC5wb2xsKCgpPT5wYWdlLmV2YWx1YXRlKCgpPT53aW5kb3cuRk1RR3VpdGFyVGVzdC5pc0NvdW50ZG93bkFjdGl2ZSgpKSkudG9CZShmYWxzZSk7CiAgZXhwZWN0KGF3YWl0IHBhZ2UuZXZhbHVhdGUoKCk9PmxvY2FsU3RvcmFnZS5nZXRJdGVtKCdmYW1pbHktbXVzaWMtaW5zdHJ1bWVudC12MScpKSkudG9CZSgnZ3VpdGFyJyk7CgogIGF3YWl0IHBhZ2UucmVsb2FkKCk7CiAgYXdhaXQgZXhwZWN0Q2hvb3NlcihwYWdlLCdTdGFydHVwIE9uZScpOwoKICBhd2FpdCBwYWdlLmdldEJ5Um9sZSgnYnV0dG9uJyx7bmFtZTovUGlhbm8gUXVlc3QgTGVhcm4gcGlhbm8vfSkuY2xpY2soKTsKICBhd2FpdCBleHBlY3QocGFnZS5nZXRCeVJvbGUoJ2hlYWRpbmcnLHtuYW1lOidMZWFybiBwaWFubyBvbmUgbm90ZSBhdCBhIHRpbWUuJ30pKS50b0JlVmlzaWJsZSgpOwogIGV4cGVjdChhd2FpdCBwYWdlLmV2YWx1YXRlKCgpPT5sb2NhbFN0b3JhZ2UuZ2V0SXRlbSgnZmFtaWx5LW11c2ljLWluc3RydW1lbnQtdjEnKSkpLnRvQmUoJ3BpYW5vJyk7CiAgYXdhaXQgcGFnZS5sb2NhdG9yKCcjcGlhbm9Td2l0Y2hJbnN0cnVtZW50JykuY2xpY2soKTsKICBhd2FpdCBleHBlY3RDaG9vc2VyKHBhZ2UsJ1N0YXJ0dXAgT25lJyk7CgogIGF3YWl0IHBhZ2UuZ2V0QnlSb2xlKCdidXR0b24nLHtuYW1lOi9QaWFubyBRdWVzdCBMZWFybiBwaWFuby99KS5jbGljaygpOwogIGF3YWl0IGV4cGVjdChwYWdlLmdldEJ5Um9sZSgnaGVhZGluZycse25hbWU6J0xlYXJuIHBpYW5vIG9uZSBub3RlIGF0IGEgdGltZS4nfSkpLnRvQmVWaXNpYmxlKCk7CiAgYXdhaXQgcGFnZS5yZWxvYWQoKTsKICBhd2FpdCBleHBlY3RDaG9vc2VyKHBhZ2UsJ1N0YXJ0dXAgT25lJyk7CgogIGNvbnN0IHJlb3BlbmVkPWF3YWl0IGNvbnRleHQubmV3UGFnZSgpOwogIGF3YWl0IHJlb3BlbmVkLmdvdG8oJy8nKTsKICBhd2FpdCBleHBlY3RDaG9vc2VyKHJlb3BlbmVkLCdTdGFydHVwIE9uZScpOwogIGF3YWl0IHJlb3BlbmVkLmNsb3NlKCk7Cn0pOwo=';
+          const changelogEntryB64 = 'IyMgdjIuNi4xMCDigJQgU3RhcnR1cCBIb21lICYgUGxheWVyIFNhZmV0eSBGaXgKCi0gRml4ZWQgc3RhcnR1cCBuYXZpZ2F0aW9uIHNvIGFuIGV4aXN0aW5nIGFjdGl2ZSBwcm9maWxlIGNvbGQtbGF1bmNoZXMvcmVsb2FkcyBhdCB0aGUgRmFtaWx5IE11c2ljIFF1ZXN0IGluc3RydW1lbnQgY2hvb3NlciBpbnN0ZWFkIG9mIGF1dG9tYXRpY2FsbHkgcmVvcGVuaW5nIHRoZSBsYXN0IEd1aXRhciBvciBQaWFubyBkZXN0aW5hdGlvbi4KLSBLZXB0IGZpcnN0LXJ1biBXaG8ncyBQbGF5aW5nPyBzZXR1cCBpbnRhY3QgYW5kIG1hZGUgdGhlIGNob29zZXIgdGhlIGV4cGxpY2l0IHN0YXJ0dXAgaG9tZSB3aXRoIHRoZSBhY3RpdmUgcGxheWVyIGlkZW50aXR5IGFuZCBwbGF5ZXItc3dpdGNoIGNvbnRyb2wgdmlzaWJsZSBiZWZvcmUgaW5zdHJ1bWVudCBzZWxlY3Rpb24uCi0gUmV1c2VkIHRoZSBleGlzdGluZyBHdWl0YXIvUGlhbm8gSG9tZSBsaWZlY3ljbGUgY2xlYW51cCB3aGVuIHJldHVybmluZyB0byBJbnN0cnVtZW50czsgbm8gc2NvcmluZywgaW5wdXQsIHRpbWluZywgaW1wb3J0LCBTb25nYm9vayBvciBwcm9maWxlLXNhdmUgc2NoZW1hIGJlaGF2aW9yIGNoYW5nZWQuCi0gQWRkZWQgUGxheXdyaWdodCBjb3ZlcmFnZSBmb3IgZnJlc2ggc2V0dXAsIHR3by1wcm9maWxlIHN3aXRjaGluZywgcGVyc2lzdGVkIHByb2dyZXNzIGlzb2xhdGlvbiwgR3VpdGFyL1BpYW5vIGVudHJ5LCBIb21lIGNsZWFudXAsIHJlbG9hZC9uZXctcGFnZSBzdGFydHVwIGFuZCByZWplY3Rpb24gb2YgbGFzdC1pbnN0cnVtZW50IGF1dG8tcmVzdW1lLgotIEFkdmFuY2VkIHBhY2thZ2UvYXBwL1BXQSBhc3NldCBhbmQgc2VydmljZS13b3JrZXIgdmVyc2lvbmluZyB0byB2Mi42LjEwLiBQaHlzaWNhbCBpbnN0YWxsZWQtUFdBIHJlbGF1bmNoIGFjY2VwdGFuY2Ugb24gdGhlIERlbGwgQ2hyb21lYm9vayByZW1haW5zIHJlcXVpcmVkIGJlZm9yZSBJc3N1ZSAjMjYgaXMgY2xvc2VkLgoK';
           function read(file) { return fs.readFileSync(file, 'utf8'); }
           function write(file, text) { fs.writeFileSync(file, text); }
           function replaceOnce(text, from, to, label) {
@@ -45,122 +46,24 @@ jobs:
 
           let app = read('app.js');
           app = replaceOnce(app, "const APP_VERSION = '2.6.9';", "const APP_VERSION = '2.6.10';", 'app version');
-          app = replaceOnce(
-            app,
-            "window.addEventListener('family-music:profile-changing', stopForProfileChange);\n  window.addEventListener('family-music:profile-changed', reloadActiveProfile);",
-            "window.addEventListener('family-music:profile-changing', stopForProfileChange);\n  window.addEventListener('family-music:show-home', stopForProfileChange);\n  window.addEventListener('family-music:profile-changed', reloadActiveProfile);",
-            'home cleanup listener'
-          );
+          app = replaceOnce(app, "window.addEventListener('family-music:profile-changing', stopForProfileChange);\n  window.addEventListener('family-music:profile-changed', reloadActiveProfile);", "window.addEventListener('family-music:profile-changing', stopForProfileChange);\n  window.addEventListener('family-music:show-home', stopForProfileChange);\n  window.addEventListener('family-music:profile-changed', reloadActiveProfile);", 'home cleanup listener');
           app = replaceOnce(app, "navigator.serviceWorker.register('./sw.js?v=2.6.9')", "navigator.serviceWorker.register('./sw.js?v=2.6.10')", 'service worker registration');
           write('app.js', app);
 
-          for (const file of [
-            'index.html',
-            'sw.js',
-            'pwa-assets.test.js',
-            'guided-hardware-acceptance.js',
-            'guided-hardware-acceptance.test.js',
-            'package.json',
-            'package-lock.json'
-          ]) replaceAllVersion(file);
+          for (const file of ['index.html','sw.js','pwa-assets.test.js','guided-hardware-acceptance.js','guided-hardware-acceptance.test.js','package.json','package-lock.json']) replaceAllVersion(file);
 
           let smoke = read('browser-tests/app-smoke.spec.js');
-          smoke = replaceOnce(
-            smoke,
-            "  await page.reload();\n  await expect(page.getByText('Ready, Browser Test?')).toBeVisible();",
-            "  await page.reload();\n  await expect(page.getByRole('heading',{name:'What are we playing today?'})).toBeVisible();\n  await expect(page.locator('#instrumentChooser [data-player-name]').first()).toHaveText('Browser Test');\n  await expect(page.locator('#pianoApp')).toBeHidden();\n  await expect(page.locator('body')).not.toHaveClass(/piano-active/);",
-            'app smoke reload expectation'
-          );
+          smoke = replaceOnce(smoke, "  await page.reload();\n  await expect(page.getByText('Ready, Browser Test?')).toBeVisible();", "  await page.reload();\n  await expect(page.getByRole('heading',{name:'What are we playing today?'})).toBeVisible();\n  await expect(page.locator('#instrumentChooser [data-player-name]').first()).toHaveText('Browser Test');\n  await expect(page.locator('#pianoApp')).toBeHidden();\n  await expect(page.locator('body')).not.toHaveClass(/piano-active/);", 'app smoke reload expectation');
           smoke = smoke.replaceAll("expect(report.appVersion).toBe('2.6.9');", "expect(report.appVersion).toBe('2.6.10');");
           write('browser-tests/app-smoke.spec.js', smoke);
 
-          const startupTest = `const {test,expect}=require('@playwright/test');
-
-async function expectChooser(page,name){
-  await expect(page.getByRole('heading',{name:'What are we playing today?'})).toBeVisible();
-  await expect(page.locator('#instrumentChooser [data-player-name]').first()).toHaveText(name);
-  await expect(page.locator('#pianoApp')).toBeHidden();
-  await expect(page.locator('#gameScreen')).toBeHidden();
-  await expect(page.locator('#resultScreen')).toBeHidden();
-  await expect(page.locator('body')).not.toHaveClass(/piano-active/);
-  const box=await page.locator('#instrumentChooser').boundingBox();
-  const viewport=page.viewportSize();
-  expect(box).not.toBeNull();
-  expect(box.width).toBeGreaterThan(viewport.width*.9);
-  expect(box.height).toBeGreaterThan(viewport.height*.9);
-}
-
-test('fresh setup and persisted startups stay profile-safe at the instrument chooser',async({page,context})=>{
-  await page.goto('/');
-  await expect(page.getByRole('heading',{name:"Who's playing?"})).toBeVisible();
-  await expect(page.locator('#instrumentChooser')).toBeHidden();
-  await expect(page.locator('#pianoApp')).toBeHidden();
-
-  await page.getByLabel('Your name').fill('Startup One');
-  await page.getByRole('button',{name:'Continue'}).click();
-  await page.getByRole('button',{name:'Start Playing'}).click();
-  await expectChooser(page,'Startup One');
-  await expect(page.locator('#instrumentChooser [data-player-avatar]').first()).not.toHaveText('');
-
-  await page.evaluate(()=>window.FMQProfiles.saveInstrumentProgress('guitar',{startupMarker:'profile-one'}));
-
-  await page.locator('#profileMenuButton').click();
-  await page.getByRole('button',{name:/Add Player/}).click();
-  await page.getByLabel('Your name').fill('Startup Two');
-  await page.getByRole('button',{name:'Continue'}).click();
-  await page.getByRole('button',{name:'Start Playing'}).click();
-  await expectChooser(page,'Startup Two');
-  expect(await page.evaluate(()=>window.FMQProfiles.getInstrumentProgress('guitar'))).toBe(null);
-
-  await page.locator('#profileMenuButton').click();
-  await page.getByRole('button',{name:/Startup One/}).click();
-  await expectChooser(page,'Startup One');
-  expect(await page.evaluate(()=>window.FMQProfiles.getInstrumentProgress('guitar')?.startupMarker)).toBe('profile-one');
-
-  await page.getByRole('button',{name:/Guitar Quest Learn guitar/}).click();
-  await expect(page.getByRole('heading',{name:'Learn guitar by actually playing guitar.'})).toBeVisible();
-  await page.evaluate(()=>{window.FMQGuitarTest.startTestCountdown(60,1);return true;});
-  await expect.poll(()=>page.evaluate(()=>window.FMQGuitarTest.isCountdownActive())).toBe(true);
-  await page.getByRole('button',{name:'🎵 Instruments'}).first().click();
-  await expectChooser(page,'Startup One');
-  await expect.poll(()=>page.evaluate(()=>window.FMQGuitarTest.isCountdownActive())).toBe(false);
-  expect(await page.evaluate(()=>localStorage.getItem('family-music-instrument-v1'))).toBe('guitar');
-
-  await page.reload();
-  await expectChooser(page,'Startup One');
-
-  await page.getByRole('button',{name:/Piano Quest Learn piano/}).click();
-  await expect(page.getByRole('heading',{name:'Learn piano one note at a time.'})).toBeVisible();
-  expect(await page.evaluate(()=>localStorage.getItem('family-music-instrument-v1'))).toBe('piano');
-  await page.locator('#pianoSwitchInstrument').click();
-  await expectChooser(page,'Startup One');
-
-  await page.getByRole('button',{name:/Piano Quest Learn piano/}).click();
-  await expect(page.getByRole('heading',{name:'Learn piano one note at a time.'})).toBeVisible();
-  await page.reload();
-  await expectChooser(page,'Startup One');
-
-  const reopened=await context.newPage();
-  await reopened.goto('/');
-  await expectChooser(reopened,'Startup One');
-  await reopened.close();
-});
-`;
-          write('browser-tests/startup-navigation.spec.js', startupTest);
+          write('browser-tests/startup-navigation.spec.js', Buffer.from(startupTestB64, 'base64').toString('utf8'));
 
           let changelog = read('CHANGELOG.md');
           const heading = '# Changelog\n\n';
           if (!changelog.startsWith(heading)) throw new Error('Unexpected CHANGELOG heading');
-          const entry = `## v2.6.10 — Startup Home & Player Safety Fix
-
-- Fixed startup navigation so an existing active profile cold-launches/reloads at the Family Music Quest instrument chooser instead of automatically reopening the last Guitar or Piano destination.
-- Kept first-run Who's Playing? setup intact and made the chooser the explicit startup home with the active player identity and player-switch control visible before instrument selection.
-- Reused the existing Guitar/Piano Home lifecycle cleanup when returning to Instruments; no scoring, input, timing, import, Songbook or profile-save schema behavior changed.
-- Added Playwright coverage for fresh setup, two-profile switching, persisted progress isolation, Guitar/Piano entry, Home cleanup, reload/new-page startup and rejection of last-instrument auto-resume.
-- Advanced package/app/PWA asset and service-worker versioning to v2.6.10. Physical installed-PWA relaunch acceptance on the Dell Chromebook remains required before Issue #26 is closed.
-
-`;
-          changelog = heading + entry + changelog.slice(heading.length);
+          const entry = Buffer.from(changelogEntryB64, 'base64').toString('utf8');
+          if (!changelog.includes('## v2.6.10 — Startup Home & Player Safety Fix')) changelog = heading + entry + changelog.slice(heading.length);
           write('CHANGELOG.md', changelog);
           NODE
 
@@ -182,15 +85,7 @@ test('fresh setup and persisted startups stay profile-safe at the instrument cho
       - name: Verify version alignment and focused diff
         shell: bash
         run: |
-          node <<'NODE'
-          const fs=require('fs');
-          const required=['package.json','package-lock.json','index.html','sw.js','app.js','pwa-assets.test.js','guided-hardware-acceptance.js','guided-hardware-acceptance.test.js'];
-          for(const file of required){
-            const text=fs.readFileSync(file,'utf8');
-            if(text.includes('2.6.9')) throw new Error(`${file} still contains active v2.6.9 release references`);
-          }
-          if(JSON.parse(fs.readFileSync('package.json','utf8')).version!=='2.6.10') throw new Error('package version mismatch');
-          NODE
+          node -e "const fs=require('fs'); for(const f of ['package.json','package-lock.json','index.html','sw.js','app.js','pwa-assets.test.js','guided-hardware-acceptance.js','guided-hardware-acceptance.test.js']) if(fs.readFileSync(f,'utf8').includes('2.6.9')) throw new Error(f+' still has v2.6.9'); if(require('./package.json').version!=='2.6.10') throw new Error('package version mismatch')"
           git diff --check
           git status --short
 
