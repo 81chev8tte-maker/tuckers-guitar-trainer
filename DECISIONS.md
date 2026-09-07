@@ -2,6 +2,20 @@
 
 This file records durable product/architecture decisions that future agents should not accidentally undo. Add dated entries when a decision materially changes.
 
+## 2026-09 — FMQ should evolve toward an adaptive interactive teacher, not only a note-scoring game
+
+**Decision:** Family Music Quest should gradually evolve into a child-friendly interactive music teacher/game that combines motivation, clear teaching, adaptive practice, and real-instrument feedback. The product should increasingly help a learner understand what to learn next, what went wrong, what to practice, how to make that practice easier, and whether improvement is actually happening.
+
+**Implications:**
+
+- Prefer improvements that strengthen the teaching loop over features that merely make the application larger.
+- Build toward a loop of teach → demonstrate → try → listen → understandable feedback → identify weakness → focused practice → reduce assistance → complete performance → track improvement.
+- Shared infrastructure should support distinct Guitar, Piano, and future Bass learning identities rather than making the experiences identical.
+- Guitar may emphasize interactive song gameplay, Note Highway, tablature, riffs/chords, sections, timing and technique; Piano may emphasize guided teaching, reading, hands, rhythm, structured progression and reduced assistance; Bass should emphasize groove, roots/fifths/octaves, muting, drum timing, ensemble role and Bass-specific feel.
+- Yousician, Simply Piano / Simply Guitar, Rocksmith, and similar products are research references only, not specifications or feature-parity targets. Study useful concepts, implement independently when they fit FMQ, and respect licensing/copyright/trademark/IP requirements.
+- Core learning should remain local-first/offline-capable and should not require a subscription or cloud service. Optional future cloud features may be considered separately, but must not become a core-learning dependency unless the product owner explicitly changes this direction.
+- This decision is a long-term product filter, not implementation authorization. It does not reorder the current v2.6.8 hardware-acceptance → foundational stability → Bass-staging sequence.
+
 ## 2026-09 — Development save compatibility is not yet guaranteed
 
 **Decision:** During active development/testing, previous-release saves do not require guaranteed compatibility across releases.

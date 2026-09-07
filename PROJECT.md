@@ -29,6 +29,77 @@ Family Music Quest should:
 - maintain independent player progress;
 - provide useful practice intelligence without overwhelming children with technical detail.
 
+## Long-term teaching-system direction
+
+Family Music Quest should gradually evolve into a highly effective, child-friendly **interactive music teacher/game** that combines motivation, clear teaching, adaptive practice, and real-instrument feedback while preserving FMQ's own architecture, hardware constraints, product identity, and instrument-specific learning design.
+
+The long-term learning loop is:
+
+> **teach → demonstrate → let the child try → listen → give understandable feedback → identify the weak area → offer focused practice → gradually reduce assistance → perform the complete musical material → track improvement**
+
+Future learning systems should increasingly help answer:
+
+- What should I learn next?
+- What am I doing wrong?
+- What should I practice?
+- Can FMQ make that specific practice easier?
+- Am I actually improving?
+
+The product should not stop at answering only whether the child hit the right note.
+
+### Durable product filter
+
+**Prefer improvements that make FMQ better at teaching over features that merely make the application larger.**
+
+Useful future work may include clearer beginner onboarding, progressive assistance, stronger note/rhythm/tab/music-reading instruction, skill-based recommendations, automatic Trouble Spot Practice, parent/helper progress summaries, curriculum refinement, and better content-authoring support. These are directions to evaluate through normal roadmap/release governance, not automatic implementation scope.
+
+### Instrument-specific learning identity
+
+Shared infrastructure is encouraged where it reduces duplication or improves reliability, but shared systems must support instrument identity rather than flatten every instrument into the same learning experience.
+
+**Guitar Quest** may lean more heavily toward:
+
+- interactive song gameplay;
+- Note Highway and tablature;
+- riffs and chord shapes;
+- song sections;
+- timing and technique practice.
+
+**Piano Quest** may lean more heavily toward:
+
+- guided teaching;
+- note and music reading;
+- hand development;
+- rhythm;
+- structured progression;
+- progressively reduced assistance;
+- clear next-step instruction.
+
+**Future Bass Quest** should emphasize:
+
+- rhythm and groove;
+- roots, fifths and octaves;
+- muting;
+- timing with drums;
+- musical role in an ensemble;
+- Bass-specific technique and feel.
+
+### Competitive references are research references, not specifications
+
+Products such as Yousician, Simply Piano / Simply Guitar, Rocksmith, and similar applications may be studied for useful interaction, motivation, teaching, onboarding, scoring, progression, and practice concepts.
+
+Future agents should:
+
+- study useful concepts where appropriate;
+- independently implement only ideas that fit FMQ's children, hardware constraints, architecture, and product goals;
+- respect copyright, licensing, trademark, and other intellectual-property requirements;
+- reject features that do not serve FMQ merely because another product includes them;
+- avoid treating feature parity as a product goal.
+
+FMQ should preserve and build on its own differentiators, including one family-focused product with distinct Guitar/Piano/future Bass experiences, imported Guitar Pro/MusicXML/MIDI practice, musical sections and A/B loops, variable-speed practice, local profiles with independent instrument progress, microphone/USB/Web MIDI support, Chromebook-first performance, local-first/offline-capable PWA behavior, hardware diagnostics/validation, Smart Practice, and future Trouble Spot/Bass-groove systems.
+
+**Core learning should not require a subscription or cloud service.** Optional future cloud features may be considered separately when they clearly improve the product, but they must not become a dependency for core learning unless the product owner explicitly changes that direction.
+
 ## Durable feature specifications
 
 The repository contains focused planning/source-of-truth documents for major future systems. These capture product decisions and acceptance constraints so future agents do not have to reconstruct them from chat history.

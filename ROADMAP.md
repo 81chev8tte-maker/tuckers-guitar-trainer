@@ -23,6 +23,20 @@ Several later roadmap items now have dedicated planning/source-of-truth document
 
 These documents define intended direction and acceptance constraints; they do not move an item into immediate release scope by themselves.
 
+## Long-term product filter
+
+After current acceptance/stability gates are satisfied, later roadmap choices should be evaluated against FMQ's long-term goal of becoming a highly effective, child-friendly interactive music teacher/game rather than only a note-scoring application.
+
+Prefer work that strengthens the learning loop:
+
+> teach → demonstrate → try → listen → understandable feedback → identify weakness → focused practice → reduce assistance → complete performance → track improvement
+
+This filter should help prioritize later work such as Guided Hardware Setup, latency calibration, Trouble Spot Practice, progressive hints/assistance, stronger skill-based recommendations, parent/helper progress summaries, curriculum refinement, song/content authoring tools, and richer instrument-specific learning mechanics.
+
+Shared infrastructure should support distinct Guitar, Piano, and future Bass learning identities rather than flattening them into one identical experience. Competitor products may be studied for useful concepts, but feature parity is not a roadmap objective.
+
+**This long-term direction does not change the current NOW/NEXT sequence.** v2.6.8 real-hardware acceptance remains the active gate; foundational blockers still outrank expansion; Bass staging remains contingent on that gate clearing.
+
 ## NOW
 
 ### Run v2.6.8 Guided Hardware Acceptance and report transfer on real hardware
