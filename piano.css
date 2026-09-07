@@ -13,3 +13,13 @@ body.piano-active>.topbar,body.piano-active>main,body.piano-active>.bottom-nav{d
 .accompaniment-control input[type="range"]{width:72px}
 .piano-list-card.checkpoint{border-color:#f7c948;box-shadow:0 0 0 1px #f7c94833}.piano-list-card.fullSong{border-color:#8b7cf6}.falling-note small{display:block;font-size:.62em;line-height:1;opacity:.9}.piano-toolbar select{min-height:42px}
 .piano-effective-bpm{font-size:.7rem;color:var(--muted);font-weight:800;white-space:nowrap}
+
+
+/* v2.6.9 — Piano falling-note readability isolation.
+   Guitar's v2.6.4 target rule is scoped to #noteLayer. Keep the primary Piano
+   pitch label explicit here so legacy Guitar text color cannot leak into Piano. */
+.piano-game .falling-note{
+  color:#fff;
+  font-size:clamp(1.2rem,2.6vw,1.55rem);
+  text-shadow:0 2px 4px rgba(0,0,0,.9);
+}

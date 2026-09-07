@@ -196,7 +196,7 @@ test('guided Hardware Acceptance Test records evidence and supports project copy
   await expect(page.locator('#guidedSummary')).toContainText('Hardware test report saved');
 
   const report=await page.evaluate(()=>window.FMQGuidedHardwareTest.reportObject());
-  expect(report.appVersion).toBe('2.6.8');
+  expect(report.appVersion).toBe('2.6.9');
   expect(report.guidedAcceptance.version).toBe(2);
   expect(report.guidedAcceptance.sessionId).toMatch(/^FMQ-HW-\d{4}-\d{2}-\d{2}-\d{2,}$/);
   expect(report.guidedAcceptance.humanObservations.source).toBe('human');
