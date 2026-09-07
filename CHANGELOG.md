@@ -3,7 +3,7 @@
 ## v2.6.9 — Piano Falling-Note Readability Fix
 
 - Fixed a Dell Chromebook child-readability regression where shared Guitar `.falling-note` CSS left Piano targets with a transparent body and dark pitch text while the white border dominated the cue.
-- Added Piano-scoped falling-note presentation so right/left-hand targets retain their intended fills and pitch labels render larger, white and shadowed at playing distance.
+- Scoped the Guitar v2.6.4 falling-note override to the Guitar note layer and added Piano-scoped high-contrast pitch text so right/left-hand targets retain their intended fills without broad new `!important` overrides.
 - Preserved Piano scoring, input, timing, lanes, hand cues, Wait for Me, Rhythm and Listen First behavior, and preserved the current Guitar Highway presentation.
 - Added a Playwright computed-style regression that reproduces the v2.6.8 cascade failure and protects the corrected Piano target presentation.
 - Advanced package/app/PWA asset and service-worker versioning to v2.6.9. Physical Dell Chromebook visual acceptance remains required before Issue #23 is closed.

@@ -16,16 +16,10 @@ body.piano-active>.topbar,body.piano-active>main,body.piano-active>.bottom-nav{d
 
 
 /* v2.6.9 — Piano falling-note readability isolation.
-   Piano and Guitar currently share the legacy .falling-note class. Keep Piano
-   presentation explicitly scoped so Guitar Highway rules cannot erase the
-   Piano target fill or darken its primary pitch label. */
+   Guitar's v2.6.4 target rule is scoped to #noteLayer. Keep the primary Piano
+   pitch label explicit here so legacy Guitar text color cannot leak into Piano. */
 .piano-game .falling-note{
-  --string-color:#725cff;
   color:#fff;
   font-size:clamp(1.2rem,2.6vw,1.55rem);
   text-shadow:0 2px 4px rgba(0,0,0,.9);
 }
-.piano-game .falling-note.left{--string-color:#267cdd}
-.piano-game .falling-note.right{--string-color:#995de8}
-.piano-game .falling-note.hit{--string-color:#5ee38a}
-.piano-game .falling-note.missed{--string-color:#ff6b78}
