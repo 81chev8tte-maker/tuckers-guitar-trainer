@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const APP_VERSION = '2.6.9';
+  const APP_VERSION = '2.6.10';
   const DB_NAME = 'tucker-guitar-trainer';
   const DB_VERSION = 1;
   const STORE_SONGS = 'songs';
@@ -308,6 +308,7 @@
     $('#tunerToggle').textContent = 'Start Tuner';
   });
   window.addEventListener('family-music:profile-changing', stopForProfileChange);
+  window.addEventListener('family-music:show-home', stopForProfileChange);
   window.addEventListener('family-music:profile-changed', reloadActiveProfile);
 
   document.addEventListener('DOMContentLoaded', init);
@@ -2188,7 +2189,7 @@
   async function registerServiceWorker() {
     if (!('serviceWorker' in navigator)) return;
     try {
-      const reg = await navigator.serviceWorker.register('./sw.js?v=2.6.9');
+      const reg = await navigator.serviceWorker.register('./sw.js?v=2.6.10');
       reg.update().catch(() => null);
     } catch (err) { console.error(err); }
   }

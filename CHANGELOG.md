@@ -1,5 +1,13 @@
 # Changelog
 
+## v2.6.10 — Startup Home & Player Safety Fix
+
+- Fixed startup navigation so an existing active profile cold-launches/reloads at the Family Music Quest instrument chooser instead of automatically reopening the last Guitar or Piano destination.
+- Kept first-run Who's Playing? setup intact and made the chooser the explicit startup home with the active player identity and player-switch control visible before instrument selection.
+- Reused the existing Guitar/Piano Home lifecycle cleanup when returning to Instruments; no scoring, input, timing, import, Songbook or profile-save schema behavior changed.
+- Added Playwright coverage for fresh setup, two-profile switching, persisted progress isolation, Guitar/Piano entry, Home cleanup, reload/new-page startup and rejection of last-instrument auto-resume.
+- Advanced package/app/PWA asset and service-worker versioning to v2.6.10. Physical installed-PWA relaunch acceptance on the Dell Chromebook remains required before Issue #26 is closed.
+
 ## v2.6.9 — Piano Falling-Note Readability Fix
 
 - Fixed a Dell Chromebook child-readability regression where shared Guitar `.falling-note` CSS left Piano targets with a transparent body and dark pitch text while the white border dominated the cue.

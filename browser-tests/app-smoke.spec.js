@@ -29,7 +29,10 @@ test('profile, diagnostics, instrument switching, and Piano cleanup work',async(
   await page.locator('#pianoExitGame').click();
   await expect(page.locator('#pianoGame')).toBeHidden();
   await page.reload();
-  await expect(page.getByText('Ready, Browser Test?')).toBeVisible();
+  await expect(page.getByRole('heading',{name:'What are we playing today?'})).toBeVisible();
+  await expect(page.locator('#instrumentChooser [data-player-name]').first()).toHaveText('Browser Test');
+  await expect(page.locator('#pianoApp')).toBeHidden();
+  await expect(page.locator('body')).not.toHaveClass(/piano-active/);
 });
 
 test('browser target groups accept chord notes in any order',async({page})=>{
@@ -196,7 +199,7 @@ test('guided Hardware Acceptance Test records evidence and supports project copy
   await expect(page.locator('#guidedSummary')).toContainText('Hardware test report saved');
 
   const report=await page.evaluate(()=>window.FMQGuidedHardwareTest.reportObject());
-  expect(report.appVersion).toBe('2.6.9');
+  expect(report.appVersion).toBe('2.6.10');
   expect(report.guidedAcceptance.version).toBe(2);
   expect(report.guidedAcceptance.sessionId).toMatch(/^FMQ-HW-\d{4}-\d{2}-\d{2}-\d{2,}$/);
   expect(report.guidedAcceptance.humanObservations.source).toBe('human');
