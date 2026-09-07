@@ -16,50 +16,46 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: fix/23-piano-falling-note-readability
-      - name: Apply focused v2.6.9 changes
+      - name: Apply focused selector-isolation refinement
         shell: bash
         run: |
           python - <<'PY'
           from pathlib import Path
 
-          version_files = [
-              'package.json',
-              'package-lock.json',
-              'index.html',
-              'sw.js',
-              'app.js',
-              'guided-hardware-acceptance.js',
-              'pwa-assets.test.js',
-              'guided-hardware-acceptance.test.js',
-              'browser-tests/app-smoke.spec.js',
-          ]
-          for name in version_files:
-              path = Path(name)
-              text = path.read_text()
-              if '2.6.8' in text:
-                  path.write_text(text.replace('2.6.8', '2.6.9'))
+          styles = Path('styles.css')
+          text = styles.read_text()
+          old = '.falling-note{background:var(--string-color)!important;border:2px solid rgba(255,255,255,.95)!important;box-shadow:0 0 0 3px color-mix(in srgb,var(--string-color) 78%,#000 22%),0 5px 14px rgba(0,0,0,.34)!important}'
+          new = '#noteLayer .falling-note{background:var(--string-color)!important;border:2px solid rgba(255,255,255,.95)!important;box-shadow:0 0 0 3px color-mix(in srgb,var(--string-color) 78%,#000 22%),0 5px 14px rgba(0,0,0,.34)!important}'
+          if old not in text and new not in text:
+              raise SystemExit('Expected v2.6.4 Guitar falling-note rule was not found')
+          if old in text:
+              text = text.replace(old, new, 1)
+              styles.write_text(text)
 
           css = Path('piano.css')
           text = css.read_text()
-          marker = '/* v2.6.9 — Piano falling-note readability isolation */'
-          if marker not in text:
-              text += '''\n\n/* v2.6.9 — Piano falling-note readability isolation.\n   Piano and Guitar currently share the legacy .falling-note class. Keep Piano\n   presentation explicitly scoped so Guitar Highway rules cannot erase the\n   Piano target fill or darken its primary pitch label. */\n.piano-game .falling-note{\n  --string-color:#725cff;\n  color:#fff;\n  font-size:clamp(1.2rem,2.6vw,1.55rem);\n  text-shadow:0 2px 4px rgba(0,0,0,.9);\n}\n.piano-game .falling-note.left{--string-color:#267cdd}\n.piano-game .falling-note.right{--string-color:#995de8}\n.piano-game .falling-note.hit{--string-color:#5ee38a}\n.piano-game .falling-note.missed{--string-color:#ff6b78}\n'''
-              css.write_text(text)
+          old_block = '''/* v2.6.9 — Piano falling-note readability isolation.\n   Piano and Guitar currently share the legacy .falling-note class. Keep Piano\n   presentation explicitly scoped so Guitar Highway rules cannot erase the\n   Piano target fill or darken its primary pitch label. */\n.piano-game .falling-note{\n  --string-color:#725cff;\n  color:#fff;\n  font-size:clamp(1.2rem,2.6vw,1.55rem);\n  text-shadow:0 2px 4px rgba(0,0,0,.9);\n}\n.piano-game .falling-note.left{--string-color:#267cdd}\n.piano-game .falling-note.right{--string-color:#995de8}\n.piano-game .falling-note.hit{--string-color:#5ee38a}\n.piano-game .falling-note.missed{--string-color:#ff6b78}\n'''
+          new_block = '''/* v2.6.9 — Piano falling-note readability isolation.\n   Guitar's v2.6.4 target rule is scoped to #noteLayer. Keep the primary Piano\n   pitch label explicit here so legacy Guitar text color cannot leak into Piano. */\n.piano-game .falling-note{\n  color:#fff;\n  font-size:clamp(1.2rem,2.6vw,1.55rem);\n  text-shadow:0 2px 4px rgba(0,0,0,.9);\n}\n'''
+          if old_block in text:
+              text = text.replace(old_block, new_block, 1)
+          elif new_block not in text:
+              raise SystemExit('Expected v2.6.9 Piano isolation block was not found')
+          css.write_text(text)
 
           changelog = Path('CHANGELOG.md')
           text = changelog.read_text()
-          heading = '## v2.6.9 — Piano Falling-Note Readability Fix'
-          if heading not in text:
-              entry = '''## v2.6.9 — Piano Falling-Note Readability Fix\n\n- Fixed a Dell Chromebook child-readability regression where shared Guitar `.falling-note` CSS left Piano targets with a transparent body and dark pitch text while the white border dominated the cue.\n- Added Piano-scoped falling-note presentation so right/left-hand targets retain their intended fills and pitch labels render larger, white and shadowed at playing distance.\n- Preserved Piano scoring, input, timing, lanes, hand cues, Wait for Me, Rhythm and Listen First behavior, and preserved the current Guitar Highway presentation.\n- Added a Playwright computed-style regression that reproduces the v2.6.8 cascade failure and protects the corrected Piano target presentation.\n- Advanced package/app/PWA asset and service-worker versioning to v2.6.9. Physical Dell Chromebook visual acceptance remains required before Issue #23 is closed.\n\n'''
-              text = text.replace('# Changelog\n\n', '# Changelog\n\n' + entry, 1)
-              changelog.write_text(text)
+          text = text.replace(
+              '- Added Piano-scoped falling-note presentation so right/left-hand targets retain their intended fills and pitch labels render larger, white and shadowed at playing distance.',
+              '- Scoped the Guitar v2.6.4 falling-note override to the Guitar note layer and added Piano-scoped high-contrast pitch text so right/left-hand targets retain their intended fills without broad new `!important` overrides.'
+          )
+          changelog.write_text(text)
           PY
       - name: Commit focused branch changes
         shell: bash
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add package.json package-lock.json index.html sw.js app.js guided-hardware-acceptance.js pwa-assets.test.js guided-hardware-acceptance.test.js browser-tests/app-smoke.spec.js piano.css CHANGELOG.md
+          git add styles.css piano.css CHANGELOG.md
           git diff --cached --quiet && exit 0
-          git commit -m "fix: isolate Piano falling-note readability for v2.6.9"
+          git commit -m "fix: scope Guitar falling-note styles away from Piano"
           git push origin HEAD:fix/23-piano-falling-note-readability
