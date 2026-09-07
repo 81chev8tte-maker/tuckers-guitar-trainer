@@ -245,8 +245,8 @@
 
   function init() {
     $('#profileMenuButton').addEventListener('click', openManager);
-    updateIdentity();
-    if (!activeProfile()) showFirstRun(1);
+    if (activeProfile()) showHome();
+    else showFirstRun(1);
   }
 
   function escapeHtml(value) {
