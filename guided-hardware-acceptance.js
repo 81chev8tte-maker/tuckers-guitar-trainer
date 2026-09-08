@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const APP_VERSION = '2.6.11';
+  const APP_VERSION = '2.6.12';
   const RESULT_KEY = 'family-music-quest-hardware-results-v1';
   const CAL_KEY = 'family-music-quest-calibration-v1';
   const SESSION_COUNTER_KEY = 'family-music-quest-hardware-session-counter-v1';

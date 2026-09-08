@@ -162,6 +162,7 @@ Future releases should preserve or deliberately update protection for:
 - current backup/export/restore format behavior;
 - Smart Practice deterministic progression;
 - PWA cache/version consistency;
+- active-practice Screen Wake Lock request/release, visibility restoration and unsupported/denied graceful behavior;
 - browser navigation between instruments;
 - offline app-shell behavior.
 

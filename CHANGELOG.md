@@ -1,5 +1,13 @@
 # Changelog
 
+## v2.6.12 — Active Practice Screen Wake Lock
+
+- Added a standards-based Screen Wake Lock lifecycle through the existing shared hardware-services layer so active Guitar gameplay/count-in, active Piano gameplay/Wait-for-Me/listening, and active Guided Hardware Test tasks can keep the Chromebook display awake without synthetic activity.
+- Reused existing Guitar `.playing`, Piano game visibility and guided-test task state rather than adding a competing gameplay/session stack.
+- Releases the lock when active practice/test state ends and handles background visibility, browser/system release, unsupported API and request rejection without changing gameplay.
+- Added deterministic wake-lock lifecycle coverage plus Playwright integration checks for Guitar, Piano and Guided Hardware Test activation/cleanup.
+- Advanced package/app/PWA/report/cache versioning to v2.6.12. Physical Dell Chromebook dim/sleep acceptance remains required for Issue #30.
+
 ## v2.6.11 — Piano Microphone Practice Reliability
 
 - Preserved a deliberate/validated Piano microphone choice as a session-scoped input intent and reacquired microphone capture before compatible scored single-note runs, Restart and Play Again instead of silently reverting to screen-key-only input.

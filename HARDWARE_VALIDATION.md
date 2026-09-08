@@ -39,6 +39,7 @@ For every guided note record expected/detected note, frequency, cents, onset ind
 - Unplug/replug without refresh where Chrome supports it
 - Lessons, Wait for Me, Rhythm, imported MIDI, loop, speed, pause/resume, and profile switching
 - Microphone single-note input separately from MIDI
+- During active Guitar/Piano practice or an active guided hardware test, leave hands off the Chromebook long enough to cross the normal dim timeout and confirm the display remains awake; after exit/Home, confirm normal system dim/sleep is allowed again. Record this as physical evidence only — automation cannot approve it.
 
 ## Release result
 
