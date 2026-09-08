@@ -46,6 +46,16 @@ test('active Guitar and Piano practice request and release the screen wake lock'
   await page.locator('[data-song="nova-first-tune"][data-mode="wait"]').first().click();
   await expect(page.locator('#pianoGame')).toBeVisible();
   await expect.poll(()=>wakeRequests(page)).toBeGreaterThan(beforePiano);
+
+  const releasesBeforeFinish=await wakeReleases(page);
+  await page.evaluate(()=>window.NovaPianoTest.getCurrentGame().finish());
+  await expect(page.locator('.piano-result-panel')).toBeVisible();
+  await expect.poll(()=>wakeReleases(page)).toBeGreaterThan(releasesBeforeFinish);
+
+  const requestsBeforeReplay=await wakeRequests(page);
+  await page.locator('#pianoPlayAgain').click();
+  await expect.poll(()=>wakeRequests(page)).toBeGreaterThan(requestsBeforeReplay);
+
   const releasesBeforePianoExit=await wakeReleases(page);
   await page.locator('#pianoExitGame').click();
   await expect(page.locator('#pianoGame')).toBeHidden();
