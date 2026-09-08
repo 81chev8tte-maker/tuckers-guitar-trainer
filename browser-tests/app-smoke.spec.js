@@ -258,6 +258,7 @@ test('guided Hardware Acceptance Test records evidence and supports project copy
     Object.defineProperty(navigator,'share',{configurable:true,value:async data=>{window.__sharedData={title:data.title,text:data.text,files:await Promise.all((data.files||[]).map(async file=>({name:file.name,type:file.type,text:await file.text()})))};}});
   });
   await page.getByRole('button',{name:'Send Report to Parent'}).click();
+  await expect.poll(()=>page.evaluate(()=>Boolean(window.__sharedData))).toBe(true);
   const sharedData=await page.evaluate(()=>window.__sharedData);
   expect(sharedData.files).toHaveLength(2);
   expect(sharedData.files[0].name).toMatch(/\.json$/);
@@ -278,6 +279,7 @@ test('guided Hardware Acceptance Test records evidence and supports project copy
     Object.defineProperty(navigator,'share',{configurable:true,value:async data=>{window.__sharedData={text:data.text,files:await Promise.all((data.files||[]).map(async file=>({name:file.name,text:await file.text()})))};}});
   });
   await page.getByRole('button',{name:'Send Report to Parent'}).click();
+  await expect.poll(()=>page.evaluate(()=>Boolean(window.__sharedData))).toBe(true);
   const textFallback=await page.evaluate(()=>window.__sharedData);
   expect(textFallback.files).toHaveLength(1);
   expect(textFallback.files[0].name).toMatch(/-parent-report\.txt$/);
