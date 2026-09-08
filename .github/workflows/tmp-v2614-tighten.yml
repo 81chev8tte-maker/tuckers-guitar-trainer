@@ -1,0 +1,25 @@
+name: Temporary v2.6.14 tightening helper
+
+on:
+  push:
+    branches:
+      - release/v2.6.14-child-self-guided-hardware-tests
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    if: ${{ !startsWith(github.event.head_commit.message, 'v2.6.14: tighten') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: release/v2.6.14-child-self-guided-hardware-tests
+      - run: node tools/tmp-v2614-tighten.mjs
+      - run: |
+          git config user.name "81chev8tte-maker"
+          git config user.email "81chev8tte@gmail.com"
+          git add -A
+          git commit -m "v2.6.14: tighten Piano quick-test failure state"
+          git push origin HEAD:release/v2.6.14-child-self-guided-hardware-tests
