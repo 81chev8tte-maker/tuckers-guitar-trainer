@@ -66,9 +66,10 @@
       const refresh=()=>{
         const guitar=this.doc.querySelector('#gameScreen');
         const piano=this.doc.querySelector('#pianoGame');
+        const pianoResult=this.doc.querySelector('.piano-result-panel');
         const guided=this.doc.querySelector('#guidedTask');
         this.setActive('guitar-gameplay',visible(guitar)&&guitar.classList?.contains('playing'));
-        this.setActive('piano-gameplay',visible(piano));
+        this.setActive('piano-gameplay',visible(piano)&&!visible(pianoResult));
         this.setActive('guided-hardware-test',visible(guided));
       };
       this.observer=new MutationObserver(refresh);
