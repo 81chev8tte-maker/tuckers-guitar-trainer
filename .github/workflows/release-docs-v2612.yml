@@ -63,6 +63,6 @@ jobs:
         run: |
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          git add CHANGELOG.md ROADMAP.md ARCHITECTURE.md TESTING.md HARDWARE_VALIDATION.md .github/workflows/release-docs-v2612.yml
+          git add -A
           git commit -m "docs: record v2.6.12 wake lock release"
           git push
