@@ -56,7 +56,7 @@ The guided hardware/report-sharing foundation originated in v2.6.7/v2.6.8. Subse
 
 Issue #22 remains the broader acceptance gate. Physical testing should use the latest deployed maintenance baseline rather than an older historical release number. v2.6.11 addresses the newly observed Piano microphone input-state/response blocker in Issue #29, but remains subject to real Dell Chromebook microphone acceptance before that blocker is considered cleared.
 
-Issue #30 tracks the separate confirmed active-practice screen wake-lock blocker and remains Backlog until v2.6.11 reaches its acceptance boundary. Issue #24 remains a separate, non-blocking Backlog reporting issue about distinguishing an enumerated virtual/system MIDI endpoint from a verified playable keyboard. Issue #31 tracks later child-friendly report transfer/evidence-fidelity work. None of #24/#30/#31 is implemented as part of v2.6.11.
+Issue #30 is the focused v2.6.12 Active Practice Screen Wake Lock maintenance release, authorized as a testing-enabler while #29 still awaits physical evidence. After technical merge/deploy it remains subject to real Dell Chromebook wake-lock acceptance. Issue #24 remains a separate, non-blocking Backlog reporting issue about distinguishing an enumerated virtual/system MIDI endpoint from a verified playable keyboard. Issue #31 tracks child-friendly report transfer/evidence-fidelity work; its parent-transfer portion may follow only after v2.6.12 is technically complete. Neither #24 nor Bass work is included in this maintenance sequence.
 
 Primary acceptance goals remain:
 

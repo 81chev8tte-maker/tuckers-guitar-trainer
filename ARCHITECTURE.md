@@ -14,7 +14,7 @@ Primary entry/UI files include:
 - `styles.css` / `piano.css` / `piano-songbook.css` — Guitar/shared and Piano presentation.
 - `profiles.js` / `profiles.css` — local player profiles, player switching, per-instrument progress containers and player appearance.
 - `diagnostics.js` / `diagnostics.css` / `diagnostics-layer.css` — Hardware & Backup UI, calibration/reporting, backup/restore.
-- `hardware-services.js` — shared Web MIDI service.
+- `hardware-services.js` — shared Web MIDI service plus active-practice Screen Wake Lock lifecycle.
 - `practice-intelligence.js` — shared skill-history and Smart Practice helper logic.
 - `practice-tools.js` — shared practice timing/loop helpers.
 - `gameplay-rules.js` — deterministic gameplay rules including Piano target grouping and Guitar active-event summary behavior.
@@ -163,6 +163,8 @@ A successful Piano microphone test/selection establishes a session-scoped microp
 ### Web MIDI
 
 The shared `hardware-services.js` MIDI service exposes Note On/Off, velocity, channel, held notes/polyphony, sustain CC64 and connection state. Piano subscribes to this shared service during MIDI gameplay.
+
+The same shared hardware-services layer owns the standards-based Screen Wake Lock lifecycle. It derives wake-lock demand from established active UI state (Guitar `.playing`, visible Piano game, active Guided Hardware Test task), releases on inactive/navigation cleanup, and reacquires after visibility/system release only while the same logical active session still requires the display. Wake Lock failure is non-fatal and never changes scoring or input behavior.
 
 ### On-screen keyboard
 
