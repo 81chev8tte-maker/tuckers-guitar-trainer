@@ -63,7 +63,7 @@ A future backup redesign should explicitly distinguish progress/settings backup 
 
 ### Full guided hardware setup completeness
 
-v2.6.7/v2.6.8 now provide a child-friendly acceptance test, structured report, human evidence and local report transfer while preserving Advanced Diagnostics. The broader first-use hardware setup wizard remains later scope: connection-method selection, persistent readiness/setup reuse, richer recovery and optional future latency calibration are not implemented yet.
+v2.6.7/v2.6.8 established the child-friendly acceptance/report foundation, v2.6.13 simplified parent transfer, and v2.6.14 adds short self-guided Guitar microphone, monophonic Piano microphone and MIDI choices over the same production services/report session. The broader first-use Hardware Setup Wizard remains later scope: connection-method selection, persistent readiness/setup reuse, richer recovery and optional future latency calibration are not implemented by these quick acceptance tests.
 
 ## Opportunistic
 

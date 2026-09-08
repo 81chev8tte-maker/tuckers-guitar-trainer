@@ -1,5 +1,15 @@
 # Changelog
 
+## v2.6.14 — Child Self-Guided Hardware Tests
+
+- Renamed the child-facing guided entry to **Quick Hardware Tests** with obvious Guitar microphone, Piano microphone and MIDI keyboard choices.
+- Reused the existing guided Guitar and MIDI paths without changing detector/scoring behavior.
+- Added a guided monophonic Piano microphone check using the production Piano microphone detector: quiet baseline, C4–D4–E4–F4–G4 and repeated C4 with plain retry feedback.
+- Added structured guided Piano microphone evidence to the existing Hardware Validation session/report, so a completed guided check is no longer reported as unperformed while gameplay/perceived-response acceptance remains explicitly manual.
+- Made the existing five child questions follow successful real quick tests and made the existing v2.6.13 **Send Report to Parent** flow the obvious completion action.
+- No scoring windows, microphone thresholds, save schema, #24/#34 behavior, USB Guitar behavior, Bass work, or full Hardware Setup Wizard were added.
+- Physical Dell Chromebook microphone/child-usability/wake-lock/Gmail acceptance remains required.
+
 ## v2.6.13 — Child-Friendly Parent Report Transfer
 
 - Replaced the technical `Share Test Report` action with a child-readable `Send Report to Parent` flow using the native Web Share API.

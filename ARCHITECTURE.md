@@ -224,10 +224,12 @@ Smart Practice is a foundation rather than a complete autonomous teacher. Future
 
 Current capabilities include:
 
+- child-facing **Quick Hardware Tests** layered over the existing guided acceptance/report system for Guitar microphone, monophonic Piano microphone, and shared Web MIDI;
 - production Guitar microphone observation;
 - granted device/audio settings;
 - input level, detected pitch/note/cents, onset and scoreability status;
 - per-player saved microphone calibration record;
+- guided Piano microphone evidence that instantiates the production Piano microphone detector and consumes its already-gated stable/quiet readings rather than maintaining a second detector;
 - Web MIDI connection and live event diagnostics;
 - Note On/Off, velocity, held-note/polyphony and sustain observations;
 - local validation report export;

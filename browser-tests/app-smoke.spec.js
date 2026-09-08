@@ -139,11 +139,8 @@ test('guided Hardware Acceptance Test records evidence and supports project copy
   await page.getByRole('button',{name:'Continue'}).click();
   await page.getByRole('button',{name:'Start Playing'}).click();
   await page.getByRole('button',{name:/Hardware & Backup/}).click();
-  await page.getByRole('button',{name:/Run Hardware Test/}).click();
-  await expect(page.getByRole('heading',{name:'Guided Hardware Test'})).toBeVisible();
-  await page.getByRole('button',{name:'🎸 Microphone'}).click();
-  await expect(page.getByRole('heading',{name:'Production Guitar Input'})).toBeVisible();
-  await page.getByRole('button',{name:'🧪 Guided Test'}).click();
+  await page.getByRole('button',{name:/Quick Hardware Tests/}).click();
+  await expect(page.getByRole('heading',{name:'Quick Hardware Tests'})).toBeVisible();
 
   await page.evaluate(()=>window.FMQGuidedHardwareTest.beginGuitarSynthetic());
   await page.evaluate(()=>{for(let i=0;i<36;i++)window.FMQGuidedHardwareTest.feedAudio({rms:.002,freq:null,midi:null,note:'—',onset:false});});
@@ -199,8 +196,8 @@ test('guided Hardware Acceptance Test records evidence and supports project copy
   await expect(page.locator('#guidedSummary')).toContainText('Hardware test report saved');
 
   const report=await page.evaluate(()=>window.FMQGuidedHardwareTest.reportObject());
-  expect(report.appVersion).toBe('2.6.13');
-  expect(report.guidedAcceptance.version).toBe(2);
+  expect(report.appVersion).toBe('2.6.14');
+  expect(report.guidedAcceptance.version).toBe(3);
   expect(report.guidedAcceptance.sessionId).toMatch(/^FMQ-HW-\d{4}-\d{2}-\d{2}-\d{2,}$/);
   expect(report.guidedAcceptance.humanObservations.source).toBe('human');
   expect(report.guidedAcceptance.humanEvidence.adultResult).toBe('not-decided');
@@ -219,7 +216,7 @@ test('guided Hardware Acceptance Test records evidence and supports project copy
   expect(projectText).toContain('Adult result: NOT DECIDED');
   expect(projectText).toContain('Adult help required: 1');
   expect(projectText).toContain('Child trusted scoring: Mostly');
-  expect(projectText).toContain('Guitar: COMPLETE · 6/6 open strings passed · retries 1');
+  expect(projectText).toContain('Guitar microphone: COMPLETE · 6/6 open strings passed · retries 1');
   expect(projectText).toContain('Piano/MIDI: COMPLETE');
   expect(projectText).toContain('highway-open-note.jpg');
   expect(projectText).not.toContain('recentEvents');

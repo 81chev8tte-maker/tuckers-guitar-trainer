@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const APP_VERSION = '2.6.13';
+  const APP_VERSION = '2.6.14';
   const RESULT_KEY = 'family-music-quest-hardware-results-v1';
   const CAL_KEY = 'family-music-quest-calibration-v1';
   const SESSION_COUNTER_KEY = 'family-music-quest-hardware-session-counter-v1';
@@ -13,6 +13,15 @@
     { id:'g', label:'G string', short:'G', note:'G3', midi:55 },
     { id:'b', label:'B string', short:'B', note:'B3', midi:59 },
     { id:'high-e', label:'thin e string', short:'e', note:'E4', midi:64 }
+  ];
+  const PIANO_MIC_QUIET_SAMPLE_COUNT = 12;
+  const PIANO_MIC_NOTES = [
+    { id:'c4', label:'C', note:'C4', midi:60 },
+    { id:'d4', label:'D', note:'D4', midi:62 },
+    { id:'e4', label:'E', note:'E4', midi:64 },
+    { id:'f4', label:'F', note:'F4', midi:65 },
+    { id:'g4', label:'G', note:'G4', midi:67 },
+    { id:'c4-repeat', label:'C again', note:'C4', midi:60, repeated:true }
   ];
   const HUMAN_QUESTIONS = [
     { id:'reaction', text:'Did the game react when you played?' },
@@ -83,6 +92,39 @@
     };
   }
 
+  const createPianoMicNoteResult = step => ({
+    expected:{ id:step.id, label:step.label, note:step.note, midi:step.midi, repeated:Boolean(step.repeated) },
+    detectedNote:null, detectedMidi:null, frequency:null, cents:null, confidence:0, level:0, peak:0, stable:false,
+    readings:0, attempts:0, retries:0, wrongDetections:[], passedAt:null
+  });
+  function applyPianoMicReading(result, step, reading) {
+    const next = clone(result);
+    next.readings += 1;
+    next.level = Number(reading?.level || 0);
+    next.peak = Math.max(Number(next.peak || 0), next.level);
+    next.confidence = Number(reading?.confidence || 0);
+    if (Number.isFinite(reading?.midi)) {
+      next.detectedMidi = reading.midi;
+      next.detectedNote = reading.name || null;
+      next.frequency = reading.frequency || null;
+      next.cents = Number.isFinite(reading.cents) ? reading.cents : null;
+    }
+    if (!reading?.stable) return { result:next, passed:false, reason:reading?.quiet ? 'quiet' : 'unstable' };
+    next.attempts += 1;
+    if (reading.midi !== step.midi) {
+      next.retries += 1;
+      next.wrongDetections.push({ note:reading.name || null, midi:Number.isFinite(reading.midi) ? reading.midi : null, frequency:reading.frequency || null });
+      next.wrongDetections = next.wrongDetections.slice(-6);
+      return { result:next, passed:false, reason:'wrong-note' };
+    }
+    next.stable = true;
+    next.passedAt = new Date().toISOString();
+    return { result:next, passed:true, reason:'passed' };
+  }
+  function createPianoMicrophoneState() {
+    return { status:'not-run', mode:'monophonic', quiet:null, notes:[], repeated:null, device:null, audioSettings:null, detectorRules:null, startedAt:null, completedAt:null };
+  }
+
   function localDateStamp(value) {
     const date = value instanceof Date ? value : new Date(value || Date.now());
     const safe = Number.isNaN(date.getTime()) ? new Date() : date;
@@ -124,12 +166,13 @@
 
   function createSession(meta={}) {
     return {
-      format:'family-music-quest-guided-hardware-acceptance', version:2, appVersion:APP_VERSION, commit:null,
+      format:'family-music-quest-guided-hardware-acceptance', version:3, appVersion:APP_VERSION, commit:null,
       sessionId:meta.sessionId || makeSessionId(meta.startedAt || new Date().toISOString(), meta.sequence || 1),
       startedAt:meta.startedAt || new Date().toISOString(), completedAt:null, status:'in-progress',
       player:meta.player || null, platform:meta.platform || null,
       audioDevice:null, audioSettings:null,
       guitar:{ status:'not-run', quiet:null, strings:[], repeated:null, silence:null },
+      pianoMicrophone:createPianoMicrophoneState(),
       midi:{ status:'not-run', device:null, noteOn:null, noteOff:null, velocitySamples:[], polyphonyMax:0, sustain:null, skipped:[] },
       humanObservations:{}, humanEvidence:createHumanEvidence(meta.humanEvidence), warnings:[], testsNotPerformed:[]
     };
@@ -137,16 +180,17 @@
   function computeNotPerformed(session) {
     const missing = [];
     if (session?.guitar?.status !== 'complete') missing.push('Guided Guitar six-string/repeated-note/silence test');
+    if (session?.pianoMicrophone?.status !== 'complete') missing.push('Guided Piano microphone check (one note at a time)');
     if (session?.midi?.status !== 'complete') missing.push('Guided Piano MIDI capability test');
     if (session?.midi?.sustain == null) missing.push('MIDI sustain capability (optional)');
     missing.push('USB audio disconnect/reconnect (manual Monday test)');
     missing.push('MIDI disconnect/reconnect (manual Monday test)');
-    missing.push('Piano microphone check (manual, one note at a time)');
+    missing.push('Piano microphone gameplay / perceived response (manual physical test)');
     missing.push('Physical end-to-end latency measurement');
     return [...new Set(missing)];
   }
 
-  const rules = { APP_VERSION, QUIET_SAMPLE_COUNT, GUITAR_STRINGS, HUMAN_QUESTIONS, scoreable, createNoteResult, applyNoteReading, summarizeQuiet, summarizeSilence, makeSessionId, normalizeEvidenceReferences, createHumanEvidence, createReportPayload, createSession, computeNotPerformed };
+  const rules = { APP_VERSION, QUIET_SAMPLE_COUNT, GUITAR_STRINGS, PIANO_MIC_QUIET_SAMPLE_COUNT, PIANO_MIC_NOTES, HUMAN_QUESTIONS, scoreable, createNoteResult, applyNoteReading, createPianoMicNoteResult, applyPianoMicReading, summarizeQuiet, summarizeSilence, makeSessionId, normalizeEvidenceReferences, createHumanEvidence, createReportPayload, createSession, computeNotPerformed };
   if (typeof module !== 'undefined' && module.exports) module.exports = rules;
   if (typeof window === 'undefined' || !window.document) return;
 
@@ -169,6 +213,10 @@
   let guidedAudioOwned = false;
   let guidedMidiUnsub = null;
   let guidedMidiOwned = false;
+  let guidedPianoMic = null;
+  let pianoMicNoteIndex = 0;
+  let pianoMicNoteResult = null;
+  let pianoMicQuietSamples = [];
   let synthetic = false;
   let noiseGate = .018;
   let midiTarget = null;
@@ -191,6 +239,8 @@
       let changed = false;
       if (!session.sessionId) { session.sessionId = nextSessionId(session.startedAt || new Date().toISOString()); changed = true; }
       if (!session.humanEvidence) { session.humanEvidence = createHumanEvidence(); changed = true; }
+      if (!session.pianoMicrophone) { session.pianoMicrophone = createPianoMicrophoneState(); changed = true; }
+      if (Number(session.version || 0) < 3) { session.version = 3; changed = true; }
       if (changed) {
         const all = getJson(RESULT_KEY);
         const existing = all[activeId()] || {};
@@ -237,13 +287,13 @@
 
     const launch = document.createElement('div');
     launch.className = 'guided-launch';
-    launch.innerHTML = '<button id="diagRunGuided" class="button big" type="button">▶ Run Hardware Test</button><span>Short kid-friendly checks. Technical details are recorded automatically.</span>';
+    launch.innerHTML = '<button id="diagRunGuided" class="button big" type="button">🧪 Quick Hardware Tests</button><span>Short kid-friendly checks. Family Music Quest records the technical details for you.</span>';
     nav.before(launch);
 
     const tab = document.createElement('button');
     tab.type = 'button';
     tab.dataset.diagTab = 'guided';
-    tab.textContent = '🧪 Guided Test';
+    tab.textContent = '🧪 Quick Tests';
     nav.prepend(tab);
 
     const view = document.createElement('section');
@@ -251,11 +301,12 @@
     view.dataset.diagView = 'guided';
     view.hidden = true;
     view.innerHTML = `
-      <div class="guided-title-row"><div><p class="eyebrow">MONDAY HARDWARE ACCEPTANCE</p><h2>Guided Hardware Test</h2></div><span id="guidedProgress" class="badge">Ready</span></div>
-      <p id="guidedLead" class="muted">Pick a test. You only need to follow the big instructions — Family Music Quest records the technical details.</p>
+      <div class="guided-title-row"><div><p class="eyebrow">SHORT CHILD-FRIENDLY CHECKS</p><h2>Quick Hardware Tests</h2></div><span id="guidedProgress" class="badge">Ready</span></div>
+      <p id="guidedLead" class="muted">Pick one test and follow the big instructions. Technical details stay in the report.</p>
       <div id="guidedMenu" class="guided-menu">
-        <button id="guidedStartGuitar" class="guided-choice" type="button"><span>🎸</span><strong>Guitar audio</strong><small>Quiet check, all six open strings, repeated note and silence.</small></button>
-        <button id="guidedStartMidi" class="guided-choice" type="button"><span>🎹</span><strong>Piano MIDI</strong><small>Note On/Off, velocity, chord/polyphony and optional sustain.</small></button>
+        <button id="guidedStartGuitar" class="guided-choice" type="button"><span>🎸</span><strong>Test Guitar Microphone</strong><small>Quiet check, all six open strings, repeated note and silence.</small></button>
+        <button id="guidedStartPianoMic" class="guided-choice" type="button"><span>🎹</span><strong>Test Piano Microphone</strong><small>One note at a time: C–D–E–F–G, then C again.</small></button>
+        <button id="guidedStartMidi" class="guided-choice" type="button"><span>🎹</span><strong>Test MIDI Keyboard</strong><small>Note On/Off, velocity, chord/polyphony and optional sustain.</small></button>
       </div>
       <div id="guidedTask" class="guided-task" hidden>
         <span id="guidedStep" class="eyebrow">STEP</span>
@@ -276,6 +327,7 @@
     $('diagRunGuided').onclick = () => { ensureSession(); showGuided(); };
     tab.onclick = () => { if (!session) loadSession(); showGuided(); };
     $('guidedStartGuitar').onclick = () => startGuitar(false).catch(showGuidedError);
+    $('guidedStartPianoMic').onclick = () => startPianoMic(false).catch(showGuidedError);
     $('guidedStartMidi').onclick = () => startMidi(false).catch(showGuidedError);
     $('guidedAction').onclick = handleGuidedAction;
     $('guidedSkip').onclick = skipGuidedStep;
@@ -302,6 +354,7 @@
       persistSession();
     }
     renderGuided();
+    if ($('guidedLead') && message) $('guidedLead').textContent = message;
   }
   function statusText(status) {
     if (status === 'complete') return '✅ Complete';
@@ -321,13 +374,15 @@
     summary.hidden = phase !== 'summary';
     $('guidedFinish').hidden = Boolean(path) || phase === 'questions' || phase === 'summary';
     $('guidedCancel').textContent = path || phase === 'questions' || phase === 'summary' ? 'Stop current test' : 'Back to diagnostics';
-    $('guidedProgress').textContent = !s ? 'Ready' : s.status === 'complete' ? 'Report saved' : path === 'guitar' ? 'Guitar' : path === 'midi' ? 'MIDI' : 'In progress';
-    $('guidedLead').textContent = s ? `Guitar: ${statusText(s.guitar.status)} · MIDI: ${statusText(s.midi.status)}. Raw measurements stay in the report.` : 'Pick a test. You only need to follow the big instructions — Family Music Quest records the technical details.';
+    $('guidedProgress').textContent = !s ? 'Ready' : s.status === 'complete' ? 'Report saved' : path === 'guitar' ? 'Guitar' : path === 'piano-mic' ? 'Piano microphone' : path === 'midi' ? 'MIDI' : 'In progress';
+    $('guidedLead').textContent = s ? `Guitar mic: ${statusText(s.guitar.status)} · Piano mic: ${statusText(s.pianoMicrophone?.status)} · MIDI: ${statusText(s.midi.status)}.` : 'Pick one test and follow the big instructions. Technical details stay in the report.';
     if (!path) {
       $('guidedStartGuitar').querySelector('small').textContent = `${statusText(s?.guitar?.status)} · Quiet check, six strings, repeated note and silence.`;
+      $('guidedStartPianoMic').querySelector('small').textContent = `${statusText(s?.pianoMicrophone?.status)} · One note at a time: C–D–E–F–G, then C again.`;
       $('guidedStartMidi').querySelector('small').textContent = `${statusText(s?.midi?.status)} · Note On/Off, velocity, polyphony and optional sustain.`;
     }
     if (path === 'guitar') renderGuitarTask();
+    if (path === 'piano-mic') renderPianoMicTask();
     if (path === 'midi') renderMidiTask();
     if (phase === 'summary') renderSummary();
   }
@@ -364,6 +419,20 @@
       setTask(`GUITAR · SILENCE ${Math.min(silenceReadings.length, QUIET_SAMPLE_COUNT)} / ${QUIET_SAMPLE_COUNT}`, 'Stay quiet — almost done', 'We are checking for unexpected note/onset readings.');
     }
   }
+  function renderPianoMicTask() {
+    $('guidedSkip').hidden = true;
+    $('guidedAction').hidden = true;
+    if (phase === 'piano-mic-quiet') {
+      setTask(`PIANO MICROPHONE · QUIET ${Math.min(pianoMicQuietSamples.length, PIANO_MIC_QUIET_SAMPLE_COUNT)} / ${PIANO_MIC_QUIET_SAMPLE_COUNT}`, 'Stay quiet for a moment', 'Microphone mode listens to one piano note at a time. No chords in this test.');
+      return;
+    }
+    if (phase === 'piano-mic-note') {
+      const step = PIANO_MIC_NOTES[pianoMicNoteIndex];
+      const prompt = step.repeated ? 'Play C again' : `Play ${step.label}`;
+      setTask(`PIANO MICROPHONE · ${pianoMicNoteIndex + 1} OF ${PIANO_MIC_NOTES.length}`, prompt, message || `Waiting for ${step.note}… One note at a time.`, pianoMicNoteResult?.level || 0);
+    }
+  }
+
   function renderMidiTask() {
     $('guidedAction').hidden = true;
     $('guidedSkip').hidden = false;
@@ -450,7 +519,72 @@
     if (summary.scoreableReadings > 0) session.warnings.push(`Guitar input produced ${summary.scoreableReadings} scoreable reading(s) during the guided silence check.`);
     session.warnings = [...new Set(session.warnings)];
     cleanupAudio(); path = null; phase = null; message = '';
+    persistSession();
+    if (!synthetic) { showQuestions(); return; }
+    renderGuided();
+  }
+
+  async function startPianoMic(isSynthetic=false) {
+    ensureSession(); cleanupResources();
+    synthetic = isSynthetic; path = 'piano-mic'; phase = 'piano-mic-quiet'; message = ''; pianoMicNoteIndex = 0; pianoMicNoteResult = null; pianoMicQuietSamples = [];
+    session.pianoMicrophone = { ...createPianoMicrophoneState(), status:'running', startedAt:new Date().toISOString() };
     persistSession(); renderGuided();
+    if (isSynthetic) return;
+    const PianoMic = window.NovaPianoInputs?.MicrophonePianoInput;
+    if (!PianoMic) throw new Error('Piano microphone input is still loading.');
+    guidedPianoMic = new PianoMic({ emit:()=>{} });
+    try {
+      await guidedPianoMic.start(processPianoMicReading);
+    } catch (error) {
+      session.pianoMicrophone.status = 'not-available';
+      session.pianoMicrophone.completedAt = new Date().toISOString();
+      cleanupPianoMic(); path = null; phase = null;
+      persistSession(); renderGuided();
+      throw error;
+    }
+    const track = guidedPianoMic.stream?.getAudioTracks?.()[0] || guidedPianoMic.stream?.getTracks?.()[0];
+    const settings = track?.getSettings?.() || {};
+    session.pianoMicrophone.device = { id:settings.deviceId || '', label:track?.label || 'Default microphone' };
+    session.pianoMicrophone.audioSettings = { sampleRate:guidedPianoMic.context?.sampleRate || settings.sampleRate || null, channelCount:settings.channelCount || 1 };
+    session.pianoMicrophone.detectorRules = clone(window.NovaPianoInputs.MIC_RULES || {});
+    persistSession();
+  }
+  function processPianoMicReading(reading) {
+    if (path !== 'piano-mic' || reading?.active === false) return;
+    if ($('guidedSignal')) $('guidedSignal').style.width = `${Math.min(100, Number(reading?.level || 0) * 1600)}%`;
+    if (phase === 'piano-mic-quiet') {
+      pianoMicQuietSamples.push(Number(reading?.level || 0));
+      if (pianoMicQuietSamples.length >= PIANO_MIC_QUIET_SAMPLE_COUNT) {
+        session.pianoMicrophone.quiet = { ...summarizeQuiet(pianoMicQuietSamples), measuredAt:new Date().toISOString(), measurementOnly:true };
+        phase = 'piano-mic-note'; pianoMicNoteIndex = 0; pianoMicNoteResult = createPianoMicNoteResult(PIANO_MIC_NOTES[0]); message = '';
+        persistSession();
+      }
+      renderGuided(); return;
+    }
+    if (phase !== 'piano-mic-note') return;
+    const step = PIANO_MIC_NOTES[pianoMicNoteIndex];
+    const applied = applyPianoMicReading(pianoMicNoteResult, step, reading);
+    pianoMicNoteResult = applied.result;
+    if (applied.reason === 'quiet') message = 'Too quiet — play a little louder.';
+    else if (applied.reason === 'unstable') message = 'We can hear something, but the note is not steady yet. Try one clean note.';
+    else if (applied.reason === 'wrong-note') message = `We heard ${reading.name || 'another note'}. Try ${step.label} again.`;
+    if (applied.passed) {
+      message = `Great — we heard ${step.label}.`;
+      if (step.repeated) session.pianoMicrophone.repeated = pianoMicNoteResult;
+      else session.pianoMicrophone.notes.push(pianoMicNoteResult);
+      pianoMicNoteIndex += 1;
+      if (pianoMicNoteIndex >= PIANO_MIC_NOTES.length) { finishPianoMicPath(); return; }
+      pianoMicNoteResult = createPianoMicNoteResult(PIANO_MIC_NOTES[pianoMicNoteIndex]);
+    }
+    persistSession(); renderGuided();
+  }
+  function finishPianoMicPath() {
+    session.pianoMicrophone.status = 'complete';
+    session.pianoMicrophone.completedAt = new Date().toISOString();
+    cleanupPianoMic(); path = null; phase = null; message = '';
+    persistSession();
+    if (!synthetic) { showQuestions(); return; }
+    renderGuided();
   }
 
   async function startMidi(isSynthetic=false) {
@@ -502,7 +636,9 @@
   function finishMidiPath() {
     session.midi.status = session.midi.skipped.length ? 'partial' : 'complete';
     cleanupMidi(); path = null; phase = null; message = '';
-    persistSession(); renderGuided();
+    persistSession();
+    if (!synthetic) { showQuestions(); return; }
+    renderGuided();
   }
 
   function handleGuidedAction() {
@@ -514,7 +650,7 @@
     ensureSession(); cleanupResources(); path = null; phase = 'questions';
     const form = $('guidedQuestions');
     const human = session.humanEvidence || createHumanEvidence();
-    form.innerHTML = `<h3>Five quick human checks</h3><p class="muted">These are your observations, not automatic measurements. Good = no problem; Bad = a clear problem.</p>${HUMAN_QUESTIONS.map((q,i)=>`<fieldset><legend>${i+1}. ${q.text}</legend><div class="guided-rating"><label><input type="radio" name="guided-${q.id}" value="good" required> Good</label><label><input type="radio" name="guided-${q.id}" value="okay"> Okay</label><label><input type="radio" name="guided-${q.id}" value="bad"> Bad</label></div></fieldset>`).join('')}
+    form.innerHTML = `<h3>✅ Done! Five quick questions</h3><p class="muted">Answer what you actually noticed. Good = no problem; Bad = a clear problem.</p>${HUMAN_QUESTIONS.map((q,i)=>`<fieldset><legend>${i+1}. ${q.text}</legend><div class="guided-rating"><label><input type="radio" name="guided-${q.id}" value="good" required> Good</label><label><input type="radio" name="guided-${q.id}" value="okay"> Okay</label><label><input type="radio" name="guided-${q.id}" value="bad"> Bad</label></div></fieldset>`).join('')}
       <section class="guided-human-evidence">
         <h3>Adult / tester evidence</h3>
         <p class="muted">These notes help the Project Manager understand the session. They do not change scoring.</p>
@@ -570,7 +706,13 @@
   }
   function renderSummary() {
     if (!session) return;
-    $('guidedSummary').innerHTML = `<strong>✅ Hardware test report saved</strong><p>Session: ${session.sessionId || '—'} · Adult result: ${formatAdultResult(session.humanEvidence?.adultResult)}</p><p>Guitar: ${statusText(session.guitar.status)} · MIDI: ${statusText(session.midi.status)}</p><p class="muted">Open Report to copy, share or download the evidence. Monday physical gameplay checks are still required.</p><div class="diagnostic-actions"><button id="guidedViewReport" class="button" type="button">View Report</button><button id="guidedNewSession" class="button secondary" type="button">Start New Test</button></div>`;
+    $('guidedSummary').innerHTML = `<strong>✅ Done! Hardware test report saved</strong><p>Session: ${session.sessionId || '—'} · Adult result: ${formatAdultResult(session.humanEvidence?.adultResult)}</p><p>Guitar mic: ${statusText(session.guitar.status)} · Piano mic: ${statusText(session.pianoMicrophone?.status)} · MIDI: ${statusText(session.midi.status)}</p><p class="muted">This records what you tested. It does not automatically approve the release.</p><div class="diagnostic-actions"><button id="guidedSendParent" class="button" type="button">Send Report to Parent</button><button id="guidedViewReport" class="button secondary" type="button">View Report</button><button id="guidedNewSession" class="button secondary" type="button">Start New Test</button></div><p id="guidedShareStatus" class="muted" aria-live="polite"></p>`;
+    $('guidedSendParent').onclick = async () => {
+      const result = await shareTestReport();
+      const status = $('guidedShareStatus');
+      if (!status) return;
+      status.textContent = result.status === 'shared' ? 'Share opened. Choose the parent destination and confirm Send.' : result.status === 'cancelled' ? 'Sharing cancelled. Your report is still saved.' : result.status === 'downloaded' ? 'Native sharing is unavailable, so the JSON fallback was downloaded.' : 'Could not open sharing. Your report is still saved; use View Report for Copy/Download fallbacks.';
+    };
     $('guidedViewReport').onclick = () => {
       document.querySelector('[data-diag-tab="report"]')?.click();
       setTimeout(refreshCombinedReport, 0);
@@ -597,7 +739,12 @@
     if (guidedMidiOwned) window.FMQHardware?.midi?.destroy?.();
     guidedMidiOwned = false;
   }
-  function cleanupResources() { cleanupAudio(); cleanupMidi(); }
+  function cleanupPianoMic() {
+    if (guidedPianoMic) { try { guidedPianoMic.stop(); } catch {} }
+    guidedPianoMic = null;
+    pianoMicQuietSamples = []; pianoMicNoteResult = null; pianoMicNoteIndex = 0;
+  }
+  function cleanupResources() { cleanupAudio(); cleanupPianoMic(); cleanupMidi(); }
 
   function ratingLabel(value) {
     return value === 'good' ? 'Good' : value === 'okay' ? 'Okay' : value === 'bad' ? 'Bad' : 'Not answered';
@@ -620,6 +767,13 @@
     const repeated = guitar.repeated ? `${guitar.repeated.onsetsObserved}/${guitar.repeated.requested} repeated onsets` : 'repeated-note check not run';
     const silence = guitar.silence ? `${guitar.silence.scoreableReadings} scoreable silence readings` : 'silence check not run';
     return `${String(guitar.status || 'unknown').toUpperCase()} · ${strings.length}/${GUITAR_STRINGS.length} open strings passed · retries ${retries} · ${repeated} · ${silence}`;
+  }
+  function pianoMicProjectSummary(s) {
+    const mic = s?.pianoMicrophone || {};
+    if (mic.status === 'not-run' || !mic.status) return 'NOT RUN';
+    const notes = mic.notes || [];
+    const retries = [...notes, ...(mic.repeated ? [mic.repeated] : [])].reduce((sum,item)=>sum+Number(item.retries || 0),0);
+    return `${String(mic.status || 'unknown').toUpperCase()} · monophonic · ${notes.length}/5 C–G notes passed · repeated C ${mic.repeated?.stable ? 'passed' : 'not passed'} · retries ${retries}`;
   }
   function midiProjectSummary(s) {
     const midi = s?.midi || {};
@@ -647,6 +801,7 @@
       `Player: ${report.player?.name || s?.player?.name || 'Unknown'}`,
       `Device: ${platformData.platform || 'Unknown'} · ${browserLabel(platformData)} · ${platformData.displayMode === 'standalone' ? 'Installed PWA' : 'Browser tab'}`,
       `Guitar/audio input: ${s?.audioDevice?.label || 'Not recorded'}`,
+      `Piano microphone input: ${s?.pianoMicrophone?.device?.label || 'Not recorded'}`,
       `Piano/MIDI input: ${s?.midi?.device?.name || 'Not recorded'}`,
       '',
       'HUMAN VALIDATION',
@@ -663,7 +818,7 @@
     if (human.adultHelpNote) lines.push(`Adult help note: ${human.adultHelpNote}`);
     if (human.childComment) lines.push(`Child comment: "${human.childComment}"`);
     if (human.testerNote) lines.push(`Tester/context: ${human.testerNote}`);
-    lines.push('', 'AUTOMATED EVIDENCE', `Guitar: ${guitarProjectSummary(s)}`, `Piano/MIDI: ${midiProjectSummary(s)}`);
+    lines.push('', 'AUTOMATED EVIDENCE', `Guitar microphone: ${guitarProjectSummary(s)}`, `Piano microphone: ${pianoMicProjectSummary(s)}`, `Piano/MIDI: ${midiProjectSummary(s)}`);
     if (s?.warnings?.length) { lines.push('Warnings:'); s.warnings.forEach(item=>lines.push(`- ${item}`)); }
     if (s?.testsNotPerformed?.length) { lines.push('Tests not performed:'); s.testsNotPerformed.forEach(item=>lines.push(`- ${item}`)); }
     if (human.evidenceReferences?.length) { lines.push('Evidence references:'); human.evidenceReferences.forEach(item=>lines.push(`- ${item}`)); }
@@ -774,11 +929,13 @@ ${payload.json}`;
   window.FMQGuidedHardwareTest = {
     rules,
     getSession:() => session ? clone(session) : null,
-    getState:() => ({ path, phase, stringIndex, resources:{ audioSubscribed:Boolean(guidedAudioUnsub), audioOwned:guidedAudioOwned, midiSubscribed:Boolean(guidedMidiUnsub), midiOwned:guidedMidiOwned } }),
+    getState:() => ({ path, phase, stringIndex, pianoMicNoteIndex, resources:{ audioSubscribed:Boolean(guidedAudioUnsub), audioOwned:guidedAudioOwned, pianoMicActive:Boolean(guidedPianoMic), midiSubscribed:Boolean(guidedMidiUnsub), midiOwned:guidedMidiOwned } }),
     beginNew:() => { newSession(); showGuided(); },
     beginGuitarSynthetic:() => startGuitar(true),
     feedAudio:reading => processAudioReading(reading),
     startSilenceSynthetic:startSilenceCheck,
+    beginPianoMicSynthetic:() => startPianoMic(true),
+    feedPianoMic:reading => processPianoMicReading(reading),
     beginMidiSynthetic:() => startMidi(true),
     feedMidi:event => processMidiEvent(event),
     skipMidi:skipGuidedStep,
