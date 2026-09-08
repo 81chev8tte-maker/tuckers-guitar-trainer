@@ -100,6 +100,8 @@ Future releases should preserve or deliberately update tests for:
 - duplicate chord-note rejection;
 - MIDI/on-screen polyphony preservation;
 - microphone-safe monophonic arrangement extraction;
+- Piano microphone input intent/reacquisition across Mic Test, scored-run start, Restart/Play Again and lifecycle cleanup;
+- detector transition gating so stale pitch history does not delay a clean new note while quiet/unstable/low-confidence candidates remain non-scoreable;
 - Wait for Me target behavior;
 - pause/restart/exit audio cleanup;
 - accompaniment enable/mute and zero-volume behavior;

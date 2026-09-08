@@ -28,6 +28,7 @@
     return alignRange({min,max,actualMin:actual.min,actualMax:actual.max,wide:true,label:`Following · ${noteName(min)}–${noteName(max)}`});
   }
   function melodyPracticeNotes(notes){const sorted=notes.map(n=>({...n})).sort((a,b)=>a.start-b.start||a.midi-b.midi),groups=[];for(const note of sorted){const group=groups.at(-1);if(group&&Math.abs(group[0].start-note.start)<.02)group.push(note);else groups.push([note]);}return groups.map(group=>({...group.at(-1),chordSize:group.length}));}
+  function isMonophonicMaterial(notes){const sorted=[...notes].sort((a,b)=>a.start-b.start||a.midi-b.midi);for(let i=1;i<sorted.length;i++)if(Math.abs(sorted[i].start-sorted[i-1].start)<.02)return false;return true;}
 
   const builtInSongs = [
     {id:'nova-first-tune',title:'First Five-Note Tune',description:'An original five-note melody for the right hand.',tempo:76,notes:[60,62,64,62,60,60,62,64,67,64,62,60].map((m,i)=>({midi:m,start:i*.7,duration:.52,hand:'right'}))},
@@ -52,6 +53,10 @@
   }
   let progress=loadProgress();
   let currentGame=null,startSongBusy=false;
+  let pianoInputIntent='screen';
+  const PIANO_MIC_RULES=Object.freeze({analysisIntervalMs:85,minRms:.012,minConfidence:.68,maxCents:45,stableFrames:3,emitDebounceMs:330,minFrequency:27,maxFrequency:4250,historySize:5});
+  const setPianoInputIntent=input=>{pianoInputIntent=input==='microphone'?'microphone':'screen';};
+  const getPianoInputIntent=()=>pianoInputIntent;
   const saveProgress=()=>window.FMQProfiles?.saveInstrumentProgress('piano',progress);
 
   class PianoInputHub {
@@ -69,7 +74,7 @@
   const screenInput=new OnScreenPianoInput(inputHub);
 
   class MicrophonePianoInput {
-    constructor(hub){this.hub=hub;this.active=false;this.context=null;this.stream=null;this.analyser=null;this.raf=0;this.history=[];this.stableMidi=null;this.stableFrames=0;this.lastEmit=new Map();this.lastAnalysis=0;this.onReading=()=>{};}
+    constructor(hub){this.hub=hub;this.active=false;this.context=null;this.stream=null;this.analyser=null;this.raf=0;this.history=[];this.historyMidi=null;this.stableMidi=null;this.stableFrames=0;this.lastEmit=new Map();this.lastAnalysis=0;this.onReading=()=>{};}
     async start(onReading){
       if(this.active)return;
       if(!navigator.mediaDevices?.getUserMedia)throw new Error('Microphone input is not available in this browser.');
@@ -78,28 +83,35 @@
       this.context=new (window.AudioContext||window.webkitAudioContext)();
       await this.context.resume();
       const source=this.context.createMediaStreamSource(this.stream);
-      this.analyser=this.context.createAnalyser();this.analyser.fftSize=4096;this.analyser.smoothingTimeConstant=.12;source.connect(this.analyser);this.active=true;this.tick();
+      this.analyser=this.context.createAnalyser();this.analyser.fftSize=4096;this.analyser.smoothingTimeConstant=.12;source.connect(this.analyser);this.active=true;setPianoInputIntent('microphone');this.tick();
     }
-    stop(){this.active=false;cancelAnimationFrame(this.raf);this.stream?.getTracks().forEach(t=>t.stop());this.context?.close();this.stream=this.context=this.analyser=null;this.history=[];this.stableMidi=null;this.stableFrames=0;this.onReading({active:false});}
+    resetStability(){this.history=[];this.historyMidi=null;this.stableMidi=null;this.stableFrames=0;}
+    stop(){this.active=false;cancelAnimationFrame(this.raf);this.stream?.getTracks().forEach(t=>t.stop());this.context?.close();this.stream=this.context=this.analyser=null;this.resetStability();this.onReading({active:false});}
+    processCandidate(result,rms,now=performance.now()){
+      const valid=Boolean(result&&rms>PIANO_MIC_RULES.minRms&&result.confidence>PIANO_MIC_RULES.minConfidence&&result.frequency>=PIANO_MIC_RULES.minFrequency&&result.frequency<=PIANO_MIC_RULES.maxFrequency);
+      if(!valid){this.resetStability();const reading={active:true,level:rms,quiet:rms<=PIANO_MIC_RULES.minRms,confidence:result?.confidence||0,stable:false};this.onReading(reading);return reading;}
+      const raw=midiFromFrequency(result.frequency),rawMidi=Math.round(raw),rawCents=(raw-rawMidi)*100;
+      if(Math.abs(rawCents)>PIANO_MIC_RULES.maxCents){this.resetStability();const reading={active:true,level:rms,quiet:false,confidence:result.confidence,frequency:result.frequency,stable:false};this.onReading(reading);return reading;}
+      if(this.historyMidi!==rawMidi){this.historyMidi=rawMidi;this.history=[];this.stableMidi=null;this.stableFrames=0;}
+      this.history.push(raw);if(this.history.length>PIANO_MIC_RULES.historySize)this.history.shift();
+      const smooth=[...this.history].sort((a,b)=>a-b)[Math.floor(this.history.length/2)],midi=Math.round(smooth),cents=(smooth-midi)*100;
+      if(Math.abs(cents)>PIANO_MIC_RULES.maxCents){this.resetStability();const reading={active:true,level:rms,quiet:false,confidence:result.confidence,frequency:result.frequency,stable:false};this.onReading(reading);return reading;}
+      if(midi===this.stableMidi)this.stableFrames++;else{this.stableMidi=midi;this.stableFrames=1;}
+      const stable=this.stableFrames>=PIANO_MIC_RULES.stableFrames,last=this.lastEmit.get(midi);
+      if(stable&&(last==null||now-last>PIANO_MIC_RULES.emitDebounceMs)){this.lastEmit.set(midi,now);this.hub.emit({midi,source:'microphone',frequency:result.frequency,confidence:result.confidence});}
+      const reading={active:true,midi,name:noteName(midi),frequency:result.frequency,confidence:result.confidence,level:rms,stable,cents};this.onReading(reading);return reading;
+    }
     tick(){
       if(!this.active||!this.analyser)return;
-      const frameNow=performance.now();if(frameNow-this.lastAnalysis<85){this.raf=requestAnimationFrame(()=>this.tick());return;}this.lastAnalysis=frameNow;
+      const frameNow=performance.now();if(frameNow-this.lastAnalysis<PIANO_MIC_RULES.analysisIntervalMs){this.raf=requestAnimationFrame(()=>this.tick());return;}this.lastAnalysis=frameNow;
       const data=new Float32Array(this.analyser.fftSize);this.analyser.getFloatTimeDomainData(data);
       let sum=0;for(const v of data)sum+=v*v;const rms=Math.sqrt(sum/data.length);
-      const result=rms>.012?this.detectPitch(data,this.context.sampleRate):null;
-      if(result&&result.confidence>.68&&result.frequency>=27&&result.frequency<=4250){
-        const raw=midiFromFrequency(result.frequency);this.history.push(raw);if(this.history.length>5)this.history.shift();
-        const smooth=[...this.history].sort((a,b)=>a-b)[Math.floor(this.history.length/2)];const midi=Math.round(smooth);const cents=(smooth-midi)*100;
-        if(Math.abs(cents)<=45){
-          if(midi===this.stableMidi)this.stableFrames++;else{this.stableMidi=midi;this.stableFrames=1;}
-          if(this.stableFrames>=3){const now=performance.now();if(now-(this.lastEmit.get(midi)||0)>330){this.lastEmit.set(midi,now);this.hub.emit({midi,source:'microphone',frequency:result.frequency,confidence:result.confidence});}}
-          this.onReading({active:true,midi,name:noteName(midi),frequency:result.frequency,confidence:result.confidence,level:rms,stable:this.stableFrames>=3,cents});
-        }
-      }else{this.stableFrames=0;this.onReading({active:true,level:rms,quiet:rms<=.012,confidence:result?.confidence||0});}
+      const result=rms>PIANO_MIC_RULES.minRms?this.detectPitch(data,this.context.sampleRate):null;
+      this.processCandidate(result,rms,frameNow);
       this.raf=requestAnimationFrame(()=>this.tick());
     }
     detectPitch(buffer,sampleRate){
-      const size=buffer.length;let bestOffset=-1,best=0;const min=Math.floor(sampleRate/4250),max=Math.min(Math.ceil(sampleRate/27),size>>1);
+      const size=buffer.length;let bestOffset=-1,best=0;const min=Math.floor(sampleRate/PIANO_MIC_RULES.maxFrequency),max=Math.min(Math.ceil(sampleRate/PIANO_MIC_RULES.minFrequency),size>>1);
       for(let offset=min;offset<=max;offset++){
         let corr=0,a=0,b=0;for(let i=0;i<size-offset;i++){corr+=buffer[i]*buffer[i+offset];a+=buffer[i]*buffer[i];b+=buffer[i+offset]*buffer[i+offset];}
         corr/=Math.sqrt(a*b)||1;if(corr>best){best=corr;bestOffset=offset;}
@@ -125,7 +137,7 @@
     async connect(){const service=window.FMQHardware?.midi;if(!service)throw new Error('Web MIDI is unavailable.');await service.connect();this.unsubscribe?.();this.unsubscribe=service.subscribe(event=>{if(event.type==='noteon'||event.type==='noteoff')this.hub.emit({midi:event.midi,velocity:event.velocity,type:event.type,source:'midi'});});}
     stop(){this.unsubscribe?.();this.unsubscribe=null;}
   }
-  window.NovaPianoInputs={PianoInputHub,MicrophonePianoInput,OnScreenPianoInput,MidiPianoInput};
+  window.NovaPianoInputs={PianoInputHub,MicrophonePianoInput,OnScreenPianoInput,MidiPianoInput,MIC_RULES:PIANO_MIC_RULES};
 
   const pianoApp=$('pianoApp');
   pianoApp.innerHTML=`
@@ -151,7 +163,7 @@
   $('choosePiano').addEventListener('click',()=>chooseInstrument('piano'));
   $('openInstrumentChooser').addEventListener('click',showChooser);
   $('pianoSwitchInstrument').addEventListener('click',showChooser);
-  window.addEventListener('family-music:profile-changing',()=>{if(currentGame)currentGame.destroy();microphoneInput.stop();});
+  window.addEventListener('family-music:profile-changing',()=>{if(currentGame)currentGame.destroy();microphoneInput.stop();setPianoInputIntent('screen');});
   window.addEventListener('family-music:profile-changed',()=>{progress=loadProgress();renderLessons();renderSongs();renderProgress();showPianoView('home');});
   window.addEventListener('family-music:show-home',()=>{if(currentGame)currentGame.destroy();microphoneInput.stop();});
   if(window.FMQProfiles?.hasActiveProfile())showChooser();
@@ -159,7 +171,7 @@
   function showPianoView(name){
     document.querySelectorAll('.piano-view').forEach(v=>v.classList.toggle('active',v.id===`piano-view-${name}`));
     document.querySelectorAll('.piano-nav-button').forEach(b=>b.classList.toggle('active',b.dataset.pianoView===name));
-    if(name!=='mic')microphoneInput.stop();if(name==='progress')renderProgress();if(name==='songs')renderSongs();
+    if(name!=='mic'&&microphoneInput.active)microphoneInput.stop();if(name==='mic')syncMicTestUi();if(name==='progress')renderProgress();if(name==='songs')renderSongs();
   }
   pianoApp.addEventListener('click',e=>{const target=e.target.closest('[data-piano-view]');if(target)showPianoView(target.dataset.pianoView);const listen=e.target.closest('[data-listen-song]');if(listen){startSong(listen.dataset.listenSong,'listen','full',listen.dataset.lesson||null,'full','listen');return;}const play=e.target.closest('[data-song]');if(play){if(play.dataset.lesson){showLessonIntro(lessons.find(lesson=>lesson.id===play.dataset.lesson));return;}const card=play.closest('.piano-list-card'),range=card?.querySelector('.piano-section-select')?.value||'full',hand=play.dataset.practice||card?.querySelector('.piano-hand-select')?.value||'full';startSong(play.dataset.song,play.dataset.mode||'wait',range,null,hand,hand);}});
 
@@ -200,15 +212,16 @@
     if(reading.name){const inside=reading.midi>=BEGINNER_RANGE.min&&reading.midi<=BEGINNER_RANGE.max,extreme=reading.midi<33||reading.midi>96;$('micDetectedNote').textContent=reading.name;$('micSignalText').textContent=reading.stable?'Signal: Good':'Hold the note…';$('micRangeText').textContent=inside?'Inside Beginner Range':`Outside Beginner Range · Available in Song Range${extreme?' · This note may be harder for the Chromebook to hear.':''}`;$('micTechnical').textContent=`Frequency ${reading.frequency.toFixed(1)} Hz · MIDI ${reading.midi} · Stability ${reading.stable?'stable':'listening'} · ${Math.round(reading.confidence*100)}% confidence`;highlightKey($('micTestKeyboard'),reading.midi,'active',180);}
     else{$('micSignalText').textContent=reading.quiet?'Too quiet — play a little louder':'Listening…';}
   }
+  function syncMicTestUi(){const toggle=$('pianoMicToggle'),status=$('pianoMicStatus');if(!toggle||!status)return;if(microphoneInput.active){toggle.textContent='Stop Microphone';status.textContent='Microphone Ready — play one key at a time.';}else{toggle.textContent='Enable Microphone';status.textContent=getPianoInputIntent()==='microphone'?'Microphone selected for Piano practice. Enable it here to test again.':'Microphone is off. You can still tap the keyboard.';}}
   $('pianoMicToggle').addEventListener('click',async()=>{
-    if(microphoneInput.active){microphoneInput.stop();$('pianoMicToggle').textContent='Enable Microphone';$('pianoMicStatus').textContent='Microphone is off. You can still tap the keyboard.';return;}
-    try{await microphoneInput.start(micReading);$('pianoMicToggle').textContent='Stop Microphone';$('pianoMicStatus').textContent='Microphone Ready — play one key at a time.';}catch(err){$('pianoMicStatus').textContent=`Microphone unavailable: ${err.message} Tap the keyboard below instead.`;}
+    if(microphoneInput.active){microphoneInput.stop();setPianoInputIntent('screen');syncMicTestUi();return;}
+    try{await microphoneInput.start(micReading);syncMicTestUi();}catch(err){setPianoInputIntent('screen');$('pianoMicStatus').textContent=`Microphone unavailable: ${err.message} Tap the keyboard below instead.`;$('pianoMicToggle').textContent='Enable Microphone';}
   });
   function highlightKey(root,midi,className='active',duration=160){const key=root?.querySelector(`.piano-key[data-midi="${midi}"]`);if(key){key.classList.add(className);setTimeout(()=>key.isConnected&&key.classList.remove(className),duration);}}
 
   class PianoGame {
-    constructor(song,mode,lessonId,options={}){this.song=song;this.mode=mode;this.lessonId=lessonId;this.rangePreference=options.rangePreference||(song.imported?'song':'beginner');this.returnView=lessonId?'lessons':'songs';this.speed=1;this.index=0;this.hits=0;this.misses=0;this.combo=0;this.bestCombo=0;this.score=0;this.time=0;this.running=false;this.waiting=false;this.finished=false;this.destroyed=false;this.lastFrame=0;this.unsubscribe=null;this.raf=0;this.lookAhead=4;this.timers=new Set();this.runToken=0;this.accompanimentIndex=0;this.targetTracker=null;this.midiInput=new MidiPianoInput(inputHub);this.section={start:0,end:Math.max(...song.notes.map(n=>n.start+n.duration),...(song.accompaniment||[]).map(n=>n.start+n.duration))+1};this.loop={start:this.section.start,end:this.section.end,enabled:false};this.displayRange={...BEGINNER_RANGE};}
-    mount(){
+    constructor(song,mode,lessonId,options={}){this.song=song;this.mode=mode;this.lessonId=lessonId;this.rangePreference=options.rangePreference||(song.imported?'song':'beginner');this.returnView=lessonId?'lessons':'songs';this.speed=1;this.index=0;this.hits=0;this.misses=0;this.combo=0;this.bestCombo=0;this.score=0;this.time=0;this.running=false;this.waiting=false;this.finished=false;this.destroyed=false;this.lastFrame=0;this.unsubscribe=null;this.raf=0;this.lookAhead=4;this.timers=new Set();this.runToken=0;this.accompanimentIndex=0;this.targetTracker=null;this.midiInput=new MidiPianoInput(inputHub);this.section={start:0,end:Math.max(...song.notes.map(n=>n.start+n.duration),...(song.accompaniment||[]).map(n=>n.start+n.duration))+1};this.loop={start:this.section.start,end:this.section.end,enabled:false};this.displayRange={...BEGINNER_RANGE};this.microphoneCompatible=options.microphoneCompatible!==false;this.restartBusy=false;this.inputNotice='';}
+    async mount(){
       this.assistance=this.song.assistance||'practice';
       document.body.classList.add('piano-game-open');
       const root=$('pianoGame');root.hidden=false;root.innerHTML=`<div class="piano-game-shell"><header class="piano-game-header"><button id="pianoExitGame" class="icon-button" aria-label="Exit">✕</button><div class="piano-game-title"><span>${this.mode==='wait'?'BEGINNER · WAIT FOR ME':'RHYTHM PLAY'}</span><strong>${escapeHtml(this.song.title)}</strong></div><div class="piano-game-stats"><div class="piano-stat"><span>SCORE</span><strong id="pgScore">0</strong></div><div class="piano-stat"><span>ACCURACY</span><strong id="pgAccuracy">100%</strong></div><div class="piano-stat"><span>COMBO</span><strong id="pgCombo">0</strong></div></div></header><div id="pianoStage" class="piano-stage"><div id="pianoLanes" class="piano-lanes"></div><div class="piano-hit-line"><span>PLAY NOW</span></div><div id="pianoInputPill" class="piano-input-pill">Input: screen keys</div><div id="pianoGameFeedback" class="piano-game-feedback"></div><div id="pianoCountIn" class="piano-count-in" hidden>1</div><div class="piano-game-controls"><select id="pianoGameSpeed" aria-label="Playback speed"><option value=".5">50%</option><option value=".6">60%</option><option value=".7">70%</option><option value=".8">80%</option><option value=".9">90%</option><option value="1" selected>100%</option></select><span id="pianoEffectiveBpm" class="piano-effective-bpm"></span><button id="pianoLoopStart" class="button small secondary">A · Start</button><button id="pianoLoopEnd" class="button small secondary">B · End</button><button id="pianoLoopToggle" class="button small secondary">↻ Loop Off</button><label class="count-in-toggle"><input id="pianoCountInToggle" type="checkbox" checked> Count-In</label><button id="pianoGameMic" class="button small secondary">🎙 Mic</button><button id="pianoRestart" class="button small secondary">↻ Restart</button><button id="pianoPause" class="button small secondary">Pause</button></div><div id="waitCallout" class="wait-callout" hidden><span>PLAY</span><strong>—</strong><small>The game will wait for you</small></div></div><div id="pianoGameKeyboard" class="piano-keyboard-wrap"></div></div>`;
@@ -220,10 +233,27 @@
       const accompanimentLabel=document.createElement('label');accompanimentLabel.className='count-in-toggle accompaniment-control';accompanimentLabel.innerHTML='<input id="pianoAccompanimentToggle" type="checkbox"> Accompaniment <input id="pianoAccompanimentVolume" type="range" min="0" max="100" step="5" aria-label="Accompaniment volume">';root.querySelector('.piano-game-controls').appendChild(accompanimentLabel);$('pianoAccompanimentToggle').checked=progress.settings?.accompaniment!==false;$('pianoAccompanimentVolume').value=Math.round((progress.settings?.accompanimentVolume??.22)*100);$('pianoAccompanimentToggle').onchange=e=>{progress.settings.accompaniment=Boolean(e.target.checked);if(!e.target.checked)pianoSynth.stopAll();saveProgress();};$('pianoAccompanimentVolume').oninput=e=>{progress.settings.accompanimentVolume=Number(e.target.value)/100;if(progress.settings.accompanimentVolume===0)pianoSynth.stopAll();saveProgress();};
       root.querySelector('.piano-game-title span').textContent=this.mode==='listen'?'LISTEN FIRST':this.mode==='wait'?'BEGINNER · WAIT FOR ME':'RHYTHM PLAY';
       this.updateRange(true);this.keyboard=createKeyboard($('pianoGameKeyboard'),true,this.displayRange.min,this.displayRange.max);this.makeLanes();
-      $('pianoExitGame').onclick=()=>this.destroy();$('pianoRestart').onclick=()=>this.restart();$('pianoPause').onclick=()=>this.togglePause();$('pianoGameSpeed').onchange=e=>{this.speed=+e.target.value;this.updateEffectiveBpm();};$('pianoLoopStart').onclick=()=>this.setLoopPoint('start');$('pianoLoopEnd').onclick=()=>this.setLoopPoint('end');$('pianoLoopToggle').onclick=()=>this.toggleLoop();$('pianoCountInToggle').checked=progress.settings?.countIn!==false;$('pianoCountInToggle').onchange=e=>{progress.settings??={};progress.settings.countIn=Boolean(e.target.checked);saveProgress();};$('pianoRangeMode').onchange=e=>{const actual=noteRange(this.sectionNotes());if(e.target.value==='beginner'&&(actual.min<BEGINNER_RANGE.min||actual.max>BEGINNER_RANGE.max)){e.target.value='song';this.feedback('This song needs Song Range');}this.rangePreference=e.target.value;progress.settings??={};progress.settings.rangeMode=this.rangePreference;saveProgress();this.restart();};$('pianoGameMic').onclick=()=>this.toggleMic();$('pianoPlayAgain').onclick=()=>{this.resultPanel.hidden=true;this.restart();};$('pianoResultBack').onclick=()=>{const destination=this.returnView;this.destroy();showPianoView(destination);};
+      $('pianoExitGame').onclick=()=>this.destroy();$('pianoRestart').onclick=()=>this.restart();$('pianoPause').onclick=()=>this.togglePause();$('pianoGameSpeed').onchange=e=>{this.speed=+e.target.value;this.updateEffectiveBpm();};$('pianoLoopStart').onclick=()=>this.setLoopPoint('start');$('pianoLoopEnd').onclick=()=>this.setLoopPoint('end');$('pianoLoopToggle').onclick=()=>this.toggleLoop();$('pianoCountInToggle').checked=progress.settings?.countIn!==false;$('pianoCountInToggle').onchange=e=>{progress.settings??={};progress.settings.countIn=Boolean(e.target.checked);saveProgress();};$('pianoRangeMode').onchange=e=>{const actual=noteRange(this.sectionNotes());if(e.target.value==='beginner'&&(actual.min<BEGINNER_RANGE.min||actual.max>BEGINNER_RANGE.max)){e.target.value='song';this.feedback('This song needs Song Range');}this.rangePreference=e.target.value;progress.settings??={};progress.settings.rangeMode=this.rangePreference;saveProgress();this.restart();};$('pianoGameMic').onclick=()=>this.toggleMic();$('pianoGameMic').disabled=this.mode==='listen'||!this.microphoneCompatible;$('pianoGameMic').title=this.mode==='listen'?'Listen First does not need input':this.microphoneCompatible?'Use the Chromebook microphone':'Microphone mode is for single-note practice';$('pianoPlayAgain').onclick=()=>{this.resultPanel.hidden=true;this.restart();};$('pianoResultBack').onclick=()=>{const destination=this.returnView;this.destroy();showPianoView(destination);};
       $('pianoAssistance').onchange=e=>{this.assistance=e.target.value;progress.settings.noteNames=['learn','practice'].includes(this.assistance);saveProgress();$('pianoStage').querySelectorAll('.falling-note').forEach(note=>note.remove());};
       $('pianoAlwaysNames').onchange=e=>{progress.settings.alwaysNoteNames=Boolean(e.target.checked);saveProgress();$('pianoStage').querySelectorAll('.falling-note').forEach(note=>note.remove());};
-      this.unsubscribe=inputHub.subscribe(event=>this.onInput(event));this.restart();
+      this.unsubscribe=inputHub.subscribe(event=>this.onInput(event));await this.restart();
+    }
+    inputStateLabel(){
+      if(this.mode==='listen')return 'no input needed';
+      if(this.midiInput.unsubscribe)return 'USB MIDI';
+      if(getPianoInputIntent()==='microphone'&&microphoneInput.active)return 'microphone';
+      return 'screen keys';
+    }
+    renderInputState(override=null){const pill=$('pianoInputPill');if(!pill)return;const range=this.displayRange.label||BEGINNER_RANGE.label;if(override){pill.textContent=override;return;}pill.textContent=`${range} · Input: ${this.inputStateLabel()}${this.inputNotice?` · ${this.inputNotice}`:''}`;}
+    async ensurePreferredInput(){
+      this.inputNotice='';
+      if(this.mode==='listen'){if(microphoneInput.active)microphoneInput.stop();this.renderInputState();return;}
+      if(getPianoInputIntent()!=='microphone'){this.renderInputState();return;}
+      if(!this.microphoneCompatible){if(microphoneInput.active)microphoneInput.stop();this.inputNotice='Mic is for single-note practice';this.renderInputState();return;}
+      if(microphoneInput.active){if($('pianoGameMic'))$('pianoGameMic').textContent='🎙 On';this.renderInputState();return;}
+      this.renderInputState('Input: microphone · connecting…');
+      try{await microphoneInput.start(r=>{if(r.name&&$('pianoInputPill'))$('pianoInputPill').textContent=`Heard: ${r.name}${r.stable?' ✓':''}`;});if(this.destroyed){microphoneInput.stop();return;}if($('pianoGameMic'))$('pianoGameMic').textContent='🎙 On';this.renderInputState();}
+      catch(err){setPianoInputIntent('screen');if($('pianoGameMic'))$('pianoGameMic').textContent='🎙 Mic';this.inputNotice='microphone unavailable';this.renderInputState();this.feedback('Microphone unavailable — using screen keys');}
     }
     sectionNotes(){return notesInRange(this.song.notes,this.section.start,this.section.end);}
     updateRange(force=false,focusMidi=null){const next=calculateDisplayRange(this.sectionNotes(),this.rangePreference,focusMidi);if(!force&&next.min===this.displayRange.min&&next.max===this.displayRange.max)return false;this.displayRange=next;return true;}
@@ -233,8 +263,8 @@
     schedule(fn,delay){const timer=setTimeout(()=>{this.timers.delete(timer);if(!this.destroyed)fn();},delay);this.timers.add(timer);return timer;}
     sleep(delay){return new Promise(resolve=>{this.pendingSleeps??=new Set();const entry={timer:0,resolve};entry.timer=setTimeout(()=>{this.timers.delete(entry.timer);this.pendingSleeps.delete(entry);resolve();},delay);this.timers.add(entry.timer);this.pendingSleeps.add(entry);});}
     clearTimers(){this.timers.forEach(clearTimeout);this.timers.clear();this.pendingSleeps?.forEach(entry=>entry.resolve());this.pendingSleeps?.clear();clearTimeout(this.feedbackTimer);pianoSynth.stopAll();}
-    restart(){this.loop.start=this.section.start;this.loop.end=this.section.end;this.loop.enabled=false;this.updateLoopUi();this.startRun(this.section.start,false);}
-    startRun(start=this.section.start,isRepeat=false){cancelAnimationFrame(this.raf);pianoSynth.stopAll();this.clearTimers();const token=++this.runToken;this.finished=false;this.destroyed=false;this.running=false;this.countingIn=true;this.song.notes.forEach(n=>delete n.done);const end=this.loop.enabled?this.loop.end:this.section.end;this.targetTracker=new window.FMQGameplayRules.PianoTargetTracker(this.song.notes,start,end);this.syncTargetIndex();this.hits=this.misses=this.combo=this.bestCombo=this.score=0;this.time=start;this.waiting=false;this.resultPanel.hidden=true;this.updateRange(true,this.song.notes[this.index]?.midi);createKeyboard($('pianoGameKeyboard'),true,this.displayRange.min,this.displayRange.max);this.makeLanes();$('pianoStage').querySelectorAll('.falling-note').forEach(n=>n.remove());$('waitCallout').hidden=true;$('pianoInputPill').textContent=`${this.displayRange.label||BEGINNER_RANGE.label} · screen keys`;$('pianoPause').disabled=true;this.updateHud();this.updateEffectiveBpm();this.beginAfterCountIn(token,isRepeat);}
+    async restart(){if(this.restartBusy||this.destroyed)return;this.restartBusy=true;try{if($('pianoPause'))$('pianoPause').disabled=true;await this.ensurePreferredInput();if(this.destroyed)return;this.loop.start=this.section.start;this.loop.end=this.section.end;this.loop.enabled=false;this.updateLoopUi();this.startRun(this.section.start,false);}finally{this.restartBusy=false;}}
+    startRun(start=this.section.start,isRepeat=false){cancelAnimationFrame(this.raf);pianoSynth.stopAll();this.clearTimers();const token=++this.runToken;this.finished=false;this.destroyed=false;this.running=false;this.countingIn=true;this.song.notes.forEach(n=>delete n.done);const end=this.loop.enabled?this.loop.end:this.section.end;this.targetTracker=new window.FMQGameplayRules.PianoTargetTracker(this.song.notes,start,end);this.syncTargetIndex();this.hits=this.misses=this.combo=this.bestCombo=this.score=0;this.time=start;this.waiting=false;this.resultPanel.hidden=true;this.updateRange(true,this.song.notes[this.index]?.midi);createKeyboard($('pianoGameKeyboard'),true,this.displayRange.min,this.displayRange.max);this.makeLanes();$('pianoStage').querySelectorAll('.falling-note').forEach(n=>n.remove());$('waitCallout').hidden=true;this.renderInputState();$('pianoPause').disabled=true;this.updateHud();this.updateEffectiveBpm();this.beginAfterCountIn(token,isRepeat);}
     syncTargetIndex(){const group=this.targetTracker?.current();this.index=group?.items[0]?.index??this.song.notes.length;}
     async beginAfterCountIn(token,isRepeat){pianoSynth.stopAll();if(progress.settings?.countIn!==false)await this.countIn(token);if(this.destroyed||token!==this.runToken)return;const accompaniment=this.song.accompaniment||[],next=accompaniment.findIndex(n=>n.start>=this.time);this.accompanimentIndex=next<0?accompaniment.length:next;this.countingIn=false;this.running=true;$('pianoPause').disabled=false;this.lastFrame=performance.now();this.frame(this.lastFrame);}
     async countIn(token){const overlay=$('pianoCountIn'),beat=window.FMQPracticeTools?.beatMilliseconds(this.tempoAt(this.time),this.speed)||750;overlay.hidden=false;for(const label of ['1','2','3','4']){if(this.destroyed||token!==this.runToken)return;overlay.textContent=label;this.countClick(label==='1');await this.sleep(beat);}if(this.destroyed||token!==this.runToken)return;overlay.textContent='PLAY!';await this.sleep(Math.min(250,beat*.35));if(!this.destroyed&&token===this.runToken)overlay.hidden=true;}
@@ -270,7 +300,7 @@
     toggleLoop(){this.loop.enabled=!this.loop.enabled;this.updateLoopUi();if(this.loop.enabled)this.startRun(this.loop.start,true);}
     updateLoopUi(){const format=window.FMQPracticeTools?.formatPracticeTime||(n=>`${Math.round(n)}s`);if($('pianoLoopStart'))$('pianoLoopStart').textContent=`A · ${format(this.loop.start)}`;if($('pianoLoopEnd'))$('pianoLoopEnd').textContent=`B · ${format(this.loop.end)}`;if($('pianoLoopToggle'))$('pianoLoopToggle').textContent=this.loop.enabled?'↻ Loop On':'↻ Loop Off';}
     togglePause(){if(this.finished||this.destroyed||this.countingIn)return;this.running=!this.running;$('pianoPause').textContent=this.running?'Pause':'Resume';if(this.running){const accompaniment=this.song.accompaniment||[],next=accompaniment.findIndex(note=>note.start>=this.time);this.accompanimentIndex=next<0?accompaniment.length:next;this.lastFrame=performance.now();this.frame(this.lastFrame);}else{cancelAnimationFrame(this.raf);pianoSynth.stopAll();}}
-    async toggleMic(){if(microphoneInput.active){microphoneInput.stop();$('pianoGameMic').textContent='🎙 Mic';$('pianoInputPill').textContent='Input: screen keys';return;}try{await microphoneInput.start(r=>{if(r.name)$('pianoInputPill').textContent=`Heard: ${r.name}${r.stable?' ✓':''}`;});$('pianoGameMic').textContent='🎙 On';$('pianoInputPill').textContent='Microphone Ready';}catch(err){$('pianoInputPill').textContent='Mic unavailable — tap the keys';this.feedback('Use the on-screen keys');}}
+    async toggleMic(){if(this.mode==='listen'||!this.microphoneCompatible){this.inputNotice='Mic is for single-note practice';this.renderInputState();this.feedback('Use screen keys or USB MIDI for this part');return;}if(microphoneInput.active){microphoneInput.stop();setPianoInputIntent('screen');$('pianoGameMic').textContent='🎙 Mic';this.inputNotice='';this.renderInputState();return;}this.renderInputState('Input: microphone · connecting…');try{await microphoneInput.start(r=>{if(r.name&&$('pianoInputPill'))$('pianoInputPill').textContent=`Heard: ${r.name}${r.stable?' ✓':''}`;});$('pianoGameMic').textContent='🎙 On';this.inputNotice='';this.renderInputState();}catch(err){setPianoInputIntent('screen');$('pianoGameMic').textContent='🎙 Mic';this.inputNotice='microphone unavailable';this.renderInputState();this.feedback('Microphone unavailable — using screen keys');}}
     async connectMidi(){try{await this.midiInput.connect();$('pianoGameMidi').textContent='⌨ MIDI On';$('pianoInputPill').textContent='USB MIDI Ready · chords supported';}catch(err){$('pianoInputPill').textContent=err.message;}}
     stopPlaybackAudio(){pianoSynth.stopAll();}
     finish(){if(this.finished||this.destroyed)return;this.finished=true;this.running=false;cancelAnimationFrame(this.raf);this.clearTimers();const total=this.hits+this.misses,accuracy=total?Math.round(100*this.hits/total):0;progress.totalHits=(progress.totalHits||0)+this.hits;progress.bestCombo=Math.max(progress.bestCombo||0,this.bestCombo);progress.lastSong=this.song.id;const prior=progress.songs[this.song.id]||{},newBest=this.score>(prior.bestScore||0);progress.songs[this.song.id]={bestScore:Math.max(prior.bestScore||0,this.score),bestAccuracy:Math.max(prior.bestAccuracy||0,accuracy),lastPlayed:Date.now()};const lessonNew=this.lessonId&&!progress.completedLessons.includes(this.lessonId);if(lessonNew)progress.completedLessons.push(this.lessonId);saveProgress();$('pianoResultLabel').textContent=this.lessonId?'LESSON COMPLETE':'SONG COMPLETE';$('pianoResultTitle').textContent=this.song.title;$('pianoResultScore').textContent=this.score;$('pianoResultAccuracy').textContent=`${accuracy}%`;$('pianoResultCombo').textContent=this.bestCombo;$('pianoResultHits').textContent=this.hits;$('pianoResultMessage').textContent=[newBest?'New best score!':'Nice playing!',lessonNew?'Lesson completed ✓':''].filter(Boolean).join(' · ');$('pianoResultBack').textContent=this.lessonId?'Back to Lessons':'Back to Songs';this.resultPanel.hidden=false;}
@@ -293,12 +323,12 @@
         selected=window.FMQGameplayRules.pianoArrangementForInput(selected,microphoneSafe?'microphone':'midi');
       }
       const clone={...song,handMode,practiceMode:requested,accompaniment:accompaniment.map(note=>({...note})).sort((a,b)=>a.start-b.start||a.midi-b.midi),notes:selected.map(note=>({...note})).sort((a,b)=>a.start-b.start||a.midi-b.midi)};
-      const rangePreference=lessonId?'beginner':song.imported?'song':(progress.settings?.rangeMode||'beginner');currentGame=new PianoGame(clone,mode,lessonId,{rangePreference});
+      const rangePreference=lessonId?'beginner':song.imported?'song':(progress.settings?.rangeMode||'beginner'),microphoneCompatible=mode!=='listen'&&isMonophonicMaterial(clone.notes);currentGame=new PianoGame(clone,mode,lessonId,{rangePreference,microphoneCompatible});
       if(sectionChoice!=='full'){
         if(sectionChoice.startsWith('phrase:')){const phrase=song.phraseBoundaries?.[Number(sectionChoice.split(':')[1])];if(phrase)currentGame.section={start:phrase.start,end:Math.max(phrase.start,phrase.end-.001)};}
         else {const [,rawStart,rawEnd]=sectionChoice.split(':');const start=Number(rawStart)||0,end=Number(rawEnd)||start+30;currentGame.section={start,end:Math.min(end,Math.max(...clone.notes.map(note=>note.start+note.duration))+1)};}
       }
-      currentGame.mount();
+      await currentGame.mount();
     }finally{startSongBusy=false;}
   }
   $('pianoQuickStart').addEventListener('click',()=>showLessonIntro(lessons[0]));
@@ -330,5 +360,5 @@
   }
   function escapeHtml(text){const div=document.createElement('div');div.textContent=String(text);return div.innerHTML;}
   function formatTime(seconds){return `${Math.floor(seconds/60)}:${String(Math.floor(seconds%60)).padStart(2,'0')}`;}
-  window.NovaPianoTest={calculateDisplayRange,noteRange,melodyPracticeNotes,MidiFileParser,PianoGame,getCurrentGame:()=>currentGame,getActiveVoiceCount:()=>[...pianoSynth.voices.values()].reduce((total,voices)=>total+voices.size,0),lessons};
+  window.NovaPianoTest={calculateDisplayRange,noteRange,melodyPracticeNotes,isMonophonicMaterial,MidiFileParser,PianoGame,getCurrentGame:()=>currentGame,getActiveVoiceCount:()=>[...pianoSynth.voices.values()].reduce((total,voices)=>total+voices.size,0),getMicrophoneState:()=>({active:microphoneInput.active,intent:getPianoInputIntent(),stableMidi:microphoneInput.stableMidi,stableFrames:microphoneInput.stableFrames}),setMicrophoneIntentForTest:value=>setPianoInputIntent(value),emitInputForTest:event=>inputHub.emit(event),lessons};
 })();
