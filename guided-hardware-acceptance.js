@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const APP_VERSION = '2.6.12';
+  const APP_VERSION = '2.6.13';
   const RESULT_KEY = 'family-music-quest-hardware-results-v1';
   const CAL_KEY = 'family-music-quest-calibration-v1';
   const SESSION_COUNTER_KEY = 'family-music-quest-hardware-session-counter-v1';
@@ -682,36 +682,68 @@
     setTimeout(()=>URL.revokeObjectURL(a.href), 500);
     return payload;
   }
+  function buildParentShareFiles(payload, reportText) {
+    if (typeof File === 'undefined') return { jsonFile:null, textFile:null, textFilename:null };
+    const jsonFile = new File([payload.json], payload.filename, { type:'application/json' });
+    const textFilename = payload.filename.replace(/\.json$/i, '-parent-report.txt');
+    const companionText = `${reportText}
+
+--- STRUCTURED HARDWARE VALIDATION JSON ---
+${payload.json}`;
+    const textFile = new File([companionText], textFilename, { type:'text/plain' });
+    return { jsonFile, textFile, textFilename };
+  }
+  function canShareFileSet(files) {
+    if (!navigator.canShare || !files?.length || files.some(file=>!file)) return false;
+    try { return Boolean(navigator.canShare({ files })); } catch { return false; }
+  }
   async function shareTestReport() {
     const payload = createReportPayload(combinedReportObject());
-    let file = null;
-    let canFileShare = false;
-    try {
-      if (typeof File !== 'undefined') file = new File([payload.json], payload.filename, { type:'application/json' });
-      canFileShare = Boolean(file && navigator.canShare && navigator.canShare({ files:[file] }) && navigator.share);
-    } catch {
-      canFileShare = false;
+    const reportText = projectReportText(payload.report);
+    const { jsonFile, textFile } = buildParentShareFiles(payload, reportText);
+    const title = 'Family Music Quest hardware test report';
+    let method = null;
+    let files = [];
+
+    if (jsonFile && textFile && canShareFileSet([jsonFile, textFile])) {
+      method = 'json+text-files';
+      files = [jsonFile, textFile];
+    } else if (jsonFile && canShareFileSet([jsonFile])) {
+      method = 'json-file';
+      files = [jsonFile];
+    } else if (textFile && canShareFileSet([textFile])) {
+      method = 'text-file';
+      files = [textFile];
+    } else if (navigator.share) {
+      let textShareable = true;
+      if (navigator.canShare) {
+        try { textShareable = Boolean(navigator.canShare({ title, text:reportText })); } catch { textShareable = false; }
+      }
+      if (textShareable) method = 'text-only';
     }
-    if (!canFileShare) {
+
+    if (!navigator.share || !method) {
       downloadReportPayload(payload);
-      setReportActionStatus('Native file sharing is not available here. The JSON report was downloaded instead.');
-      return { status:'downloaded', payload };
+      setReportActionStatus('This Chromebook cannot open a compatible native share. The JSON report was downloaded; Copy Project Report is also available.');
+      return { status:'downloaded', method:'download-json', payload };
     }
+
+    const shareData = { title, text:reportText };
+    if (files.length) shareData.files = files;
     try {
-      await navigator.share({
-        files:[file],
-        title:'Family Music Quest hardware test report',
-        text:`FMQ ${APP_VERSION} · ${payload.report.guidedAcceptance?.sessionId || 'hardware test'}`
-      });
-      setReportActionStatus('Share sheet completed. The report also remains saved on this Chromebook.');
-      return { status:'shared', payload };
+      await navigator.share(shareData);
+      if (method === 'json+text-files') setReportActionStatus('Share sheet completed with the readable report and structured JSON attached. FMQ cannot verify whether the selected app sent the message.');
+      else if (method === 'json-file') setReportActionStatus('Share sheet completed with structured JSON plus the full report text. The selected app may handle the text differently; verify before sending.');
+      else if (method === 'text-file') setReportActionStatus('Share sheet completed with a readable report file that also contains the structured JSON. A separate .json attachment was not supported on this device.');
+      else setReportActionStatus('Share sheet completed with the full report text. File sharing was unavailable; use Download JSON if the structured file is still needed.');
+      return { status:'shared', method, payload };
     } catch (error) {
       if (error?.name === 'AbortError') {
-        setReportActionStatus('Sharing was canceled or no destination was selected. You can try again or Download JSON.');
-        return { status:'cancelled', payload };
+        setReportActionStatus('Sharing was canceled or no destination was selected. Nothing was sent; the report is still saved.');
+        return { status:'cancelled', method, payload };
       }
-      setReportActionStatus('Sharing did not complete. Your report is still saved; use Download JSON if needed.');
-      return { status:'error', payload, error:String(error?.message || error) };
+      setReportActionStatus('Sharing did not complete. Nothing was removed; use Send Report to Parent again, Copy Project Report, or Download JSON.');
+      return { status:'error', method, payload, error:String(error?.message || error) };
     }
   }
   function wireReport() {
@@ -725,7 +757,7 @@
         await navigator.clipboard?.writeText(projectReportText());
         setReportActionStatus('Project Report copied. Paste it into the Family Music Quest Project Manager chat.');
       } catch {
-        setReportActionStatus('Could not copy automatically. Select the report text above, or use Share Test Report / Download JSON.');
+        setReportActionStatus('Could not copy automatically. Select the report text above, or use Send Report to Parent / Download JSON.');
       }
     };
     $('diagShareReport').onclick = shareTestReport;

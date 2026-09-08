@@ -1,5 +1,13 @@
 # Changelog
 
+## v2.6.13 — Child-Friendly Parent Report Transfer
+
+- Replaced the technical `Share Test Report` action with a child-readable `Send Report to Parent` flow using the native Web Share API.
+- Preferred payload shares the existing structured Hardware Validation JSON plus a readable text companion; the full Project Report is also supplied as share text.
+- The text companion includes the structured JSON after the readable report so evidence remains recoverable when a platform cannot attach the `.json` file separately.
+- Added capability-based narrower native-share fallbacks, neutral cancellation/error handling, and preserved Copy Project Report / Download JSON fallbacks.
+- Split manual-evidence fidelity to #34 rather than widening this release. Native ChromeOS/Gmail behavior still requires physical Dell Chromebook verification.
+
 ## v2.6.12 — Active Practice Screen Wake Lock
 
 - Added a standards-based Screen Wake Lock lifecycle through the existing shared hardware-services layer so active Guitar gameplay/count-in, active Piano gameplay/Wait-for-Me/listening, and active Guided Hardware Test tasks can keep the Chromebook display awake without synthetic activity.
