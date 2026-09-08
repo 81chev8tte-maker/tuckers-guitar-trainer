@@ -59,6 +59,7 @@ test('active Guided Hardware Test holds wake lock but idle Hardware & Backup doe
   await expect(page.getByRole('heading',{name:'Hardware & Backup'})).toBeVisible();
   expect(await wakeRequests(page)).toBe(0);
 
+  await page.locator('[data-diag-tab="guided"]').click();
   await page.evaluate(()=>window.FMQGuidedHardwareTest.beginGuitarSynthetic());
   await expect(page.locator('#guidedTask')).toBeVisible();
   await expect.poll(()=>wakeRequests(page)).toBe(1);
