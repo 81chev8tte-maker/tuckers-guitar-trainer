@@ -139,11 +139,8 @@ test('guided Hardware Acceptance Test records evidence and supports project copy
   await page.getByRole('button',{name:'Continue'}).click();
   await page.getByRole('button',{name:'Start Playing'}).click();
   await page.getByRole('button',{name:/Hardware & Backup/}).click();
-  await page.getByRole('button',{name:/Run Hardware Test/}).click();
-  await expect(page.getByRole('heading',{name:'Guided Hardware Test'})).toBeVisible();
-  await page.getByRole('button',{name:'🎸 Microphone'}).click();
-  await expect(page.getByRole('heading',{name:'Production Guitar Input'})).toBeVisible();
-  await page.getByRole('button',{name:'🧪 Guided Test'}).click();
+  await page.getByRole('button',{name:/Quick Hardware Tests/}).click();
+  await expect(page.getByRole('heading',{name:'Quick Hardware Tests'})).toBeVisible();
 
   await page.evaluate(()=>window.FMQGuidedHardwareTest.beginGuitarSynthetic());
   await page.evaluate(()=>{for(let i=0;i<36;i++)window.FMQGuidedHardwareTest.feedAudio({rms:.002,freq:null,midi:null,note:'—',onset:false});});
