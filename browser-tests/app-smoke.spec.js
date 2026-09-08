@@ -216,7 +216,7 @@ test('guided Hardware Acceptance Test records evidence and supports project copy
   expect(projectText).toContain('Adult result: NOT DECIDED');
   expect(projectText).toContain('Adult help required: 1');
   expect(projectText).toContain('Child trusted scoring: Mostly');
-  expect(projectText).toContain('Guitar: COMPLETE · 6/6 open strings passed · retries 1');
+  expect(projectText).toContain('Guitar microphone: COMPLETE · 6/6 open strings passed · retries 1');
   expect(projectText).toContain('Piano/MIDI: COMPLETE');
   expect(projectText).toContain('highway-open-note.jpg');
   expect(projectText).not.toContain('recentEvents');
