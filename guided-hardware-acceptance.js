@@ -354,6 +354,7 @@
       persistSession();
     }
     renderGuided();
+    if ($('guidedLead') && message) $('guidedLead').textContent = message;
   }
   function statusText(status) {
     if (status === 'complete') return '✅ Complete';
@@ -532,7 +533,15 @@
     const PianoMic = window.NovaPianoInputs?.MicrophonePianoInput;
     if (!PianoMic) throw new Error('Piano microphone input is still loading.');
     guidedPianoMic = new PianoMic({ emit:()=>{} });
-    await guidedPianoMic.start(processPianoMicReading);
+    try {
+      await guidedPianoMic.start(processPianoMicReading);
+    } catch (error) {
+      session.pianoMicrophone.status = 'not-available';
+      session.pianoMicrophone.completedAt = new Date().toISOString();
+      cleanupPianoMic(); path = null; phase = null;
+      persistSession(); renderGuided();
+      throw error;
+    }
     const track = guidedPianoMic.stream?.getAudioTracks?.()[0] || guidedPianoMic.stream?.getTracks?.()[0];
     const settings = track?.getSettings?.() || {};
     session.pianoMicrophone.device = { id:settings.deviceId || '', label:track?.label || 'Default microphone' };
@@ -792,6 +801,7 @@
       `Player: ${report.player?.name || s?.player?.name || 'Unknown'}`,
       `Device: ${platformData.platform || 'Unknown'} · ${browserLabel(platformData)} · ${platformData.displayMode === 'standalone' ? 'Installed PWA' : 'Browser tab'}`,
       `Guitar/audio input: ${s?.audioDevice?.label || 'Not recorded'}`,
+      `Piano microphone input: ${s?.pianoMicrophone?.device?.label || 'Not recorded'}`,
       `Piano/MIDI input: ${s?.midi?.device?.name || 'Not recorded'}`,
       '',
       'HUMAN VALIDATION',
