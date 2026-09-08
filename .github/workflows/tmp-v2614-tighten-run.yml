@@ -1,0 +1,27 @@
+name: Temporary v2.6.14 tightening run
+
+on:
+  push:
+    branches:
+      - release/v2.6.14-child-self-guided-hardware-tests
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: release/v2.6.14-child-self-guided-hardware-tests
+      - name: Apply focused tightening
+        run: node tools/tmp-v2614-tighten.mjs
+      - name: Commit and remove temporary workflow
+        run: |
+          rm -f .github/workflows/tmp-v2614-tighten-run.yml
+          git config user.name "81chev8tte-maker"
+          git config user.email "81chev8tte@gmail.com"
+          git add -A
+          git commit -m "v2.6.14: tighten Piano quick-test failure state"
+          git push origin HEAD:release/v2.6.14-child-self-guided-hardware-tests
