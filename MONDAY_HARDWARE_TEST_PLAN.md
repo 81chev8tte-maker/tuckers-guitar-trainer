@@ -80,20 +80,19 @@ Then:
 
 ## 3A — Run the in-app guided hardware acceptance
 
-Before the longer gameplay matrix, open **Hardware & Backup → Run Hardware Test**.
+Before the longer gameplay matrix, open **Hardware & Backup → Quick Hardware Tests**. Keep each child-facing round short.
 
-- Run **Guitar audio** with the intended microphone/USB input.
-- Run **Piano MIDI** when the physical MIDI keyboard is available.
+- Tucker can run **Test Guitar Microphone** with the real guitar/amp and follow the quiet, six-string, repeated-note and silence prompts.
+- Nova can run **Test Piano Microphone** and follow the one-note-at-a-time C4–D4–E4–F4–G4 plus repeated-C4 prompts.
+- Run **Test MIDI Keyboard** only when a real MIDI keyboard is actually available; otherwise leave it not performed.
 - Answer the five short Human Observations questions without coaching the child toward an expected answer.
 - Record **Adult help required** (0 / 1 / 2+).
 - Ask the child whether the game usually agreed with what they thought they played (**Yes / Mostly / No / unsure**).
 - Add an optional verbatim child comment, short tester/context note, and screenshot/video filenames when useful.
 - Explicitly choose **PASS / BLOCKER / NOT DECIDED**; diagnostics never choose this automatically.
-- Open **Report** and verify **Copy Project Report**.
-- Paste the Project Report into the Family Music Quest Project Manager chat on the phone.
-- Use **Share Test Report** and verify the physical ChromeOS share sheet where supported. Use any available destination (Quick Share may or may not be offered by ChromeOS) to move the JSON to the Android phone.
-- Attach the JSON to the Family Music Quest Project for technical analysis.
-- Also verify **Download JSON** and the unsupported-share fallback.
+- After the short questions, use **Send Report to Parent** and verify the physical ChromeOS share sheet/Gmail path where supported.
+- Confirm the parent receives an understandable report/attachments.
+- Use **Copy Project Report** and **Download JSON** only as fallbacks when native transfer does not work.
 
 Screenshots remain supplemental evidence for visual/readability problems. Short external phone video is preferred for stutter, audio glitches, perceived latency or timing problems. FMQ stores only evidence filenames/labels, not the media itself.
 

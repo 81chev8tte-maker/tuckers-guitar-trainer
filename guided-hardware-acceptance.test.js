@@ -1,7 +1,7 @@
 const assert = require('assert');
 const rules = require('./guided-hardware-acceptance.js');
 
-assert.equal(rules.APP_VERSION, '2.6.13');
+assert.equal(rules.APP_VERSION, '2.6.14');
 assert.equal(rules.GUITAR_STRINGS.length, 6);
 assert.deepEqual(rules.GUITAR_STRINGS.map(s=>s.midi), [40,45,50,55,59,64]);
 
@@ -53,7 +53,7 @@ assert.equal(silence.stablePitchReadings, 1);
 
 const session = rules.createSession({startedAt:'2026-09-07T12:00:00Z',sequence:3,player:{id:'p1',name:'Tester'},platform:{platform:'Chrome OS'}});
 assert.equal(session.status, 'in-progress');
-assert.equal(session.version, 2);
+assert.equal(session.version, 3);
 assert.equal(session.sessionId, 'FMQ-HW-2026-09-07-03');
 assert.equal(session.humanEvidence.adultResult, 'not-decided');
 let missing = rules.computeNotPerformed(session);
@@ -70,6 +70,28 @@ assert(!missing.some(x=>x.includes('Guided Piano MIDI')));
 assert(!missing.some(x=>x.includes('MIDI sustain capability')));
 assert(missing.some(x=>x.includes('Physical end-to-end latency')));
 
+
+assert.equal(rules.PIANO_MIC_NOTES.length, 6);
+assert.deepEqual(rules.PIANO_MIC_NOTES.map(step=>step.midi), [60,62,64,65,67,60]);
+const c4 = rules.PIANO_MIC_NOTES[0];
+let pianoResult = rules.createPianoMicNoteResult(c4);
+let pianoApplied = rules.applyPianoMicReading(pianoResult, c4, {active:true,level:.001,quiet:true,stable:false});
+assert.equal(pianoApplied.passed, false, 'quiet Piano candidate cannot pass');
+pianoApplied = rules.applyPianoMicReading(pianoApplied.result, c4, {active:true,level:.03,midi:60,name:'C4',stable:false,confidence:.9});
+assert.equal(pianoApplied.passed, false, 'unstable Piano candidate cannot pass');
+pianoApplied = rules.applyPianoMicReading(pianoApplied.result, c4, {active:true,level:.03,midi:62,name:'D4',stable:true,confidence:.9});
+assert.equal(pianoApplied.passed, false, 'wrong stable Piano note cannot pass');
+assert.equal(pianoApplied.result.retries, 1);
+pianoApplied = rules.applyPianoMicReading(pianoApplied.result, c4, {active:true,level:.03,midi:60,name:'C4',stable:true,confidence:.9,frequency:261.63,cents:0});
+assert.equal(pianoApplied.passed, true, 'correct production-gated stable Piano reading passes');
+assert.equal(pianoApplied.result.stable, true);
+
+const pianoMissingSession = rules.createSession();
+assert(rules.computeNotPerformed(pianoMissingSession).some(x=>x.includes('Guided Piano microphone')));
+pianoMissingSession.pianoMicrophone.status = 'complete';
+const afterPianoGuide = rules.computeNotPerformed(pianoMissingSession);
+assert(!afterPianoGuide.some(x=>x.includes('Guided Piano microphone')), 'completed guided Piano microphone must not be reported unperformed');
+assert(afterPianoGuide.some(x=>x.includes('Piano microphone gameplay / perceived response')), 'guided Piano microphone must not claim gameplay/latency acceptance');
 
 const payloadReport = {
   format:'family-music-quest-hardware-report',
