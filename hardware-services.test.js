@@ -38,6 +38,7 @@ function makeSentinel(){
   assert.equal(wake.snapshot().wanted,false);
   wake.setActive('piano-gameplay',true);
   await tick();
+  assert.deepEqual(wake.snapshot().activeReasons,['piano-gameplay']);
   assert.equal(sentinels.length,1,'active practice should request one screen wake lock');
   assert.equal(wake.snapshot().held,true);
 
