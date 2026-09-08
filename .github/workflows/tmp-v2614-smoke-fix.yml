@@ -1,0 +1,27 @@
+name: Temporary v2.6.14 smoke test fix
+
+on:
+  push:
+    branches:
+      - release/v2.6.14-child-self-guided-hardware-tests
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: release/v2.6.14-child-self-guided-hardware-tests
+      - name: Apply smoke test update
+        run: node tools/tmp-v2614-smoke-fix.mjs
+      - name: Commit and remove temporary helper
+        run: |
+          rm -f .github/workflows/tmp-v2614-smoke-fix.yml
+          git config user.name "81chev8tte-maker"
+          git config user.email "81chev8tte@gmail.com"
+          git add -A
+          git commit -m "test: align guided smoke flow with Quick Hardware Tests"
+          git push origin HEAD:release/v2.6.14-child-self-guided-hardware-tests
