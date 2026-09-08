@@ -1,0 +1,68 @@
+name: Temporary v2.6.12 documentation alignment
+on:
+  push:
+    branches: [release/v2.6.12-wake-lock]
+permissions:
+  contents: write
+jobs:
+  align:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: release/v2.6.12-wake-lock
+      - name: Update permanent release documentation
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          changelog=Path('CHANGELOG.md')
+          text=changelog.read_text()
+          marker='# Changelog\n\n'
+          section='''## v2.6.12 — Active Practice Screen Wake Lock\n\n- Added a standards-based Screen Wake Lock lifecycle through the existing shared hardware-services layer so active Guitar gameplay/count-in, active Piano gameplay/Wait-for-Me/listening, and active Guided Hardware Test tasks can keep the Chromebook display awake without synthetic activity.\n- Reused existing Guitar `.playing`, Piano game visibility and guided-test task state rather than adding a competing gameplay/session stack.\n- Releases the lock when active practice/test state ends and handles background visibility, browser/system release, unsupported API and request rejection without changing gameplay.\n- Added deterministic wake-lock lifecycle coverage plus Playwright integration checks for Guitar, Piano and Guided Hardware Test activation/cleanup.\n- Advanced package/app/PWA/report/cache versioning to v2.6.12. Physical Dell Chromebook dim/sleep acceptance remains required for Issue #30.\n\n'''
+          if '## v2.6.12 — Active Practice Screen Wake Lock' not in text:
+              if marker not in text: raise SystemExit('CHANGELOG marker not found')
+              changelog.write_text(text.replace(marker,marker+section,1))
+
+          roadmap=Path('ROADMAP.md')
+          text=roadmap.read_text()
+          old='Issue #30 tracks the separate confirmed active-practice screen wake-lock blocker and remains Backlog until v2.6.11 reaches its acceptance boundary. Issue #24 remains a separate, non-blocking Backlog reporting issue about distinguishing an enumerated virtual/system MIDI endpoint from a verified playable keyboard. Issue #31 tracks later child-friendly report transfer/evidence-fidelity work. None of #24/#30/#31 is implemented as part of v2.6.11.'
+          new='Issue #30 is the focused v2.6.12 Active Practice Screen Wake Lock maintenance release, authorized as a testing-enabler while #29 still awaits physical evidence. After technical merge/deploy it remains subject to real Dell Chromebook wake-lock acceptance. Issue #24 remains a separate, non-blocking Backlog reporting issue about distinguishing an enumerated virtual/system MIDI endpoint from a verified playable keyboard. Issue #31 tracks child-friendly report transfer/evidence-fidelity work; its parent-transfer portion may follow only after v2.6.12 is technically complete. Neither #24 nor Bass work is included in this maintenance sequence.'
+          if old not in text: raise SystemExit('ROADMAP target paragraph not found')
+          roadmap.write_text(text.replace(old,new,1))
+
+          architecture=Path('ARCHITECTURE.md')
+          text=architecture.read_text()
+          old='- `hardware-services.js` — shared Web MIDI service.'
+          new='- `hardware-services.js` — shared Web MIDI service plus active-practice Screen Wake Lock lifecycle.'
+          if old not in text: raise SystemExit('ARCHITECTURE file-list target not found')
+          text=text.replace(old,new,1)
+          old2='The shared `hardware-services.js` MIDI service exposes Note On/Off, velocity, channel, held notes/polyphony, sustain CC64 and connection state. Piano subscribes to this shared service during MIDI gameplay.\n'
+          new2=old2+'\nThe same shared hardware-services layer owns the standards-based Screen Wake Lock lifecycle. It derives wake-lock demand from established active UI state (Guitar `.playing`, visible Piano game, active Guided Hardware Test task), releases on inactive/navigation cleanup, and reacquires after visibility/system release only while the same logical active session still requires the display. Wake Lock failure is non-fatal and never changes scoring or input behavior.\n'
+          if old2 not in text: raise SystemExit('ARCHITECTURE hardware paragraph target not found')
+          architecture.write_text(text.replace(old2,new2,1))
+
+          testing=Path('TESTING.md')
+          text=testing.read_text()
+          old='- PWA cache/version consistency;\n- browser navigation between instruments;'
+          new='- PWA cache/version consistency;\n- active-practice Screen Wake Lock request/release, visibility restoration and unsupported/denied graceful behavior;\n- browser navigation between instruments;'
+          if old not in text: raise SystemExit('TESTING shared matrix target not found')
+          testing.write_text(text.replace(old,new,1))
+
+          hardware=Path('HARDWARE_VALIDATION.md')
+          text=hardware.read_text()
+          old='- Microphone single-note input separately from MIDI\n\n## Release result'
+          new='- Microphone single-note input separately from MIDI\n- During active Guitar/Piano practice or an active guided hardware test, leave hands off the Chromebook long enough to cross the normal dim timeout and confirm the display remains awake; after exit/Home, confirm normal system dim/sleep is allowed again. Record this as physical evidence only — automation cannot approve it.\n\n## Release result'
+          if old not in text: raise SystemExit('HARDWARE_VALIDATION target not found')
+          hardware.write_text(text.replace(old,new,1))
+          PY
+          git diff --check
+          git rm .github/workflows/release-docs-v2612.yml
+      - name: Commit documentation alignment
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add CHANGELOG.md ROADMAP.md ARCHITECTURE.md TESTING.md HARDWARE_VALIDATION.md .github/workflows/release-docs-v2612.yml
+          git commit -m "docs: record v2.6.12 wake lock release"
+          git push
