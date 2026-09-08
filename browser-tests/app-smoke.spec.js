@@ -199,7 +199,7 @@ test('guided Hardware Acceptance Test records evidence and supports project copy
   await expect(page.locator('#guidedSummary')).toContainText('Hardware test report saved');
 
   const report=await page.evaluate(()=>window.FMQGuidedHardwareTest.reportObject());
-  expect(report.appVersion).toBe('2.6.12');
+  expect(report.appVersion).toBe('2.6.13');
   expect(report.guidedAcceptance.version).toBe(2);
   expect(report.guidedAcceptance.sessionId).toMatch(/^FMQ-HW-\d{4}-\d{2}-\d{2}-\d{2,}$/);
   expect(report.guidedAcceptance.humanObservations.source).toBe('human');
@@ -235,7 +235,7 @@ test('guided Hardware Acceptance Test records evidence and supports project copy
 
   await page.getByRole('button',{name:'View Report'}).click();
   await expect(page.getByRole('button',{name:'Copy Project Report'})).toBeVisible();
-  await expect(page.getByRole('button',{name:'Share Test Report'})).toBeVisible();
+  await expect(page.getByRole('button',{name:'Send Report to Parent'})).toBeVisible();
   await expect(page.getByRole('button',{name:'Download JSON'})).toBeVisible();
   await expect(page.getByRole('button',{name:'🎸 Microphone'})).toBeVisible();
 
@@ -249,25 +249,50 @@ test('guided Hardware Acceptance Test records evidence and supports project copy
   await page.evaluate(()=>{
     window.__downloadClicks=0;
     window.__downloadJson='';
+    window.__canShareCalls=[];
+    window.__sharedData=null;
     const originalCreate=URL.createObjectURL.bind(URL);
     URL.createObjectURL=blob=>{blob.text().then(text=>{window.__downloadJson=text;});return originalCreate(blob);};
     HTMLAnchorElement.prototype.click=function(){window.__downloadClicks++;};
-    Object.defineProperty(navigator,'canShare',{configurable:true,value:()=>true});
-    Object.defineProperty(navigator,'share',{configurable:true,value:async data=>{window.__sharedFilename=data.files[0].name;window.__sharedJson=await data.files[0].text();}});
+    Object.defineProperty(navigator,'canShare',{configurable:true,value:data=>{window.__canShareCalls.push((data.files||[]).map(file=>file.name));return Boolean(data.files?.length===2);}});
+    Object.defineProperty(navigator,'share',{configurable:true,value:async data=>{window.__sharedData={title:data.title,text:data.text,files:await Promise.all((data.files||[]).map(async file=>({name:file.name,type:file.type,text:await file.text()})))};}});
   });
-  await page.getByRole('button',{name:'Share Test Report'}).click();
-  await expect.poll(()=>page.evaluate(()=>window.__sharedJson||'')).toContain(sessionId);
-  const shared=await page.evaluate(()=>JSON.parse(window.__sharedJson));
+  await page.getByRole('button',{name:'Send Report to Parent'}).click();
+  await expect.poll(()=>page.evaluate(()=>Boolean(window.__sharedData))).toBe(true);
+  const sharedData=await page.evaluate(()=>window.__sharedData);
+  expect(sharedData.files).toHaveLength(2);
+  expect(sharedData.files[0].name).toMatch(/\.json$/);
+  expect(sharedData.files[1].name).toMatch(/-parent-report\.txt$/);
+  expect(sharedData.text).toContain('Family Music Quest — Project Hardware Report');
+  expect(sharedData.text).toContain(sessionId);
+  expect(sharedData.files[1].text).toContain('STRUCTURED HARDWARE VALIDATION JSON');
+  expect(sharedData.files[1].text).toContain(sessionId);
+  const shared=JSON.parse(sharedData.files[0].text);
   expect(shared.guidedAcceptance.sessionId).toBe(sessionId);
   expect(shared.guidedAcceptance.humanEvidence.childScoringTrust).toBe('mostly');
   expect(await page.evaluate(()=>window.__downloadClicks)).toBe(0);
+  expect((await page.evaluate(()=>window.__canShareCalls))[0]).toHaveLength(2);
+
+  await page.evaluate(()=>{
+    window.__sharedData=null;window.__canShareCalls=[];
+    Object.defineProperty(navigator,'canShare',{configurable:true,value:data=>{const names=(data.files||[]).map(file=>file.name);window.__canShareCalls.push(names);return names.length===1&&names[0].endsWith('-parent-report.txt');}});
+    Object.defineProperty(navigator,'share',{configurable:true,value:async data=>{window.__sharedData={text:data.text,files:await Promise.all((data.files||[]).map(async file=>({name:file.name,text:await file.text()})))};}});
+  });
+  await page.getByRole('button',{name:'Send Report to Parent'}).click();
+  await expect.poll(()=>page.evaluate(()=>Boolean(window.__sharedData))).toBe(true);
+  const textFallback=await page.evaluate(()=>window.__sharedData);
+  expect(textFallback.files).toHaveLength(1);
+  expect(textFallback.files[0].name).toMatch(/-parent-report\.txt$/);
+  expect(textFallback.files[0].text).toContain('STRUCTURED HARDWARE VALIDATION JSON');
+  expect(textFallback.files[0].text).toContain(sessionId);
 
   await page.evaluate(()=>{
     window.__downloadClicks=0;window.__downloadJson='';
     Object.defineProperty(navigator,'canShare',{configurable:true,value:()=>false});
+    Object.defineProperty(navigator,'share',{configurable:true,value:undefined});
   });
-  await page.getByRole('button',{name:'Share Test Report'}).click();
-  await expect(page.locator('#diagReportActionStatus')).toContainText('downloaded instead');
+  await page.getByRole('button',{name:'Send Report to Parent'}).click();
+  await expect(page.locator('#diagReportActionStatus')).toContainText('JSON report was downloaded');
   await expect.poll(()=>page.evaluate(()=>window.__downloadClicks)).toBe(1);
   await expect.poll(()=>page.evaluate(()=>window.__downloadJson||'')).toContain(sessionId);
   const fallback=await page.evaluate(()=>JSON.parse(window.__downloadJson));
@@ -275,11 +300,11 @@ test('guided Hardware Acceptance Test records evidence and supports project copy
 
   await page.evaluate(()=>{
     window.__downloadClicks=0;
-    Object.defineProperty(navigator,'canShare',{configurable:true,value:()=>true});
+    Object.defineProperty(navigator,'canShare',{configurable:true,value:data=>Boolean(data.files?.length===2)});
     Object.defineProperty(navigator,'share',{configurable:true,value:async()=>{throw new DOMException('cancelled','AbortError');}});
   });
-  await page.getByRole('button',{name:'Share Test Report'}).click();
-  await expect(page.locator('#diagReportActionStatus')).toContainText('Sharing was canceled');
+  await page.getByRole('button',{name:'Send Report to Parent'}).click();
+  await expect(page.locator('#diagReportActionStatus')).toContainText('Nothing was sent');
   expect(await page.evaluate(()=>window.__downloadClicks)).toBe(0);
   expect((await page.evaluate(()=>window.FMQGuidedHardwareTest.getSession())).sessionId).toBe(sessionId);
 
@@ -287,8 +312,8 @@ test('guided Hardware Acceptance Test records evidence and supports project copy
     window.__downloadClicks=0;
     Object.defineProperty(navigator,'share',{configurable:true,value:async()=>{throw new Error('share failed');}});
   });
-  await page.getByRole('button',{name:'Share Test Report'}).click();
-  await expect(page.locator('#diagReportActionStatus')).toContainText('still saved');
+  await page.getByRole('button',{name:'Send Report to Parent'}).click();
+  await expect(page.locator('#diagReportActionStatus')).toContainText('Nothing was removed');
   expect(await page.evaluate(()=>window.__downloadClicks)).toBe(0);
 
   await page.evaluate(()=>{window.__downloadClicks=0;window.__downloadJson='';});

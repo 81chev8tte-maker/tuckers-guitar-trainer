@@ -12,11 +12,11 @@ Recommended order:
 2. run Piano MIDI if MIDI hardware is available;
 3. answer the existing five Human Observations plus scoring-trust, adult-help and adult PASS/BLOCKER/NOT DECIDED fields;
 4. add optional child/tester notes or screenshot/video filenames when useful;
-5. open Report and use **Copy Project Report** for the Project Manager chat;
-6. use **Share Test Report** to invoke the native file share sheet when supported, or **Download JSON** as the local fallback;
-7. move the JSON to the Android phone and attach it to the Family Music Quest Project for technical analysis.
+5. open Report and prefer **Send Report to Parent**; choose the intended native share target such as Gmail and confirm the prepared report/attachments before sending;
+6. verify the recipient receives an understandable report plus structured evidence through the real Chromebook share path;
+7. if native sharing is unavailable or a target does not preserve the prepared evidence, use **Copy Project Report** and **Download JSON** as local fallbacks.
 
-Share Test Report and Download JSON serialize the same structured Hardware Validation report object. Native share destinations are selected by ChromeOS; FMQ does not promise a particular target such as Quick Share and does not upload the report itself.
+Send Report to Parent and Download JSON use the same structured Hardware Validation report object. The parent-transfer action also prepares the full human-readable Project Report and, where supported, a readable text companion. Native share destinations and target-specific handling are controlled by ChromeOS/the selected app; FMQ does not promise Gmail or any other target will preserve every share field until that path is physically verified, and FMQ does not upload or send the report itself.
 
 The guided quiet baseline is measurement-only. USB/MIDI disconnect/reconnect, Piano microphone, perceived latency, audio smoothness, child usability and actual ChromeOS share-sheet behavior remain manual Monday evidence.
 
