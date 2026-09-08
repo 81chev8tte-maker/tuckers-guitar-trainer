@@ -14,5 +14,74 @@
     snapshot(){return{available:this.available(),status:this.status,input:this.input?{id:this.input.id,name:this.input.name||'MIDI keyboard',manufacturer:this.input.manufacturer||'',state:this.input.state}:null,inputs:[...(this.access?.inputs.values()||[])].map(i=>({id:i.id,name:i.name,manufacturer:i.manufacturer,state:i.state})),held:[...this.held],sustain:this.sustain};}
     destroy(){if(this.input)this.input.onmidimessage=null;if(this.access)this.access.onstatechange=null;this.input=null;this.access=null;this.held.clear();this.status='idle';}
   }
-  window.FMQHardware={midi:new MidiService(),noteName};
+
+  class ScreenWakeLockService {
+    constructor(nav=navigator,doc=document){
+      this.nav=nav;this.doc=doc;this.reasons=new Set();this.sentinel=null;this.requestPromise=null;this.lastError=null;this.observer=null;
+      this.boundVisibility=()=>this.sync();
+      this.doc?.addEventListener?.('visibilitychange',this.boundVisibility);
+    }
+    available(){return Boolean(this.nav?.wakeLock?.request);}
+    wanted(){return this.reasons.size>0;}
+    shouldHold(){return this.wanted()&&this.doc?.visibilityState!=='hidden';}
+    setActive(reason,active){
+      if(!reason)return this.snapshot();
+      if(active)this.reasons.add(reason);else this.reasons.delete(reason);
+      this.sync();
+      return this.snapshot();
+    }
+    snapshot(){return{available:this.available(),activeReasons:[...this.reasons],wanted:this.wanted(),held:Boolean(this.sentinel&&!this.sentinel.released),lastError:this.lastError};}
+    async sync(){
+      if(!this.shouldHold()){
+        const current=this.sentinel;this.sentinel=null;
+        if(current&&!current.released){try{await current.release();}catch{}}
+        return this.snapshot();
+      }
+      if(!this.available()||this.sentinel||this.requestPromise)return this.snapshot();
+      this.requestPromise=Promise.resolve().then(()=>this.nav.wakeLock.request('screen')).then(async sentinel=>{
+        if(!sentinel)return null;
+        if(!this.shouldHold()){
+          try{await sentinel.release();}catch{}
+          return null;
+        }
+        this.lastError=null;
+        this.sentinel=sentinel;
+        const released=()=>{
+          if(this.sentinel===sentinel)this.sentinel=null;
+          if(this.shouldHold())Promise.resolve().then(()=>this.sync());
+        };
+        sentinel.addEventListener?.('release',released,{once:true});
+        return sentinel;
+      }).catch(error=>{
+        this.lastError=String(error?.message||error||'Wake Lock request failed');
+        this.sentinel=null;
+        return null;
+      }).finally(()=>{this.requestPromise=null;});
+      await this.requestPromise;
+      return this.snapshot();
+    }
+    trackActiveUi(){
+      if(!this.doc?.querySelector||typeof MutationObserver==='undefined'||this.observer)return;
+      const visible=element=>Boolean(element&&!element.hidden&&element.getAttribute?.('aria-hidden')!=='true');
+      const refresh=()=>{
+        const guitar=this.doc.querySelector('#gameScreen');
+        const piano=this.doc.querySelector('#pianoGame');
+        const guided=this.doc.querySelector('#guidedTask');
+        this.setActive('guitar-gameplay',visible(guitar)&&guitar.classList?.contains('playing'));
+        this.setActive('piano-gameplay',visible(piano));
+        this.setActive('guided-hardware-test',visible(guided));
+      };
+      this.observer=new MutationObserver(refresh);
+      this.observer.observe(this.doc.documentElement,{subtree:true,childList:true,attributes:true,attributeFilter:['hidden','class','aria-hidden']});
+      refresh();
+    }
+    stopTracking(){this.observer?.disconnect?.();this.observer=null;this.reasons.clear();this.sync();}
+    dispose(){this.stopTracking();this.doc?.removeEventListener?.('visibilitychange',this.boundVisibility);}
+  }
+
+  const midi=new MidiService();
+  const wakeLock=new ScreenWakeLockService();
+  window.FMQHardware={midi,noteName,wakeLock,ScreenWakeLockService};
+  const startWakeTracking=()=>wakeLock.trackActiveUi();
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',startWakeTracking,{once:true});else startWakeTracking();
 })();
