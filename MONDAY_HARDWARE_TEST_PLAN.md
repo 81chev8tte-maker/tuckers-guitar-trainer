@@ -16,13 +16,28 @@ The Monday session should answer five questions:
 2. Does Guitar input work reliably through the intended microphone/USB path?
 3. Does Piano input work reliably through microphone/on-screen/Web MIDI paths that are actually available?
 4. Is Guitar gameplay readable and responsive on the target Chromebook?
-5. Does v2.6.8 preserve the v2.6.6/v2.6.7 gameplay and guided-test behavior while making the evidence easy to move from Chromebook to phone?
+5. Does the current deployed baseline preserve established gameplay/guided-test behavior while making the evidence practical to collect and transfer?
 
-Do not turn the session into a long technical endurance test for the children. Use short rounds and let the adult handle diagnostic captures between them.
+Do not turn the session into a long technical endurance test for the child. Use short rounds and let the adult handle diagnostic captures between them.
 
 ---
 
 # 2. Roles
+
+## Current primary child tester
+
+**Tucker is the primary child hardware/usability tester for both Guitar Quest and Piano Quest**, including Piano microphone and future physical MIDI acceptance when the relevant hardware is available.
+
+This is a tester-role change only. It does not weaken, remove, or reinterpret any Guitar, Piano, Chromebook/PWA, wake-lock, report-transfer, scoring-trust, readability, musical-feel, microphone, USB, or MIDI acceptance requirement.
+
+Evidence provenance matters:
+
+- record future Tucker runs as Tucker-tested;
+- preserve historical Nova-tested evidence as Nova evidence;
+- do not claim Nova-specific usability evidence when Nova did not perform the test;
+- adult-only observations must remain labeled as adult observations.
+
+For future printable/manual Hardware Test Quest materials, organize one Tucker-centered checklist/passport covering both Guitar and Piano rather than separate Tucker/Guitar and Nova/Piano sheets.
 
 ## Child tester
 
@@ -51,12 +66,13 @@ The adult tester records:
 
 ---
 
-# 3. Before the kids start
+# 3. Before the child tester starts
 
 Record:
 
 ```text
 Date:
+Child tester:
 FMQ version/commit:
 Chromebook model:
 Chrome version if practical:
@@ -83,8 +99,8 @@ Then:
 Before the longer gameplay matrix, open **Hardware & Backup → Quick Hardware Tests**. Keep each child-facing round short.
 
 - Tucker can run **Test Guitar Microphone** with the real guitar/amp and follow the quiet, six-string, repeated-note and silence prompts.
-- Nova can run **Test Piano Microphone** and follow the one-note-at-a-time C4–D4–E4–F4–G4 plus repeated-C4 prompts.
-- Run **Test MIDI Keyboard** only when a real MIDI keyboard is actually available; otherwise leave it not performed.
+- Tucker can run **Test Piano Microphone** with the real electronic keyboard speaker → Chromebook microphone path and follow the one-note-at-a-time C4–D4–E4–F4–G4 plus repeated-C4 prompts.
+- Tucker can run **Test MIDI Keyboard** when a real MIDI keyboard is actually available; otherwise leave it not performed.
 - Answer the five short Human Observations questions without coaching the child toward an expected answer.
 - Record **Adult help required** (0 / 1 / 2+).
 - Ask the child whether the game usually agreed with what they thought they played (**Yes / Mostly / No / unsure**).
@@ -92,7 +108,7 @@ Before the longer gameplay matrix, open **Hardware & Backup → Quick Hardware T
 - Explicitly choose **PASS / BLOCKER / NOT DECIDED**; diagnostics never choose this automatically.
 - After the short questions, use **Send Report to Parent** and verify the physical ChromeOS share sheet/Gmail path where supported.
 - Confirm the parent receives an understandable report/attachments.
-- Use **Copy Project Report** and **Download JSON** only as fallbacks when native transfer does not work.
+- Use **Copy Project Report** and **Download JSON** as fallbacks when native transfer does not work.
 
 Screenshots remain supplemental evidence for visual/readability problems. Short external phone video is preferred for stutter, audio glitches, perceived latency or timing problems. FMQ stores only evidence filenames/labels, not the media itself.
 
@@ -235,7 +251,7 @@ Adult observations:
 
 Use the same complex local Guitar Pro file used during the original failure.
 
-This remains the primary gameplay/performance acceptance case. v2.6.8 only extends the guided measurement/reporting and local transfer layer; it does not replace this Full Song run.
+This remains the primary gameplay/performance acceptance case. The guided measurement/reporting layer does not replace this Full Song run.
 
 Follow the matrix in `CHROMEBOOK_PERFORMANCE_BENCHMARK.md`:
 
@@ -243,7 +259,7 @@ Follow the matrix in `CHROMEBOOK_PERFORMANCE_BENCHMARK.md`:
 | --- | --- | --- | --- | --- | --- |
 | B1 | short section | Highway | on | on | 100% |
 | B2 | Full Song | Highway | on | on | 100% |
-| B3 | Full Song | Tab | on | on | 100% |
+| B3 | Full Song | Tab | backing on | on | 100% |
 | B4 | Full Song | Highway | on | diagnosis-only off | 100% |
 | B5 | Full Song | Highway | off | on | 100% |
 | B6 | Full Song | Highway | on | on | 70% |
@@ -291,7 +307,7 @@ Expected:
 
 # 9. Piano test — child flow
 
-Use the actual input available on Monday.
+Use the actual input available for the session.
 
 ## P1 — launch
 
@@ -391,7 +407,7 @@ After normal play:
 6. reload/reopen the app;
 7. confirm current-version progress remains.
 
-Do not perform destructive restore/reset during the children’s normal session unless intentionally testing it later.
+Do not perform destructive restore/reset during the child tester's normal session unless intentionally testing it later.
 
 ---
 
@@ -419,6 +435,7 @@ For any meaningful failure, record:
 ```text
 Title:
 Version/commit:
+Child tester:
 Profile:
 Instrument:
 Input:
@@ -446,7 +463,7 @@ Prefer one precise failure report over ten vague comments.
 
 ---
 
-# 14. Release decision after Monday
+# 14. Release decision after testing
 
 Classify findings:
 
@@ -479,14 +496,14 @@ Can be scheduled based on dependency/risk.
 
 Minor polish that does not undermine learning or reliability.
 
-If Monday clears the v2.6.6 gameplay/hardware gate while v2.6.8 reporting/sharing remains healthy, the project can seriously consider moving to the Bass Quest foundation described in `BASS_QUEST_SPEC.md`.
+If testing clears the current gameplay/hardware gate while reporting/sharing is healthy, the project can seriously consider moving to the Bass Quest foundation described in `BASS_QUEST_SPEC.md`.
 
 ---
 
 # 15. Keep the session child-friendly
 
 - Use short test rounds.
-- Let each child actually play, not only watch the adult debug.
+- Let the child tester actually play, not only watch the adult debug.
 - Ask open questions before revealing the expected bug.
 - Stop a test when frustration replaces useful feedback.
 - Do diagnostic isolation runs after the child-facing run when possible.
