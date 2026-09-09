@@ -1,5 +1,13 @@
 # Changelog
 
+## v2.6.15 — Piano Microphone Fundamental Selection Reliability
+
+- Refs #40. Generated production-detector tests reproduced stable low subharmonics, including C3 → F1 at +3 cents and C4 → F1 at +6 cents. The original 80-case matrix failed 56 cases.
+- Corrected only autocorrelation lag selection: choose the earliest near-equal local peak using interpolated peak height, then interpolate its lag. Confidence remains the selected measured correlation; frequencies/cents are not snapped to a target.
+- Preserved C3–B5 support, monophonic input, RMS/confidence/cents gates, three stability frames, 330 ms debounce, 85 ms analysis cadence and 4096 samples. No #29 lifecycle, scoring, save, MIDI, Guitar or report-transfer behavior changed.
+- Added deterministic fundamental/range/harmonic/noise/transition coverage and a browser regression proving generated C3/C4 score while wrong D notes remain wrong.
+- Aligned package/app/report/PWA assets and cache to v2.6.15. #40 remains open for Tucker’s physical Dell Chromebook + electronic-keyboard-speaker → internal-microphone retest; automation is not physical acceptance.
+
 ## v2.6.14 — Child Self-Guided Hardware Tests
 
 - Renamed the child-facing guided entry to **Quick Hardware Tests** with obvious Guitar microphone, Piano microphone and MIDI keyboard choices.
