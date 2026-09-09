@@ -1,6 +1,12 @@
 # Family Music Quest physical validation
 
-Record the device, browser version, selected input, date, and actual result for every test. Automated tests cannot validate physical microphone or MIDI behavior.
+Record the device, browser version, selected input, date, **actual child tester**, and actual result for every test. Automated tests cannot validate physical microphone or MIDI behavior.
+
+## Current primary child tester
+
+**Tucker is the primary child hardware/usability tester for both Guitar Quest and Piano Quest**, including Piano microphone and future physical MIDI acceptance when the relevant hardware is available.
+
+This changes the tester, not the acceptance standard. Keep all existing Guitar, Piano, Chromebook/PWA, wake-lock, report-transfer and child-usability requirements. Record future evidence truthfully as Tucker-tested when Tucker performs it, preserve historical Nova-tested evidence as Nova evidence, and do not infer Nova-specific usability conclusions from Tucker's runs.
 
 ## Guided in-app acceptance and report transfer (v2.6.14)
 

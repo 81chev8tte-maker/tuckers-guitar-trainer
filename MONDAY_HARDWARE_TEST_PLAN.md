@@ -24,6 +24,21 @@ Do not turn the session into a long technical endurance test for the children. U
 
 # 2. Roles
 
+## Current primary child tester
+
+**Tucker is the primary child hardware/usability tester for both Guitar Quest and Piano Quest**, including Piano microphone and future physical MIDI acceptance when the relevant hardware is available.
+
+This is a tester-role change only. It does not weaken, remove, or reinterpret any Guitar, Piano, Chromebook/PWA, wake-lock, report-transfer, scoring-trust, readability, musical-feel, microphone, USB, or MIDI acceptance requirement.
+
+Evidence provenance matters:
+
+- record future Tucker runs as Tucker-tested;
+- preserve historical Nova-tested evidence as Nova evidence;
+- do not claim Nova-specific usability evidence when Nova did not perform the test;
+- adult-only observations must remain labeled as adult observations.
+
+For future printable/manual Hardware Test Quest materials, organize one Tucker-centered checklist/passport covering both Guitar and Piano rather than separate Tucker/Guitar and Nova/Piano sheets.
+
 ## Child tester
 
 The child tester should mainly answer:
@@ -51,12 +66,13 @@ The adult tester records:
 
 ---
 
-# 3. Before the kids start
+# 3. Before the child tester starts
 
 Record:
 
 ```text
 Date:
+Child tester:
 FMQ version/commit:
 Chromebook model:
 Chrome version if practical:
@@ -83,8 +99,8 @@ Then:
 Before the longer gameplay matrix, open **Hardware & Backup → Quick Hardware Tests**. Keep each child-facing round short.
 
 - Tucker can run **Test Guitar Microphone** with the real guitar/amp and follow the quiet, six-string, repeated-note and silence prompts.
-- Nova can run **Test Piano Microphone** and follow the one-note-at-a-time C4–D4–E4–F4–G4 plus repeated-C4 prompts.
-- Run **Test MIDI Keyboard** only when a real MIDI keyboard is actually available; otherwise leave it not performed.
+- Tucker can run **Test Piano Microphone** with the real electronic keyboard speaker → Chromebook microphone path and follow the one-note-at-a-time C4–D4–E4–F4–G4 plus repeated-C4 prompts.
+- Tucker can run **Test MIDI Keyboard** when a real MIDI keyboard is actually available; otherwise leave it not performed.
 - Answer the five short Human Observations questions without coaching the child toward an expected answer.
 - Record **Adult help required** (0 / 1 / 2+).
 - Ask the child whether the game usually agreed with what they thought they played (**Yes / Mostly / No / unsure**).
@@ -391,7 +407,7 @@ After normal play:
 6. reload/reopen the app;
 7. confirm current-version progress remains.
 
-Do not perform destructive restore/reset during the children’s normal session unless intentionally testing it later.
+Do not perform destructive restore/reset during the child tester's normal session unless intentionally testing it later.
 
 ---
 
@@ -419,6 +435,7 @@ For any meaningful failure, record:
 ```text
 Title:
 Version/commit:
+Child tester:
 Profile:
 Instrument:
 Input:
@@ -486,7 +503,7 @@ If Monday clears the v2.6.6 gameplay/hardware gate while v2.6.8 reporting/sharin
 # 15. Keep the session child-friendly
 
 - Use short test rounds.
-- Let each child actually play, not only watch the adult debug.
+- Let the child tester actually play, not only watch the adult debug.
 - Ask open questions before revealing the expected bug.
 - Stop a test when frustration replaces useful feedback.
 - Do diagnostic isolation runs after the child-facing run when possible.
