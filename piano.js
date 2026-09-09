@@ -112,11 +112,35 @@
     }
     detectPitch(buffer,sampleRate){
       const size=buffer.length;let bestOffset=-1,best=0;const min=Math.floor(sampleRate/PIANO_MIC_RULES.maxFrequency),max=Math.min(Math.ceil(sampleRate/PIANO_MIC_RULES.minFrequency),size>>1);
+      // Reuse the correlation workspace; keep the existing analyser and cadence.
+      if(!this.correlations||this.correlations.length<max+1)this.correlations=new Float64Array(max+1);
+      const correlations=this.correlations;
       for(let offset=min;offset<=max;offset++){
         let corr=0,a=0,b=0;for(let i=0;i<size-offset;i++){corr+=buffer[i]*buffer[i+offset];a+=buffer[i]*buffer[i];b+=buffer[i+offset]*buffer[i+offset];}
-        corr/=Math.sqrt(a*b)||1;if(corr>best){best=corr;bestOffset=offset;}
+        corr/=Math.sqrt(a*b)||1;correlations[offset]=corr;if(corr>best){best=corr;bestOffset=offset;}
       }
-      return bestOffset>0?{frequency:sampleRate/bestOffset,confidence:best}:null;
+      // Integer multiples of a period can beat the fundamental by a tiny sample-
+      // alignment margin. Prefer the earliest near-equal *peak*, never the initial
+      // zero-lag shoulder. Compare interpolated peak heights so the same sample-
+      // alignment error does not bias selection against shorter periods. The .002
+      // tolerance compares peaks, not scoring confidence.
+      for(let offset=min+1;offset<max;offset++){
+        const corr=correlations[offset],left=correlations[offset-1],right=correlations[offset+1];
+        if(corr>PIANO_MIC_RULES.minConfidence&&corr>left&&corr>=right){
+          const shift=clamp(.5*(left-right)/(left-2*corr+right),-.5,.5);
+          const peak=corr-.25*(left-right)*shift;
+          if(peak>=best-.002){bestOffset=offset;break;}
+        }
+      }
+      if(bestOffset<=0)return null;
+      let lag=bestOffset;
+      const confidence=correlations[bestOffset];
+      if(bestOffset>min&&bestOffset<max){
+        const left=correlations[bestOffset-1],right=correlations[bestOffset+1],curvature=left-2*confidence+right;
+        if(confidence>left&&confidence>=right&&curvature<0)lag+=clamp(.5*(left-right)/curvature,-.5,.5);
+      }
+      // Keep confidence tied to the selected measured peak, and preserve cents.
+      return {frequency:sampleRate/lag,confidence};
     }
   }
   const microphoneInput=new MicrophonePianoInput(inputHub);

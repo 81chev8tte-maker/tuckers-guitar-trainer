@@ -143,3 +143,37 @@ test('Piano detector resets stale pitch history without weakening stability/nois
     {type:'noteoff',midi:64,source:'midi',velocity:0}
   ]);
 });
+
+test('generated microphone fundamentals score C3/C4 while wrong notes stay wrong',async({page})=>{
+  await installFakeMicrophone(page);
+  await createProfileAndOpenPiano(page,'Fundamental Test');
+  await page.locator('.piano-nav-button[data-piano-view="mic"]').click();
+  await page.locator('#pianoMicToggle').click();
+  for(const [lesson,midi,cents] of [['lower-c',48,3],['middle-c',60,6]]){
+    await page.locator('.piano-nav-button[data-piano-view="lessons"]').click();
+    await page.locator(`[data-lesson="${lesson}"][data-song]`).click();
+    await page.locator('#startLessonPractice').click();
+    await expect(page.locator('#pianoInputPill')).toContainText('Input: microphone');
+    await expect(page.locator('#pianoPause')).toBeEnabled({timeout:8000});
+    await expect.poll(()=>page.evaluate(()=>window.NovaPianoTest.getCurrentGame().waiting)).toBe(true);
+    const feed=async(note,tuning)=>page.evaluate(({note,tuning})=>{
+      const events=[],mic=new window.NovaPianoInputs.MicrophonePianoInput({emit:event=>{events.push(event.midi);window.NovaPianoTest.emitInputForTest(event);}});
+      const hz=440*2**((note-69)/12)*2**(tuning/1200),sampleRate=48000;
+      for(let frame=0;frame<3;frame++){
+        const data=Float32Array.from({length:4096},(_,i)=>{
+          const t=(i+frame*4080)/sampleRate,phase=2*Math.PI*hz*t;
+          return .1*(Math.sin(phase)+.7*Math.sin(2*phase)+.4*Math.sin(3*phase)+.2*Math.sin(4*phase))/2.3;
+        });
+        const rms=Math.sqrt(data.reduce((s,v)=>s+v*v,0)/data.length);
+        mic.processCandidate(mic.detectPitch(data,sampleRate),rms,1000+frame*85);
+      }
+      return events;
+    },{note,tuning});
+    expect(await feed(midi+2,0)).toEqual([midi+2]);
+    await expect(page.locator('#pgScore')).toHaveText('0');
+    await expect(page.locator('#pianoGame')).toContainText(`Almost! Heard D${midi===48?3:4} · Find C${midi===48?3:4}`);
+    expect(await feed(midi,cents)).toEqual([midi]);
+    await expect(page.locator('#pgScore')).toHaveText('50');
+    await page.locator('#pianoExitGame').click();
+  }
+});

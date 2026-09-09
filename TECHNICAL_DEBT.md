@@ -23,6 +23,10 @@ If real-world testing reveals reproducible scoring corruption, save corruption, 
 
 ## Should Address
 
+### Piano microphone fundamental selection — #40 physical acceptance pending
+
+v2.6.15 corrects a deterministically reproduced integer-lag/subharmonic preference in the production Piano detector. C3/C4, D/E/F/G controls and generated C3–B5 signals have regression coverage. The real electronic-keyboard-speaker → Dell Chromebook internal-microphone path remains unaccepted until Tucker’s retest is judged by the Project Manager. Stable wrong notes, disproportionate C3/C4 retry burden, room acoustics, attack/decay interference and perceived response remain physical test debt; synthetic timbres do not model the actual keyboard/microphone. #29 lifecycle acceptance is separate and remains passed.
+
 ### Guitar Tab View readability
 
 The current playable Tab View is based on a virtualized event-cell grid. Dense imported songs can be hard to follow musically.

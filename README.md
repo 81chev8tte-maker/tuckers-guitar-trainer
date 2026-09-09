@@ -1,5 +1,9 @@
 # Family Music Quest
 
+## v2.6.15 Piano Microphone Fundamental Selection Reliability
+
+Corrects Piano microphone subharmonic lag selection without changing scoring or input gates. Generated regression signals now recover C3/C4 and nearby notes through the production detector. Physical acceptance for Issue #40 remains pending; see [HARDWARE_VALIDATION.md](HARDWARE_VALIDATION.md) for Tucker’s retest and [AUDIO_PIPELINE_REVIEW.md](AUDIO_PIPELINE_REVIEW.md) for the investigation.
+
 ## v2.6.3 Musical Feel & Guitar Songbook
 
 - Makes 100% the intended performance tempo for every built-in Piano piece; existing 50–100% practice speeds remain relative to that authored tempo

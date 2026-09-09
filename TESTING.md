@@ -175,6 +175,14 @@ Relevant current files include:
 
 The permanent matrix describes behavior that should be protected over time. The actual current coverage status is recorded in `TEST_DEBT_AUDIT.md`; several items above remain partial, manual-only or missing today.
 
+## v2.6.15 / #40 fundamental-selection regression
+
+`piano-fundamental.test.js` executes the production input-class prefix of `piano.js` in a Node VM, without copying/reimplementing the detector. Original generated signals cover 44.1/48 kHz, C3/C4 and D/E/F/G controls, pure/rich/dominant-second-harmonic timbres, the entire C3–B5 range, amplitude variation and cents. Production `tick()` streams verify RMS, three-frame stability, transitions and debounce; silence, quiet, seeded noise, low confidence and off-centre pitches remain non-scoreable. A genuine F1 control protects against a blacklist fix.
+
+The browser microphone suite also feeds generated C3/C4 through the production detector and input hub into actual Wait for Me scoring; wrong D3/D4 must remain wrong. Existing #29 lifecycle, screen-key and MIDI provider tests stay required. `test-support/piano-signals.js` contains generated FMQ material only.
+
+For physical acceptance use the focused Tucker checklist in `HARDWARE_VALIDATION.md`. The in-app Quick Piano guide does not include C3 and cannot replace that retest.
+
 ## Test debt
 
 Test debt is important behavior that is weakly or not automatically protected. It is not automatically a release blocker, but future work touching the area should consider adding useful coverage.

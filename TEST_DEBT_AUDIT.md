@@ -6,6 +6,10 @@ It is a planning/source-of-truth document. It does **not** mean every missing te
 
 The audit is based on the actual test commands and test files present in the repository, not on intended coverage described in old prompts.
 
+## v2.6.15 focused update — Piano microphone #40
+
+The historical inventory below is not a current test count. #29 lifecycle, fallback, stability and screen/MIDI provider behavior is covered in `browser-tests/piano-microphone-reliability.spec.js`. v2.6.15 adds `piano-fundamental.test.js` to `npm test`, exercising the actual production lag selector and tick/gates with generated signals, plus browser C3/C4 scoring and wrong-D rejection. Fundamental/alias selection is now deterministically protected for those fixtures; actual keyboard/Chromebook recognition, retry burden and perceived response remain **Manual-only** and #40 remains open for hardware acceptance. No claim is made that synthetic waveforms validate all real Piano timbres.
+
 ## Coverage labels
 
 - **Protected** — current automated tests exercise the important behavior directly enough to catch a likely regression.

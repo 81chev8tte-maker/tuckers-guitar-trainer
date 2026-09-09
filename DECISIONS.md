@@ -2,6 +2,14 @@
 
 This file records durable product/architecture decisions that future agents should not accidentally undo. Add dated entries when a decision materially changes.
 
+## 2026-09-09 — Piano fundamental selection must resolve lag aliases before scoring
+
+**Decision:** For #40/v2.6.15, correct near-equal autocorrelation period selection inside the existing production Piano detector. Compare interpolated local peaks and return a refined frequency with the selected measured confidence. Do not blacklist F1, transpose detections, snap cents or forgive C targets.
+
+**Evidence:** Deterministic production signals reproduced stable C3/C4 → F1 and G4 → G3/other low aliases before the change. See `AUDIO_PIPELINE_REVIEW.md`.
+
+**Constraints:** Keep C3 supported, the same 4096-sample/85 ms analysis, all scoreability gates and #29 lifecycle. Generated tests justify the narrow correction; real keyboard-speaker/Chromebook acceptance is still required. Revisit selection only with additional reproducible evidence, not by broadening scoring.
+
 ## 2026-09 — Issue status labels are the operational execution state; Project is the visual mirror
 
 **Decision:** Each actionable GitHub Issue uses exactly one agent-manageable `status:*` label as the operational execution state: `status:backlog`, `status:ready`, `status:in-progress`, `status:needs-hardware-test`, or `status:done`. The GitHub Project remains the visual planning view and should mirror that state when practical.
