@@ -16,9 +16,9 @@ The Monday session should answer five questions:
 2. Does Guitar input work reliably through the intended microphone/USB path?
 3. Does Piano input work reliably through microphone/on-screen/Web MIDI paths that are actually available?
 4. Is Guitar gameplay readable and responsive on the target Chromebook?
-5. Does the current deployed baseline preserve established gameplay/guided-test behavior while making the evidence practical to collect and transfer?
+5. Does v2.6.8 preserve the v2.6.6/v2.6.7 gameplay and guided-test behavior while making the evidence easy to move from Chromebook to phone?
 
-Do not turn the session into a long technical endurance test for the child. Use short rounds and let the adult handle diagnostic captures between them.
+Do not turn the session into a long technical endurance test for the children. Use short rounds and let the adult handle diagnostic captures between them.
 
 ---
 
@@ -108,7 +108,7 @@ Before the longer gameplay matrix, open **Hardware & Backup → Quick Hardware T
 - Explicitly choose **PASS / BLOCKER / NOT DECIDED**; diagnostics never choose this automatically.
 - After the short questions, use **Send Report to Parent** and verify the physical ChromeOS share sheet/Gmail path where supported.
 - Confirm the parent receives an understandable report/attachments.
-- Use **Copy Project Report** and **Download JSON** as fallbacks when native transfer does not work.
+- Use **Copy Project Report** and **Download JSON** only as fallbacks when native transfer does not work.
 
 Screenshots remain supplemental evidence for visual/readability problems. Short external phone video is preferred for stutter, audio glitches, perceived latency or timing problems. FMQ stores only evidence filenames/labels, not the media itself.
 
@@ -251,7 +251,7 @@ Adult observations:
 
 Use the same complex local Guitar Pro file used during the original failure.
 
-This remains the primary gameplay/performance acceptance case. The guided measurement/reporting layer does not replace this Full Song run.
+This remains the primary gameplay/performance acceptance case. v2.6.8 only extends the guided measurement/reporting and local transfer layer; it does not replace this Full Song run.
 
 Follow the matrix in `CHROMEBOOK_PERFORMANCE_BENCHMARK.md`:
 
@@ -259,7 +259,7 @@ Follow the matrix in `CHROMEBOOK_PERFORMANCE_BENCHMARK.md`:
 | --- | --- | --- | --- | --- | --- |
 | B1 | short section | Highway | on | on | 100% |
 | B2 | Full Song | Highway | on | on | 100% |
-| B3 | Full Song | Tab | backing on | on | 100% |
+| B3 | Full Song | Tab | on | on | 100% |
 | B4 | Full Song | Highway | on | diagnosis-only off | 100% |
 | B5 | Full Song | Highway | off | on | 100% |
 | B6 | Full Song | Highway | on | on | 70% |
@@ -307,7 +307,7 @@ Expected:
 
 # 9. Piano test — child flow
 
-Use the actual input available for the session.
+Use the actual input available on Monday.
 
 ## P1 — launch
 
@@ -463,7 +463,7 @@ Prefer one precise failure report over ten vague comments.
 
 ---
 
-# 14. Release decision after testing
+# 14. Release decision after Monday
 
 Classify findings:
 
@@ -496,7 +496,7 @@ Can be scheduled based on dependency/risk.
 
 Minor polish that does not undermine learning or reliability.
 
-If testing clears the current gameplay/hardware gate while reporting/sharing is healthy, the project can seriously consider moving to the Bass Quest foundation described in `BASS_QUEST_SPEC.md`.
+If Monday clears the v2.6.6 gameplay/hardware gate while v2.6.8 reporting/sharing remains healthy, the project can seriously consider moving to the Bass Quest foundation described in `BASS_QUEST_SPEC.md`.
 
 ---
 
