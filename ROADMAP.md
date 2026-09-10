@@ -56,9 +56,9 @@ The guided hardware/report-sharing foundation originated in v2.6.7/v2.6.8. Subse
 
 Issue #22 remains the broader acceptance gate. #29’s v2.6.11 microphone lifecycle/input-intent work has physically passed and is Done. Preserve it. #30 remains Needs Hardware Test; #31 remains Backlog after failed physical Chromebook acceptance; #38 remains Backlog. These issues are outside this release.
 
-**v2.6.15 — Piano Microphone Fundamental Selection Reliability (#40)** is the focused detector correction. Generated signals reproduced long-period/subharmonic selection before changes; the narrow local-peak/lag correction and regression coverage are described in `AUDIO_PIPELINE_REVIEW.md`. After technical completion, #40 remains **Needs Hardware Test**, not Done. Tucker is the primary tester for repeated C3/C4, nearby D/E/F/G, normal/softer playing, and C3 Wait for Me/Rhythm practice. Follow `HARDWARE_VALIDATION.md`; no next phase is authorized by automation.
+**v2.6.16 — Hardware Test Workflow Reliability (#43 + #44)** precedes the next detector hardware cycle. It makes the existing Quick Hardware Tests accumulate Guitar microphone, Piano microphone, and MIDI evidence in one explicit session, adds an intentional reset, and makes the Piano C4–G4 prompts physically unambiguous around Middle C. After technical deployment, both issues remain **Needs Hardware Test** until one clean combined adult Dell Chromebook session verifies the retained session ID, consolidated report/JSON, reset, and physical-key wording.
 
-v2.6.14’s Quick Hardware Tests remain the short guided evidence path. #24, #34, Bass and broader hardware-wizard/report changes remain outside #40.
+**#40 is paused and becomes the v2.6.17 candidate only after v2.6.16 acceptance clears.** Its v2.6.15 detector correction remains deployed and unchanged: generated signals reproduced long-period/subharmonic selection, while real C3/C4 and nearby-note acceptance is still pending. #24, #34, #31, #38, Bass and broader hardware-wizard/report changes remain outside this release.
 Primary acceptance goals remain:
 
 - run Hardware & Backup → Run Hardware Test where practical, record human evidence, Copy Project Report, and transfer the JSON by native share or download fallback;

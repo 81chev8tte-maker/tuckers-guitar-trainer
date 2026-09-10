@@ -781,6 +781,8 @@ A future report can include:
 
 Do not upload reports automatically. Current hardware validation is local/export-based and should remain privacy-respecting unless product policy explicitly changes.
 
+Current focused implementation note (v2.6.16): the smaller **Quick Hardware Tests** acceptance flow is not the full wizard. It does retain Guitar microphone, Piano microphone, and MIDI subtests in one explicit session; completed paths remain visible, session-level human evidence is reviewed against the accumulated paths, and only **Start New Test Session** intentionally clears the session. Piano microphone prompts identify Middle C physically while preserving exact expected note/MIDI evidence.
+
 ---
 
 # 20. Troubleshooting Guidance

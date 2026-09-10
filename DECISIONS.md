@@ -2,6 +2,12 @@
 
 This file records durable product/architecture decisions that future agents should not accidentally undo. Add dated entries when a decision materially changes.
 
+## 2026-09-10 — Quick Hardware Tests use an explicit accumulating acceptance session
+
+**Decision:** Guitar microphone, Piano microphone, and MIDI Quick Hardware Tests accumulate under one persisted acceptance session ID in any order. Saving the session-level human evidence completes a report but does not make the next subtest create a new session. Only the visible, confirmed **Start New Test Session** action resets guided results.
+
+**Provenance:** When another subtest is added, prior human answers/evidence reload for deliberate review. The report preserves the first recorded timestamp, records the latest review timestamp, and identifies the completed guided paths the human evidence covers. This does not change the report-transfer mechanism or make automated evidence a physical acceptance result.
+
 ## 2026-09-09 — Piano fundamental selection must resolve lag aliases before scoring
 
 **Decision:** For #40/v2.6.15, correct near-equal autocorrelation period selection inside the existing production Piano detector. Compare interpolated local peaks and return a refined frequency with the selected measured confidence. Do not blacklist F1, transpose detections, snap cents or forgive C targets.

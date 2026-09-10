@@ -1,5 +1,14 @@
 # Changelog
 
+## v2.6.16 — Hardware Test Workflow Reliability
+
+- Refs #43 and #44. Quick Hardware Tests now accumulate completed Guitar microphone, Piano microphone, and MIDI paths under one retained session ID instead of silently resetting after the first saved report.
+- Added a visible **Test Another Input** continuation and an explicit, confirmed **Start New Test Session** reset. Chooser cards retain completion status and the consolidated Project Report/JSON recomputes genuinely unperformed guided paths.
+- Reloaded prior session-level human answers/evidence for deliberate review after another subtest. Structured provenance preserves the first recorded time, records the latest human review time, and states which completed guided paths the evidence covers.
+- Made the Piano guide physically explicit: Middle C is identified by the nearby two-black-key group, D4–G4 remain anchored to that area, and the final prompt requests the same Middle C again. Expected notes and MIDI values remain C4/D4/E4/F4/G4/C4 and 60/62/64/65/67/60.
+- Added deterministic and browser coverage for both Guitar→Piano and Piano→Guitar accumulation, adding MIDI, consolidated report/not-performed logic, human provenance, explicit reset, and prompt-to-MIDI agreement.
+- Aligned package/app/report/PWA assets and cache to v2.6.16. No detector, scoring, threshold, hardware-input, save/profile, wake-lock, or report-transfer behavior changed; physical Chromebook acceptance remains required.
+
 ## v2.6.15 — Piano Microphone Fundamental Selection Reliability
 
 - Refs #40. Generated production-detector tests reproduced stable low subharmonics, including C3 → F1 at +3 cents and C4 → F1 at +6 cents. The original 80-case matrix failed 56 cases.
