@@ -8,20 +8,35 @@ Record the device, browser version, selected input, date, **actual child tester*
 
 This changes the tester, not the acceptance standard. Keep all existing Guitar, Piano, Chromebook/PWA, wake-lock, report-transfer and child-usability requirements. Record future evidence truthfully as Tucker-tested when Tucker performs it, preserve historical Nova-tested evidence as Nova evidence, and do not infer Nova-specific usability conclusions from Tucker's runs.
 
-## Guided in-app acceptance and report transfer (v2.6.14)
+## Guided in-app acceptance and report transfer (v2.6.16)
 
 Start from **Hardware & Backup → Quick Hardware Tests**. The child-facing flow records technical observations while the child follows plain-language prompts. It reuses the production Guitar audio service, the production monophonic Piano microphone detector, the shared Web MIDI service, and the existing Hardware Validation/report-transfer system; it does not change scoring/detector thresholds or replace the manual checks below.
+
+The three guided paths accumulate under one visible session ID. After saving the questions, choose **Test Another Input** to retain earlier completed paths; **Start New Test Session** is the explicit, confirmed reset. Previously recorded human answers reload when another path is added and must be reviewed so their recorded/reviewed timestamps and covered-path provenance remain truthful.
 
 Recommended order:
 
 1. run **Test Guitar Microphone** if Guitar hardware is available;
-2. run **Test Piano Microphone** for C4–D4–E4–F4–G4 plus repeated C4 when Piano microphone is being evaluated;
+2. run **Test Piano Microphone** for Middle C (C4), nearby D4–E4–F4–G4, and the same Middle C again when Piano microphone is being evaluated;
 3. run **Test MIDI Keyboard** if real MIDI hardware is available;
 4. answer the existing five Human Observations plus scoring-trust; adult/helper context remains distinct and the overall adult result stays NOT DECIDED unless an adult deliberately changes it;
 5. add optional child/tester notes or screenshot/video filenames when useful;
 6. use **Send Report to Parent**; choose the intended native share target such as Gmail and confirm the prepared report/attachments before sending;
 7. verify the recipient receives an understandable report plus structured evidence through the real Chromebook share path;
 8. if native sharing is unavailable or a target does not preserve the prepared evidence, use **Copy Project Report** and **Download JSON** as local fallbacks.
+
+### v2.6.16 / #43 + #44 post-deployment acceptance
+
+On the adult-operated Dell Chromebook, confirm the app visibly reports v2.6.16, then intentionally start one clean Quick Hardware Test session.
+
+1. Record the displayed session ID. Complete **Test Guitar Microphone**, save truthful human answers/context, then choose **Test Another Input**.
+2. Confirm the same session ID remains and Guitar stays visibly **Complete**. Complete **Test Piano Microphone** without starting a new session.
+3. Verify the first prompt identifies **Middle C** as the white key immediately left of the two black keys near the middle. Verify D/E/F/G remain in that same area and the final prompt clearly requests the same Middle C again.
+4. Review the reloaded session-level human answers so they describe the combined run, then save. In both Project Report and downloaded JSON, verify Guitar and Piano are complete, the same session ID is retained, their evidence is present, and only genuinely unperformed guided paths (for example MIDI when unavailable) are listed.
+5. If a MIDI keyboard is available, use **Test Another Input**, complete MIDI, review/save the answers again, and verify all earlier results remain. If unavailable, do not simulate or mark MIDI performed.
+6. Activate **Start New Test Session**, confirm the warning, and verify a different session ID with Guitar/Piano/MIDI all **Not run**. Do not overwrite or double-count repeated exports of the earlier session ID.
+
+Record wording ambiguity, disappeared completion state, changed session ID before explicit reset, missing consolidated evidence, incorrect `testsNotPerformed`, or provenance that does not clearly cover the accumulated paths as blockers. Automation does not pass these physical/usability checks. Keep #43 and #44 at `status:needs-hardware-test` until the Project Manager accepts the evidence.
 
 Send Report to Parent and Download JSON use the same structured Hardware Validation report object. The parent-transfer action also prepares the full human-readable Project Report and, where supported, a readable text companion. Native share destinations and target-specific handling are controlled by ChromeOS/the selected app; FMQ does not promise Gmail or any other target will preserve every share field until that path is physically verified, and FMQ does not upload or send the report itself.
 

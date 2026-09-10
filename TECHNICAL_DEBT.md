@@ -67,7 +67,7 @@ A future backup redesign should explicitly distinguish progress/settings backup 
 
 ### Full guided hardware setup completeness
 
-v2.6.7/v2.6.8 established the child-friendly acceptance/report foundation, v2.6.13 simplified parent transfer, and v2.6.14 adds short self-guided Guitar microphone, monophonic Piano microphone and MIDI choices over the same production services/report session. The broader first-use Hardware Setup Wizard remains later scope: connection-method selection, persistent readiness/setup reuse, richer recovery and optional future latency calibration are not implemented by these quick acceptance tests.
+v2.6.7/v2.6.8 established the child-friendly acceptance/report foundation, v2.6.13 simplified parent transfer, v2.6.14 added short self-guided Guitar microphone, monophonic Piano microphone and MIDI choices, and v2.6.16 made those choices accumulate in one explicitly reset acceptance session. The broader first-use Hardware Setup Wizard remains later scope: connection-method selection, persistent readiness/setup reuse, richer recovery and optional future latency calibration are not implemented by these quick acceptance tests. Real Chromebook verification of combined-session retention, reset clarity, and the Middle C physical wording remains manual debt until #43/#44 acceptance.
 
 ## Opportunistic
 

@@ -6,6 +6,10 @@ It is a planning/source-of-truth document. It does **not** mean every missing te
 
 The audit is based on the actual test commands and test files present in the repository, not on intended coverage described in old prompts.
 
+## v2.6.16 focused update — guided session workflow (#43 + #44)
+
+Deterministic/browser coverage now protects exact Middle C/D4–G4/repeated-C4 prompt metadata and MIDI mapping, Guitar↔Piano session accumulation in both orders, adding MIDI, retained human-evidence provenance, consolidated `testsNotPerformed`, and explicit reset. The adult Dell Chromebook must still establish that the physical-key wording is unambiguous, the combined session/report remains understandable in normal use, and reset intent is clear. Those are manual-only acceptance items; automation does not close #43 or #44.
+
 ## v2.6.15 focused update — Piano microphone #40
 
 The historical inventory below is not a current test count. #29 lifecycle, fallback, stability and screen/MIDI provider behavior is covered in `browser-tests/piano-microphone-reliability.spec.js`. v2.6.15 adds `piano-fundamental.test.js` to `npm test`, exercising the actual production lag selector and tick/gates with generated signals, plus browser C3/C4 scoring and wrong-D rejection. Fundamental/alias selection is now deterministically protected for those fixtures; actual keyboard/Chromebook recognition, retry burden and perceived response remain **Manual-only** and #40 remains open for hardware acceptance. No claim is made that synthetic waveforms validate all real Piano timbres.

@@ -1,7 +1,7 @@
 const assert = require('assert');
 const rules = require('./guided-hardware-acceptance.js');
 
-assert.equal(rules.APP_VERSION, '2.6.15');
+assert.equal(rules.APP_VERSION, '2.6.16');
 assert.equal(rules.GUITAR_STRINGS.length, 6);
 assert.deepEqual(rules.GUITAR_STRINGS.map(s=>s.midi), [40,45,50,55,59,64]);
 
@@ -73,6 +73,11 @@ assert(missing.some(x=>x.includes('Physical end-to-end latency')));
 
 assert.equal(rules.PIANO_MIC_NOTES.length, 6);
 assert.deepEqual(rules.PIANO_MIC_NOTES.map(step=>step.midi), [60,62,64,65,67,60]);
+assert.deepEqual(rules.PIANO_MIC_NOTES.map(step=>step.note), ['C4','D4','E4','F4','G4','C4']);
+assert.equal(rules.PIANO_MIC_NOTES[0].prompt, 'Play Middle C');
+assert(rules.PIANO_MIC_NOTES[0].locationCue.includes('white key immediately to their left'));
+assert(rules.PIANO_MIC_NOTES.slice(1,5).every(step=>step.locationCue.includes('same area')));
+assert.equal(rules.PIANO_MIC_NOTES[5].prompt, 'Play the same Middle C again');
 const c4 = rules.PIANO_MIC_NOTES[0];
 let pianoResult = rules.createPianoMicNoteResult(c4);
 let pianoApplied = rules.applyPianoMicReading(pianoResult, c4, {active:true,level:.001,quiet:true,stable:false});
@@ -92,6 +97,10 @@ pianoMissingSession.pianoMicrophone.status = 'complete';
 const afterPianoGuide = rules.computeNotPerformed(pianoMissingSession);
 assert(!afterPianoGuide.some(x=>x.includes('Guided Piano microphone')), 'completed guided Piano microphone must not be reported unperformed');
 assert(afterPianoGuide.some(x=>x.includes('Piano microphone gameplay / perceived response')), 'guided Piano microphone must not claim gameplay/latency acceptance');
+assert.deepEqual(rules.completedGuidedPaths(pianoMissingSession), ['pianoMicrophone']);
+pianoMissingSession.guitar.status = 'complete';
+pianoMissingSession.midi.status = 'complete';
+assert.deepEqual(rules.completedGuidedPaths(pianoMissingSession), ['guitar','pianoMicrophone','midi']);
 
 const payloadReport = {
   format:'family-music-quest-hardware-report',

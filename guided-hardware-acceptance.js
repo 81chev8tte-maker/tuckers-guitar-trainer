@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const APP_VERSION = '2.6.15';
+  const APP_VERSION = '2.6.16';
   const RESULT_KEY = 'family-music-quest-hardware-results-v1';
   const CAL_KEY = 'family-music-quest-calibration-v1';
   const SESSION_COUNTER_KEY = 'family-music-quest-hardware-session-counter-v1';
@@ -16,12 +16,12 @@
   ];
   const PIANO_MIC_QUIET_SAMPLE_COUNT = 12;
   const PIANO_MIC_NOTES = [
-    { id:'c4', label:'C', note:'C4', midi:60 },
-    { id:'d4', label:'D', note:'D4', midi:62 },
-    { id:'e4', label:'E', note:'E4', midi:64 },
-    { id:'f4', label:'F', note:'F4', midi:65 },
-    { id:'g4', label:'G', note:'G4', midi:67 },
-    { id:'c4-repeat', label:'C again', note:'C4', midi:60, repeated:true }
+    { id:'c4', label:'Middle C', prompt:'Play Middle C', locationCue:'Find the two black keys near the middle of the keyboard. Middle C is the white key immediately to their left.', note:'C4', midi:60 },
+    { id:'d4', label:'D above Middle C', prompt:'Play D next to Middle C', locationCue:'Stay in the same area. D is the white key immediately to the right of Middle C.', note:'D4', midi:62 },
+    { id:'e4', label:'E above Middle C', prompt:'Play E near Middle C', locationCue:'Stay in the same area. E is the next white key to the right of D.', note:'E4', midi:64 },
+    { id:'f4', label:'F above Middle C', prompt:'Play F near Middle C', locationCue:'Stay in the same area. F is the next white key to the right of E.', note:'F4', midi:65 },
+    { id:'g4', label:'G above Middle C', prompt:'Play G near Middle C', locationCue:'Stay in the same area. G is the next white key to the right of F.', note:'G4', midi:67 },
+    { id:'c4-repeat', label:'Middle C again', prompt:'Play the same Middle C again', locationCue:'Return to the same white key immediately left of the two black keys near the middle.', note:'C4', midi:60, repeated:true }
   ];
   const HUMAN_QUESTIONS = [
     { id:'reaction', text:'Did the game react when you played?' },
@@ -93,7 +93,7 @@
   }
 
   const createPianoMicNoteResult = step => ({
-    expected:{ id:step.id, label:step.label, note:step.note, midi:step.midi, repeated:Boolean(step.repeated) },
+    expected:{ id:step.id, label:step.label, prompt:step.prompt, locationCue:step.locationCue, note:step.note, midi:step.midi, repeated:Boolean(step.repeated) },
     detectedNote:null, detectedMidi:null, frequency:null, cents:null, confidence:0, level:0, peak:0, stable:false,
     readings:0, attempts:0, retries:0, wrongDetections:[], passedAt:null
   });
@@ -189,8 +189,15 @@
     missing.push('Physical end-to-end latency measurement');
     return [...new Set(missing)];
   }
+  function completedGuidedPaths(session) {
+    const completed = [];
+    if (session?.guitar?.status === 'complete') completed.push('guitar');
+    if (session?.pianoMicrophone?.status === 'complete') completed.push('pianoMicrophone');
+    if (session?.midi?.status === 'complete') completed.push('midi');
+    return completed;
+  }
 
-  const rules = { APP_VERSION, QUIET_SAMPLE_COUNT, GUITAR_STRINGS, PIANO_MIC_QUIET_SAMPLE_COUNT, PIANO_MIC_NOTES, HUMAN_QUESTIONS, scoreable, createNoteResult, applyNoteReading, createPianoMicNoteResult, applyPianoMicReading, summarizeQuiet, summarizeSilence, makeSessionId, normalizeEvidenceReferences, createHumanEvidence, createReportPayload, createSession, computeNotPerformed };
+  const rules = { APP_VERSION, QUIET_SAMPLE_COUNT, GUITAR_STRINGS, PIANO_MIC_QUIET_SAMPLE_COUNT, PIANO_MIC_NOTES, HUMAN_QUESTIONS, scoreable, createNoteResult, applyNoteReading, createPianoMicNoteResult, applyPianoMicReading, summarizeQuiet, summarizeSilence, makeSessionId, normalizeEvidenceReferences, createHumanEvidence, createReportPayload, createSession, computeNotPerformed, completedGuidedPaths };
   if (typeof module !== 'undefined' && module.exports) module.exports = rules;
   if (typeof window === 'undefined' || !window.document) return;
 
@@ -273,10 +280,31 @@
     renderGuided();
     return session;
   }
-  function ensureSession() {
+  function ensureSession({ reopen=false }={}) {
     if (!session) loadSession();
-    if (!session || session.status !== 'in-progress') newSession();
+    if (!session) newSession();
+    if (reopen && session.status === 'complete') {
+      session.status = 'in-progress';
+      session.completedAt = null;
+      session.testsNotPerformed = computeNotPerformed(session);
+      persistSession();
+    }
     return session;
+  }
+
+  function showTestChoices() {
+    ensureSession({ reopen:true });
+    cleanupResources();
+    path = null; phase = null; message = '';
+    persistSession();
+    showGuided();
+  }
+
+  function startNewSessionExplicitly() {
+    if (session && !window.confirm('Start a new hardware test session? This clears the completed subtests and answers from the current session.')) return;
+    newSession();
+    phase = null;
+    showGuided();
   }
 
   function injectUi() {
@@ -303,6 +331,7 @@
     view.innerHTML = `
       <div class="guided-title-row"><div><p class="eyebrow">SHORT CHILD-FRIENDLY CHECKS</p><h2>Quick Hardware Tests</h2></div><span id="guidedProgress" class="badge">Ready</span></div>
       <p id="guidedLead" class="muted">Pick one test and follow the big instructions. Technical details stay in the report.</p>
+      <div id="guidedSessionActions" class="guided-session-actions" hidden><span id="guidedSessionLabel" class="muted"></span><button id="guidedNewSession" class="button ghost" type="button">Start New Test Session</button></div>
       <div id="guidedMenu" class="guided-menu">
         <button id="guidedStartGuitar" class="guided-choice" type="button"><span>🎸</span><strong>Test Guitar Microphone</strong><small>Quiet check, all six open strings, repeated note and silence.</small></button>
         <button id="guidedStartPianoMic" class="guided-choice" type="button"><span>🎹</span><strong>Test Piano Microphone</strong><small>One note at a time: C–D–E–F–G, then C again.</small></button>
@@ -332,6 +361,7 @@
     $('guidedAction').onclick = handleGuidedAction;
     $('guidedSkip').onclick = skipGuidedStep;
     $('guidedFinish').onclick = showQuestions;
+    $('guidedNewSession').onclick = startNewSessionExplicitly;
     $('guidedCancel').onclick = () => { if (path || phase === 'questions' || phase === 'summary') cancelGuided('Stopped by tester'); else document.querySelector('[data-diag-tab="microphone"]')?.click(); };
     document.querySelector('[data-diag-tab="report"]')?.addEventListener('click', () => setTimeout(refreshCombinedReport, 0));
     $('closeDiagnostics')?.addEventListener('click', () => { if (path) cancelGuided('Hardware & Backup closed'); else cleanupResources(); });
@@ -373,12 +403,14 @@
     questions.hidden = phase !== 'questions';
     summary.hidden = phase !== 'summary';
     $('guidedFinish').hidden = Boolean(path) || phase === 'questions' || phase === 'summary';
-    $('guidedCancel').textContent = path || phase === 'questions' || phase === 'summary' ? 'Stop current test' : 'Back to diagnostics';
+    $('guidedSessionActions').hidden = !s || Boolean(path) || phase === 'questions';
+    $('guidedSessionLabel').textContent = s ? `Session ${s.sessionId} · completed tests stay together until you start a new session.` : '';
+    $('guidedCancel').textContent = path ? 'Stop current test' : phase === 'questions' || phase === 'summary' ? 'Back to test choices' : 'Back to diagnostics';
     $('guidedProgress').textContent = !s ? 'Ready' : s.status === 'complete' ? 'Report saved' : path === 'guitar' ? 'Guitar' : path === 'piano-mic' ? 'Piano microphone' : path === 'midi' ? 'MIDI' : 'In progress';
     $('guidedLead').textContent = s ? `Guitar mic: ${statusText(s.guitar.status)} · Piano mic: ${statusText(s.pianoMicrophone?.status)} · MIDI: ${statusText(s.midi.status)}.` : 'Pick one test and follow the big instructions. Technical details stay in the report.';
     if (!path) {
       $('guidedStartGuitar').querySelector('small').textContent = `${statusText(s?.guitar?.status)} · Quiet check, six strings, repeated note and silence.`;
-      $('guidedStartPianoMic').querySelector('small').textContent = `${statusText(s?.pianoMicrophone?.status)} · One note at a time: C–D–E–F–G, then C again.`;
+      $('guidedStartPianoMic').querySelector('small').textContent = `${statusText(s?.pianoMicrophone?.status)} · Middle C, nearby D–E–F–G, then the same Middle C again.`;
       $('guidedStartMidi').querySelector('small').textContent = `${statusText(s?.midi?.status)} · Note On/Off, velocity, polyphony and optional sustain.`;
     }
     if (path === 'guitar') renderGuitarTask();
@@ -428,8 +460,7 @@
     }
     if (phase === 'piano-mic-note') {
       const step = PIANO_MIC_NOTES[pianoMicNoteIndex];
-      const prompt = step.repeated ? 'Play C again' : `Play ${step.label}`;
-      setTask(`PIANO MICROPHONE · ${pianoMicNoteIndex + 1} OF ${PIANO_MIC_NOTES.length}`, prompt, message || `Waiting for ${step.note}… One note at a time.`, pianoMicNoteResult?.level || 0);
+      setTask(`PIANO MICROPHONE · ${pianoMicNoteIndex + 1} OF ${PIANO_MIC_NOTES.length}`, step.prompt, message || `${step.locationCue} Waiting for ${step.note}; play one note at a time.`, pianoMicNoteResult?.level || 0);
     }
   }
 
@@ -449,7 +480,7 @@
   }
 
   async function startGuitar(isSynthetic=false) {
-    ensureSession(); cleanupResources();
+    ensureSession({ reopen:true }); cleanupResources();
     synthetic = isSynthetic; path = 'guitar'; phase = 'quiet'; message = ''; stringIndex = 0; quietSamples = []; silenceReadings = []; noteResult = null;
     session.guitar = { status:'running', quiet:null, strings:[], repeated:null, silence:null };
     persistSession(); renderGuided();
@@ -525,7 +556,7 @@
   }
 
   async function startPianoMic(isSynthetic=false) {
-    ensureSession(); cleanupResources();
+    ensureSession({ reopen:true }); cleanupResources();
     synthetic = isSynthetic; path = 'piano-mic'; phase = 'piano-mic-quiet'; message = ''; pianoMicNoteIndex = 0; pianoMicNoteResult = null; pianoMicQuietSamples = [];
     session.pianoMicrophone = { ...createPianoMicrophoneState(), status:'running', startedAt:new Date().toISOString() };
     persistSession(); renderGuided();
@@ -567,7 +598,7 @@
     pianoMicNoteResult = applied.result;
     if (applied.reason === 'quiet') message = 'Too quiet — play a little louder.';
     else if (applied.reason === 'unstable') message = 'We can hear something, but the note is not steady yet. Try one clean note.';
-    else if (applied.reason === 'wrong-note') message = `We heard ${reading.name || 'another note'}. Try ${step.label} again.`;
+    else if (applied.reason === 'wrong-note') message = `We heard ${reading.name || 'another note'}. ${step.locationCue}`;
     if (applied.passed) {
       message = `Great — we heard ${step.label}.`;
       if (step.repeated) session.pianoMicrophone.repeated = pianoMicNoteResult;
@@ -588,7 +619,7 @@
   }
 
   async function startMidi(isSynthetic=false) {
-    ensureSession(); cleanupMidi();
+    ensureSession({ reopen:true }); cleanupMidi();
     synthetic = isSynthetic; path = 'midi'; phase = 'midi-noteon'; midiTarget = null; message = '';
     session.midi = { status:'running', device:null, noteOn:null, noteOff:null, velocitySamples:[], polyphonyMax:0, sustain:null, skipped:[] };
     persistSession(); renderGuided();
@@ -650,7 +681,9 @@
     ensureSession(); cleanupResources(); path = null; phase = 'questions';
     const form = $('guidedQuestions');
     const human = session.humanEvidence || createHumanEvidence();
-    form.innerHTML = `<h3>✅ Done! Five quick questions</h3><p class="muted">Answer what you actually noticed. Good = no problem; Bad = a clear problem.</p>${HUMAN_QUESTIONS.map((q,i)=>`<fieldset><legend>${i+1}. ${q.text}</legend><div class="guided-rating"><label><input type="radio" name="guided-${q.id}" value="good" required> Good</label><label><input type="radio" name="guided-${q.id}" value="okay"> Okay</label><label><input type="radio" name="guided-${q.id}" value="bad"> Bad</label></div></fieldset>`).join('')}
+    const priorAnswers = session.humanObservations?.answers || {};
+    const hasPriorHumanEvidence = Boolean(session.humanObservations?.recordedAt);
+    form.innerHTML = `<h3>✅ Done! Five quick questions</h3><p class="muted">${hasPriorHumanEvidence ? 'Your earlier session answers are loaded. Review them so they truthfully cover all completed tests in this same session.' : 'Answer what you actually noticed. Good = no problem; Bad = a clear problem.'}</p>${HUMAN_QUESTIONS.map((q,i)=>`<fieldset><legend>${i+1}. ${q.text}</legend><div class="guided-rating"><label><input type="radio" name="guided-${q.id}" value="good" required> Good</label><label><input type="radio" name="guided-${q.id}" value="okay"> Okay</label><label><input type="radio" name="guided-${q.id}" value="bad"> Bad</label></div></fieldset>`).join('')}
       <section class="guided-human-evidence">
         <h3>Adult / tester evidence</h3>
         <p class="muted">These notes help the Project Manager understand the session. They do not change scoring.</p>
@@ -676,6 +709,9 @@
     $('guidedChildComment').value = human.childComment || '';
     $('guidedTesterNote').value = human.testerNote || '';
     $('guidedEvidenceRefs').value = (human.evidenceReferences || []).join('\n');
+    for (const q of HUMAN_QUESTIONS) {
+      if (priorAnswers[q.id]) form.querySelector(`[name="guided-${q.id}"][value="${priorAnswers[q.id]}"]`)?.setAttribute('checked','checked');
+    }
     if (human.childScoringTrust) form.querySelector(`[name="guided-scoring-trust"][value="${human.childScoringTrust}"]`)?.setAttribute('checked','checked');
     form.onsubmit = event => {
       event.preventDefault();
@@ -698,15 +734,20 @@
   }
   function completeSession(answers, evidence={}) {
     ensureSession();
-    session.humanObservations = { scale:'good/okay/bad', answers:{...answers}, recordedAt:new Date().toISOString(), source:'human' };
-    session.humanEvidence = createHumanEvidence(evidence);
+    const now = new Date().toISOString();
+    const priorObservationTime = session.humanObservations?.recordedAt || now;
+    const priorEvidenceTime = session.humanEvidence?.recordedAt || now;
+    const completedPaths = completedGuidedPaths(session);
+    session.humanObservations = { scale:'good/okay/bad', answers:{...answers}, recordedAt:priorObservationTime, reviewedAt:now, source:'human', coversGuidedPaths:completedPaths };
+    session.humanEvidence = { ...createHumanEvidence(evidence), recordedAt:priorEvidenceTime, reviewedAt:now, source:'human', coversGuidedPaths:completedPaths };
     session.testsNotPerformed = computeNotPerformed(session);
     session.status = 'complete'; session.completedAt = new Date().toISOString();
     phase = 'summary'; persistSession(); renderGuided();
   }
   function renderSummary() {
     if (!session) return;
-    $('guidedSummary').innerHTML = `<strong>✅ Done! Hardware test report saved</strong><p>Session: ${session.sessionId || '—'} · Adult result: ${formatAdultResult(session.humanEvidence?.adultResult)}</p><p>Guitar mic: ${statusText(session.guitar.status)} · Piano mic: ${statusText(session.pianoMicrophone?.status)} · MIDI: ${statusText(session.midi.status)}</p><p class="muted">This records what you tested. It does not automatically approve the release.</p><div class="diagnostic-actions"><button id="guidedSendParent" class="button" type="button">Send Report to Parent</button><button id="guidedViewReport" class="button secondary" type="button">View Report</button><button id="guidedNewSession" class="button secondary" type="button">Start New Test</button></div><p id="guidedShareStatus" class="muted" aria-live="polite"></p>`;
+    $('guidedSummary').innerHTML = `<strong>✅ Done! Hardware test report saved</strong><p>Session: ${session.sessionId || '—'} · Adult result: ${formatAdultResult(session.humanEvidence?.adultResult)}</p><p>Guitar mic: ${statusText(session.guitar.status)} · Piano mic: ${statusText(session.pianoMicrophone?.status)} · MIDI: ${statusText(session.midi.status)}</p><p class="muted">This records what you tested. Add another input to this session, or use Start New Test Session above to clear it intentionally.</p><div class="diagnostic-actions"><button id="guidedContinueSession" class="button" type="button">Test Another Input</button><button id="guidedSendParent" class="button" type="button">Send Report to Parent</button><button id="guidedViewReport" class="button secondary" type="button">View Report</button></div><p id="guidedShareStatus" class="muted" aria-live="polite"></p>`;
+    $('guidedContinueSession').onclick = showTestChoices;
     $('guidedSendParent').onclick = async () => {
       const result = await shareTestReport();
       const status = $('guidedShareStatus');
@@ -717,7 +758,6 @@
       document.querySelector('[data-diag-tab="report"]')?.click();
       setTimeout(refreshCombinedReport, 0);
     };
-    $('guidedNewSession').onclick = () => { newSession(); phase = null; showGuided(); };
   }
   function cancelGuided(reason='Cancelled') {
     if (session && path) {
@@ -755,6 +795,10 @@
   function trustLabel(value) {
     return value === 'yes' ? 'Yes' : value === 'mostly' ? 'Mostly' : value === 'no-unsure' ? 'No / unsure' : 'Not answered';
   }
+  function guidedPathLabels(paths=[]) {
+    const labels = { guitar:'Guitar microphone', pianoMicrophone:'Piano microphone', midi:'Piano/MIDI' };
+    return paths.map(item=>labels[item] || item).join(', ') || 'No completed guided tests';
+  }
   function browserLabel(platformData={}) {
     const match = String(platformData.userAgent || '').match(/(?:Chrome|CriOS)\/([\d.]+)/);
     return match ? `Chrome ${match[1]}` : 'Browser version not identified';
@@ -783,7 +827,7 @@
   }
   function combinedReportObject() {
     const base = baseReportObject ? baseReportObject() : { format:'family-music-quest-hardware-report', version:1, generatedAt:new Date().toISOString(), player:activeProfile(), platform:platform() };
-    const saved = getJson(RESULT_KEY)[activeId()]?.guidedAcceptance || session || null;
+    const saved = session || getJson(RESULT_KEY)[activeId()]?.guidedAcceptance || null;
     const currentPlatform = platform();
     return { ...base, appVersion:APP_VERSION, commit:base.commit || null, platform:{ ...(base.platform || {}), displayMode:currentPlatform.displayMode }, guidedAcceptance:saved };
   }
@@ -808,6 +852,8 @@
       `Adult result: ${formatAdultResult(human.adultResult)}`,
       `Adult help required: ${human.adultHelpRequired || '0'}`,
       `Child trusted scoring: ${trustLabel(human.childScoringTrust)}`,
+      `Human evidence scope: ${guidedPathLabels(human.coversGuidedPaths || s?.humanObservations?.coversGuidedPaths)}`,
+      `Human evidence recorded: ${human.recordedAt || s?.humanObservations?.recordedAt || 'Not recorded'} · last reviewed: ${human.reviewedAt || s?.humanObservations?.reviewedAt || 'Not reviewed'}`,
       'Child feedback:',
       `- Game reacted when played: ${ratingLabel(observations.reaction)}`,
       `- Delay: ${ratingLabel(observations.delay)}`,
