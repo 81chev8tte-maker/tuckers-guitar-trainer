@@ -1,10 +1,14 @@
 # Family Music Quest
 
+## v2.6.17 Piano C3 Fundamental/Octave Reliability
+
+Refines Piano microphone peak comparison after generated signals reproduced the remaining C3 octave errors. Scoring, input gates and microphone lifecycle stay unchanged. #40 still requires real Dell Chromebook/keyboard acceptance; see [AUDIO_PIPELINE_REVIEW.md](AUDIO_PIPELINE_REVIEW.md) for evidence and limits and [HARDWARE_VALIDATION.md](HARDWARE_VALIDATION.md) for the C3/C4 retest.
+
 ## v2.6.16 Hardware Test Workflow Reliability
 
 Quick Hardware Tests now retain Guitar microphone, Piano microphone, and MIDI results inside one explicit acceptance session. Completed paths remain visible, session-level human answers are reloaded for deliberate review, consolidated reports list only genuinely unperformed paths, and a confirmed **Start New Test Session** action performs the only guided-session reset.
 
-The Piano microphone guide now begins with plain-language **Middle C** location instructions, keeps D4–G4 in that same keyboard area, and explicitly returns to the same Middle C. Production detectors, scoring, input lifecycle, report transfer, saves, and profiles are unchanged. Issues #43 and #44 still require physical Dell Chromebook acceptance.
+The Piano microphone guide now begins with plain-language **Middle C** location instructions, keeps D4–G4 in that same keyboard area, and explicitly returns to the same Middle C. Production detectors, scoring, input lifecycle, report transfer, saves, and profiles are unchanged. Issues #43 and #44 have passed adult Dell Chromebook acceptance.
 
 ## v2.6.15 Piano Microphone Fundamental Selection Reliability
 

@@ -56,9 +56,12 @@ The guided hardware/report-sharing foundation originated in v2.6.7/v2.6.8. Subse
 
 Issue #22 remains the broader acceptance gate. #29’s v2.6.11 microphone lifecycle/input-intent work has physically passed and is Done. Preserve it. #30 remains Needs Hardware Test; #31 remains Backlog after failed physical Chromebook acceptance; #38 remains Backlog. These issues are outside this release.
 
-**v2.6.16 — Hardware Test Workflow Reliability (#43 + #44)** precedes the next detector hardware cycle. It makes the existing Quick Hardware Tests accumulate Guitar microphone, Piano microphone, and MIDI evidence in one explicit session, adds an intentional reset, and makes the Piano C4–G4 prompts physically unambiguous around Middle C. After technical deployment, both issues remain **Needs Hardware Test** until one clean combined adult Dell Chromebook session verifies the retained session ID, consolidated report/JSON, reset, and physical-key wording.
+**v2.6.16 — Hardware Test Workflow Reliability (#43 + #44)** has physically passed adult Dell Chromebook acceptance, and both Issues are Done. The retained combined session/report, explicit reset and Middle C prompt workflow remain intact.
 
-**#40 is paused and becomes the v2.6.17 candidate only after v2.6.16 acceptance clears.** Its v2.6.15 detector correction remains deployed and unchanged: generated signals reproduced long-period/subharmonic selection, while real C3/C4 and nearby-note acceptance is still pending. #24, #34, #31, #38, Bass and broader hardware-wizard/report changes remain outside this release.
+**v2.6.17 — Piano C3 Fundamental/Octave Reliability (#40 only)** is the focused follow-up. The v2.6.15 real-keyboard retest failed: F1 improved, but C3 still produced C4/C2 or no stable note. v2.6.17 refines peak comparison using reproducible weak-partial/noise evidence; technical completion does not close the physical blocker. Keep #40 **Needs Hardware Test** after deployment until the real C3/lower-range, upper controls, softer playing, Wait for Me and Rhythm retest passes. See `AUDIO_PIPELINE_REVIEW.md` and `HARDWARE_VALIDATION.md`.
+
+Do not begin #46, #38, #31, #34, Bass, FMQ Test Console or any other issue as part of this release. #29 lifecycle remains physically accepted; #30 retains its separate acceptance status.
+
 Primary acceptance goals remain:
 
 - run Hardware & Backup → Run Hardware Test where practical, record human evidence, Copy Project Report, and transfer the JSON by native share or download fallback;

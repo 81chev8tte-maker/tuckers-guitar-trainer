@@ -1,5 +1,13 @@
 # Changelog
 
+## v2.6.17 — Piano C3 Fundamental/Octave Reliability
+
+- Refs #40. Investigated the remaining physical C3→C4/C2/no-stable-note failure separately from the old F1 issue. Generated production tests reproduce weak-odd-partial octave-high selection, noisy longer-period selection and alternating octave candidates.
+- Replaced only the fixed peak-comparison allowance with local interpolation-error estimation plus a residual-relative noise allowance. The actual measured confidence, continuous frequency/cents and all input/scoring gates remain intact.
+- Added 816 static octave trials and evolving/transition/rejection streams; browser checks cover weak/noisy C3 scoring in Wait/Rhythm with genuine C2/C4 still wrong. Preserved the earlier fundamental and #29 lifecycle regressions.
+- Kept 4096 samples/85 ms, C3 support, monophony, MIDI/screen keys, Guitar, saves/profiles, Wake Lock and reports unchanged apart from version. Package/app/report/PWA/cache align to v2.6.17.
+- #43/#44 workflow acceptance has passed. #40 remains open for the real keyboard-speaker → Dell Chromebook microphone retest; synthetic evidence does not claim physical acceptance or solve all attack/interference cases.
+
 ## v2.6.16 — Hardware Test Workflow Reliability
 
 - Refs #43 and #44. Quick Hardware Tests now accumulate completed Guitar microphone, Piano microphone, and MIDI paths under one retained session ID instead of silently resetting after the first saved report.

@@ -3,7 +3,7 @@ const assert=require('node:assert/strict');
 const {loadPianoInputs,signal,frequency,rms}=require('./test-support/piano-signals');
 const {MicrophonePianoInput,clock}=loadPianoInputs(process.env.FMQ_PIANO_SOURCE||'piano.js');
 const investigate=process.env.FMQ_INVESTIGATE==='1';
-let checks=0,failures=0,trials=0;
+let checks=0,failures=0,trials=0,failedTrials=0;
 const examples=[];
 function check(ok,detail){checks++;if(!ok){failures++;if(examples.length<12)examples.push(detail);if(!investigate)assert.fail(JSON.stringify(detail));}}
 const controls=[48,50,52,53,55,60,62,64,65,67];
@@ -15,7 +15,7 @@ function capture(sampleRate){
   return {events,frame(next){data=next;clock.now+=85;mic.tick();return reading;}};
 }
 function trial(midi,options){
-  trials++;
+  trials++;const failuresBefore=failures;
   const events=[],mic=new MicrophonePianoInput({emit:e=>events.push(e.midi)}),data=signal(midi,options);
   const result=mic.detectPitch(data,options.sampleRate||48000);
   const cents=result?1200*Math.log2(result.frequency/frequency(midi)):Infinity;
@@ -24,6 +24,7 @@ function trial(midi,options){
   check(Math.abs(cents-(options.cents||0))<(options.noise?45:5),{midi,options,detected:result,cents});
   for(let frame=0;frame<3;frame++)mic.processCandidate(result,rms(data),1000+85*frame);
   check(events.length===1&&events[0]===midi,{midi,options,events});
+  if(failures>failuresBefore)failedTrials++;
 }
 // Weak but present odd/fundamental energy must distinguish C3 from C4.
 // Noise controls independently protect against choosing a longer period solely
@@ -85,5 +86,5 @@ for(const options of [{amplitude:.005,harmonics:[.03,1,0,.3]},{noise:8},{cents:4
   for(let frame=0;frame<5;frame++)check(run.frame(signal(48,{...options,seed:frame+1})).stable===false,{options,frame});
   check(run.events.length===0,{options,events:run.events});
 }
-console.log(JSON.stringify({suite:'Piano octave reliability',trials,checks,failures,examples},null,2));
+console.log(JSON.stringify({suite:'Piano octave reliability',trials,failedTrials,checks,failures,examples},null,2));
 if(!investigate)assert.equal(failures,0);

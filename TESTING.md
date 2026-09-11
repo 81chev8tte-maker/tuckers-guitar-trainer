@@ -26,9 +26,15 @@ Runs `node --check` syntax validation against the current major JavaScript files
 
 Runs Playwright browser tests.
 
+## v2.6.17 / #40 octave reliability regression
+
+`piano-octave.test.js` adds 816 static production-detector trials plus evolving/transition/rejection streams (2,630 assertions). It covers weak odd/upper harmonics, noisy longer-period selection, C3↔D3/C4, attack/decay, softer levels, lower/upper controls, genuine lower notes and absent-fundamental honesty. Both pitch and emitted MIDI are checked. Existing `piano-fundamental.test.js` and #29 lifecycle tests remain required. The browser microphone suite adds actual Wait/Rhythm scoring from weak/noisy C3 and honest rejection of genuine C2/C4 against a C3 target. Browser clocks are controlled for these pitch/scoring checks; they do not measure perceived latency.
+
+`AUDIO_PIPELINE_REVIEW.md` records baseline failures and reproduction commands. Investigation mode reports failures intentionally; normal `npm test` asserts every regression. Physical C3 acceptance failed in v2.6.15 and remains outstanding for v2.6.17; use the current checklist in `HARDWARE_VALIDATION.md`.
+
 ## v2.6.16 / #43 + #44 guided-session regression
 
-`guided-hardware-acceptance.test.js` protects the Middle C/D4–G4/repeated-C4 prompt metadata, exact MIDI mapping, completed-path enumeration, and truthful not-performed rules. `browser-tests/quick-hardware-tests.spec.js` runs synthetic production-path evidence in both Guitar→Piano and Piano→Guitar order, adds MIDI, saves/reviews human evidence, compares consolidated report state, and verifies the explicit new-session reset. These tests do not claim physical key clarity, microphone/MIDI acceptance, ChromeOS behavior, or human provenance truthfulness beyond the data entered; use the v2.6.16 checklist in `HARDWARE_VALIDATION.md`.
+`guided-hardware-acceptance.test.js` protects the Middle C/D4–G4/repeated-C4 prompt metadata, exact MIDI mapping, completed-path enumeration, and truthful not-performed rules. `browser-tests/quick-hardware-tests.spec.js` runs synthetic production-path evidence in both Guitar→Piano and Piano→Guitar order, adds MIDI, saves/reviews human evidence, compares consolidated report state, and verifies the explicit new-session reset. These tests do not claim physical key clarity, microphone/MIDI acceptance, ChromeOS behavior, or human provenance truthfulness beyond the data entered; the v2.6.16 adult checklist in `HARDWARE_VALIDATION.md` has since passed under #43/#44.
 
 ## Commands that do not currently exist
 
