@@ -25,7 +25,7 @@ If real-world testing reveals reproducible scoring corruption, save corruption, 
 
 ### Piano microphone fundamental selection — #40 physical acceptance pending
 
-v2.6.15 corrects a deterministically reproduced integer-lag/subharmonic preference in the production Piano detector. C3/C4, D/E/F/G controls and generated C3–B5 signals have regression coverage. The real electronic-keyboard-speaker → Dell Chromebook internal-microphone path remains unaccepted until Tucker’s retest is judged by the Project Manager. Stable wrong notes, disproportionate C3/C4 retry burden, room acoustics, attack/decay interference and perceived response remain physical test debt; synthetic timbres do not model the actual keyboard/microphone. #29 lifecycle acceptance is separate and remains passed.
+v2.6.15 improved the original F1/long-period failure but **failed** adult real-keyboard acceptance: C3 sometimes became C4/C2 or did not stabilize. v2.6.17 addresses reproduced weak-odd-partial and noisy-overlap selection failures without changing input gates. Generated coverage does not establish the exact physical root cause or clear #40/#22. First-attack ambiguity, strong modulation/interference, weak fundamentals buried in noise, room response and retry burden remain physical/technical limits; see `AUDIO_PIPELINE_REVIEW.md`. Retest actual C3/lower controls and both gameplay modes under `HARDWARE_VALIDATION.md`. #29 lifecycle acceptance remains separate and passed.
 
 ### Guitar Tab View readability
 
@@ -67,7 +67,7 @@ A future backup redesign should explicitly distinguish progress/settings backup 
 
 ### Full guided hardware setup completeness
 
-v2.6.7/v2.6.8 established the child-friendly acceptance/report foundation, v2.6.13 simplified parent transfer, v2.6.14 added short self-guided Guitar microphone, monophonic Piano microphone and MIDI choices, and v2.6.16 made those choices accumulate in one explicitly reset acceptance session. The broader first-use Hardware Setup Wizard remains later scope: connection-method selection, persistent readiness/setup reuse, richer recovery and optional future latency calibration are not implemented by these quick acceptance tests. Real Chromebook verification of combined-session retention, reset clarity, and the Middle C physical wording remains manual debt until #43/#44 acceptance.
+v2.6.7/v2.6.8 established the child-friendly acceptance/report foundation, v2.6.13 simplified parent transfer, v2.6.14 added short self-guided Guitar microphone, monophonic Piano microphone and MIDI choices, and v2.6.16 made those choices accumulate in one explicitly reset acceptance session. The broader first-use Hardware Setup Wizard remains later scope: connection-method selection, persistent readiness/setup reuse, richer recovery and optional future latency calibration are not implemented by these quick acceptance tests. Adult Dell Chromebook acceptance of combined-session retention, reset clarity and Middle C wording passed for #43/#44; preserve that behavior during the #40 follow-up.
 
 ## Opportunistic
 

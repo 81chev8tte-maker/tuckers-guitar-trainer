@@ -99,7 +99,7 @@ test('Quick Piano microphone guide rejects quiet, unstable and wrong notes and r
   await expect(page.getByRole('button',{name:'Send Report to Parent'})).toBeVisible();
 
   const report=await page.evaluate(()=>window.FMQGuidedHardwareTest.reportObject());
-  expect(report.appVersion).toBe('2.6.16');
+  expect(report.appVersion).toBe('2.6.17');
   expect(report.guidedAcceptance.version).toBe(3);
   expect(report.guidedAcceptance.humanEvidence.adultResult).toBe('not-decided');
   expect(report.guidedAcceptance.testsNotPerformed.some(item=>item.includes('Guided Piano microphone'))).toBe(false);

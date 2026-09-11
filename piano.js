@@ -122,14 +122,28 @@
       // Integer multiples of a period can beat the fundamental by a tiny sample-
       // alignment margin. Prefer the earliest near-equal *peak*, never the initial
       // zero-lag shoulder. Compare interpolated peak heights so the same sample-
-      // alignment error does not bias selection against shorter periods. The .002
-      // tolerance compares peaks, not scoring confidence.
+      // alignment error does not bias selection against shorter periods.
       for(let offset=min+1;offset<max;offset++){
         const corr=correlations[offset],left=correlations[offset-1],right=correlations[offset+1];
         if(corr>PIANO_MIC_RULES.minConfidence&&corr>left&&corr>=right){
           const shift=clamp(.5*(left-right)/(left-2*corr+right),-.5,.5);
           const peak=corr-.25*(left-right)*shift;
-          if(peak>=best-.002){bestOffset=offset;break;}
+          // A fixed .002 margin hides weak odd harmonics in clean signals, but
+          // is too small for overlap/noise variation in noisier signals. Estimate
+          // the local quadratic interpolation error from third/fourth differences
+          // (maximum |x^3-x|/6 and |x^4-x^2|/24 for |x|<=.5).
+          let interpolationError=.002; // retain edge behavior without five samples
+          if(offset>=min+2&&offset<=max-2){
+            const third=(correlations[offset+2]-2*right+2*left-correlations[offset-2])/2;
+            const fourth=correlations[offset-2]-4*left+6*corr-4*right+correlations[offset+2];
+            interpolationError=Math.abs(third)/16+Math.abs(fourth)/128+1e-7;
+          }
+          // Allow a tenth of the best peak's residual mismatch for noise; unlike
+          // an absolute margin, this tends to zero for a clean periodic signal.
+          // This compares periods only. Selected measured confidence and all
+          // RMS/cents/stability/debounce gates remain unchanged.
+          const tolerance=interpolationError+.1*Math.max(0,1-best);
+          if(peak>=best-tolerance){bestOffset=offset;break;}
         }
       }
       if(bestOffset<=0)return null;

@@ -2,6 +2,14 @@
 
 This file records durable product/architecture decisions that future agents should not accidentally undo. Add dated entries when a decision materially changes.
 
+## 2026-09-11 — Piano peak equivalence accounts for signal quality
+
+**Decision:** For #40/v2.6.17, replace the fixed .002 peak-comparison allowance with local interpolation-error estimation plus a small residual-relative allowance. Keep selected measured confidence and all input/scoring gates intact.
+
+**Evidence:** Production-generated tests reproduce weak-odd-partial C3→C4, noisy C3→C2 and alternating octave candidates that cannot stabilize. Simply tightening the old allowance regressed noisy controls. See `AUDIO_PIPELINE_REVIEW.md` for the exact signals, rejected experiment and remaining limitations.
+
+**Constraints:** This is a scoped peak-selection correction, not target-based octave forcing, a polyphonic detector or proof of physical acceptance. Keep 4096 samples/85 ms, C3 support and #29 lifecycle. Any further changes require additional reproducible evidence and the normal PM boundary.
+
 ## 2026-09-10 — Quick Hardware Tests use an explicit accumulating acceptance session
 
 **Decision:** Guitar microphone, Piano microphone, and MIDI Quick Hardware Tests accumulate under one persisted acceptance session ID in any order. Saving the session-level human evidence completes a report but does not make the next subtest create a new session. Only the visible, confirmed **Start New Test Session** action resets guided results.

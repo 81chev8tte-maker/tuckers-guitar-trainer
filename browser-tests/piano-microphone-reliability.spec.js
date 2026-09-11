@@ -177,3 +177,44 @@ test('generated microphone fundamentals score C3/C4 while wrong notes stay wrong
     await page.locator('#pianoExitGame').click();
   }
 });
+
+test('weak-fundamental and noisy C3 score honestly in Wait for Me and Rhythm',async({page})=>{
+  const {signal}=require('../test-support/piano-signals');
+  await installFakeMicrophone(page);
+  await createProfileAndOpenPiano(page,'C3 Octave Test');
+  await page.locator('.piano-nav-button[data-piano-view="mic"]').click();
+  await page.locator('#pianoMicToggle').click();
+  for(const mode of ['wait','normal']){
+    if(mode==='wait'){
+      await page.locator('.piano-nav-button[data-piano-view="lessons"]').click();
+      await page.locator('[data-lesson="lower-c"][data-song]').click();
+      await page.locator('#startLessonPractice').click();
+    }else{
+      await page.locator('.piano-nav-button[data-piano-view="songs"]').click();
+      await page.locator('[data-song="two-hand-steps"][data-mode="normal"]').click();
+    }
+    await expect(page.locator('#pianoInputPill')).toContainText('Input: microphone');
+    await expect(page.locator('#pianoPause')).toBeEnabled({timeout:8000});
+    // Freeze the gameplay clock at the target, not the scoring window. This is
+    // deterministic pitch/scoring coverage, not a physical latency assertion.
+    await page.evaluate(()=>{const game=window.NovaPianoTest.getCurrentGame();cancelAnimationFrame(game.raf);game.time=game.targetTracker.current().start;});
+    const feed=async(midi,options={})=>{
+      const frames=Array.from({length:3},(_,frame)=>Array.from(signal(midi,{...options,sampleRate:44100,start:Math.round(frame*.085*44100)})));
+      return page.evaluate(frames=>{
+        const events=[],mic=new window.NovaPianoInputs.MicrophonePianoInput({emit:event=>{events.push(event.midi);window.NovaPianoTest.emitInputForTest(event);}});
+        frames.forEach((samples,frame)=>{const data=Float32Array.from(samples),level=Math.sqrt(data.reduce((sum,v)=>sum+v*v,0)/data.length);mic.processCandidate(mic.detectPitch(data,44100),level,1000+85*frame);});
+        return events;
+      },frames);
+    };
+    for(const wrong of [36,60]){
+      expect(await feed(wrong)).toEqual([wrong]);
+      await expect(page.locator('#pgScore')).toHaveText('0');
+      await expect(page.locator('#pianoGameFeedback')).toContainText(`Almost! Heard C${wrong===36?2:4} · Find C3`);
+    }
+    const timbre=mode==='wait'?{harmonics:[.03,1,0,.3]}:{harmonics:[1,.7,.4,.2],noise:.5,seed:1,phase:1};
+    expect(await feed(48,timbre)).toEqual([48]);
+    await expect(page.locator('#pgScore')).toHaveText(mode==='wait'?'50':'100');
+    await page.locator('#pianoExitGame').click();
+    expect(await page.evaluate(()=>window.NovaPianoTest.getMicrophoneState())).toMatchObject({active:false,intent:'microphone'});
+  }
+});
